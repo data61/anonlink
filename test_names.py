@@ -4,12 +4,9 @@ import unittest
 from bitarray import bitarray
 import bloommatcher as bm
 import randomnames as rn
-from datetime import datetime, timedelta
+from datetime import datetime
 
-class testbloommatcher(unittest.TestCase):
-
-    def setUp(self):
-        pass
+class TestBloomMatcher(unittest.TestCase):
 
     def test_tanimoto_1(self):
         self.assertEqual(bm.tanimoto(bitarray('1111011'), bitarray('1111011')), 1.0)
@@ -47,13 +44,15 @@ class testbloommatcher(unittest.TestCase):
     def test_random_date(self):
         start = datetime(1980, 1, 1)
         end = datetime(1990, 1, 1)
-        self.assertGreater((rn.random_date(start,end)-start).days, 0)
-        self.assertLess((rn.random_date(start,end)-end).days, 0)
+
+        for i in range(1000):
+            self.assertGreaterEqual((rn.random_date(start, end)-start).days, 0)
+            self.assertLess((rn.random_date(start, end)-end).days, 0)
 
     def test_generate_subsets(self):
         nl = rn.NameList(20)
-        s1, s2 = nl.generateSubsets(10, 0.8)
-        counteq = 0;
+        s1, s2 = nl.generate_subsets(10, 0.8)
+        counteq = 0
         for s in s1:
             for t in s2:
                 if s == t:

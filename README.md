@@ -1,13 +1,21 @@
 # AnonymousLinking
+
 Python and optimised C++ demonstrating the anonymous linkage using cryptographic hashes and bloom filters
 
 This is as described in http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf
 
 Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
 
-Compile the C++ library on the mac with
+## Compile the C++ library
 
-g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o dice_one_against_many.dylib dice_one_against_many.cpp
+For mac with:
+
+    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o dice_one_against_many.dll dice_one_against_many.cpp
+
+For linux with:
+
+    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -shared -fpic -o dice_one_against_many.so dice_one_against_many.cpp
+
 
 ```
 $ python randomnames.py

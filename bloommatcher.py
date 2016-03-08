@@ -32,11 +32,14 @@ def bigramlist(word):
     """
     Make bigrams from word with pre- and ap-pended spaces
 
+    s -> [' ' + s0, s0 + s1, s1 + s2, .. sN + ' ']
+
     :param word: string to make bigrams from
     :return: list of bigrams as strings
     """
     word = " " + word + " "
-    return [word[i:i+2] for i in range(0, len(word)-1)]
+    return [word[i:i+2] for i in range(len(word)-1)]
+
 
 def unigramlist(instr, toremove='/'):
     """
@@ -57,6 +60,7 @@ def dicecoeff(e1, e2):
     :return: real 0-1 similarity measure
     """
     return 2*(e1 & e2).count()/float(e1.count() + e2.count())
+
 
 def dicecoeff_precount(e1, e2, count):
     """
