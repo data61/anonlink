@@ -17,8 +17,7 @@ def hbloom(mlist, l=1024, k=30, keysha1="secret1", keymd5="secret2"):
     :return: bitarray with bloom filter
     """
     bf = bitarray(l)
-    for i in range(0, l):
-        bf[i] = 0
+    bf[:] = 0
     for m in mlist:
         sha1hm = int(hmac.new(keysha1, m, sha1).hexdigest(), 16) % l
         md5hm = int(hmac.new(keymd5, m).hexdigest(), 16) % l
