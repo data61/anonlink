@@ -8,6 +8,7 @@ Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Joi
 
 ## Compile the C++ library
 
+
 For mac with:
 
     g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o dice_one_against_many.dll dice_one_against_many.cpp
@@ -18,21 +19,24 @@ For linux with:
 
 
 ```
-$ python randomnames.py
-26.4389259815
+$ python benchmark.py
+
+Python 26.4389259815
 =======================
-0.362435102463
+C++    0.362435102463
 Results are the same
 ```
 
-Does a comparison of 4000 records vs another 4000 records, with an 80% overlap between records. Records are name, date
- of birth and gender. Does it twice, once in python, once in C++ called from python.
-Results are in seconds. Single threaded performance. C++ version uses cpu instruction for bitcount in a 64bit word.
+Does a comparison of 4000 records vs another 4000 records, with an 80% overlap between records. 
+Records are name, date of birth and gender. Does it twice, once in Python, once in C++ called from Python.
+
+Results are in seconds. Single threaded performance. C++ version uses cpu instruction `POPCNT` for bitcount 
+in a 64bit word. http://wm.ite.pl/articles/sse-popcount.html
 
 
 Run unit tests
 ```
-$ python test_names.py
+$ nosetests
 .............
 ----------------------------------------------------------------------
 Ran 13 tests in 0.045s

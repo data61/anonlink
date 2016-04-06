@@ -1,9 +1,9 @@
-__author__ = 'shardy'
-
-
 from hashlib import sha1
 import hmac
 from bitarray import bitarray
+
+__author__ = 'shardy'
+
 
 def hbloom(mlist, l=1024, k=30, keysha1="secret1", keymd5="secret2"):
     """
