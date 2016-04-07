@@ -6,7 +6,6 @@ import randomnames as rn
 __author__ = 'shardy'
 
 
-
 class TestRandomNames(unittest.TestCase):
 
     def test_random_date(self):

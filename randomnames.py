@@ -12,14 +12,14 @@ TODO: Get first name distributions right by using distributions
 TODO: Add RESTfull api
 """
 
-__author__ = 'shardy'
 
 import os
 import csv
 import random
 from datetime import datetime, timedelta
 import numpy as np
-import bloommatcher as bm
+
+__author__ = 'shardy'
 
 
 def loadCSV(fname):
@@ -50,6 +50,8 @@ def random_date(start, end):
 
 class NameList:
     """List of randomly generated names"""
+
+    schema = ('index', 'name', 'dob', 'gender')
 
     def __init__(self, n):
         self.load_names()
@@ -85,8 +87,8 @@ class NameList:
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
 
-        self.all_first_names = loadCSV(os.path.join(dir_path, 'CSV_Database_of_First_Names.csv'))[1:]
-        self.all_last_names = loadCSV(os.path.join(dir_path, 'CSV_Database_of_Last_Names.csv'))[1:]
+        self.all_first_names = loadCSV(os.path.join(dir_path, 'data', 'CSV_Database_of_First_Names.csv'))[1:]
+        self.all_last_names = loadCSV(os.path.join(dir_path, 'data', 'CSV_Database_of_Last_Names.csv'))[1:]
 
     def generate_subsets(self, sz, overlap=0.8):
         """
@@ -105,25 +107,4 @@ class NameList:
         random.shuffle(l1)
         random.shuffle(l2)
         return [self.names[i] for i in l1],  [self.names[i] for i in l2]
-
-
-def cryptoBloomFilter(rec, key1="test1", key2="test2"):
-    """
-    Make a bloom filer from a record.
-
-    Using the method from
-    http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf
-
-    :param rec: record of index, name, dob, gender (M/F)
-    :param key1: key for first hash function
-    :param key2: key for second hash function
-    :return: 2-tuple - bitarray with bloom filter for record, index of record
-    """
-    bf = bm.hbloom(
-                    bm.bigramlist(rec[1]) +
-                    bm.unigramlist(rec[2], toremove='/') +
-                    bm.unigramlist(rec[3]), keysha1=key1, keymd5=key2
-                )
-
-    return bf, rec[0], bf.count()
 
