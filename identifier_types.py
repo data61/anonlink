@@ -34,9 +34,16 @@ class IdentifierType:
         return result
 
 basic_types = {
-    'index': IdentifierType(weight=0),
-    'dob': IdentifierType(unigram=True, toremove='/'),
-    'name': IdentifierType(),
-    'gender': IdentifierType()
+    'INDEX': IdentifierType(weight=0),
+
+    'GENDER M or F': IdentifierType(unigram=True),
+    'GENDER freetext': IdentifierType(),
+
+    'DOB YYYY/MM/DD': IdentifierType(toremove='/'),
+    'DOB YYYY': IdentifierType(unigram=True, toremove='/'),
+
+    'NAME freetext': IdentifierType(),
+
+    'PHONE freetext': IdentifierType(unigram=True, toremove='()-')
 }
 

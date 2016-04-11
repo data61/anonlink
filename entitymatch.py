@@ -13,11 +13,12 @@ def cryptoBloomFilter(record, tokenizers, key1="test1", key2="test2"):
     Using the method from
     http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf
 
-    :param record: record of index, name, dob, gender (M/F)
-    :param tokenizers: A list of IdentifierType tokenizers
+    :param record: record tuple. E.g. (index, name, dob, gender)
+    :param tokenizers: A list of IdentifierType tokenizers (one for each record element)
     :param key1: key for first hash function
     :param key2: key for second hash function
-    :return: 2-tuple - bitarray with bloom filter for record, index of record
+
+    :return: 3-tuple - bitarray with bloom filter for record, index of record, bitcount
     """
 
     mlist = []
@@ -44,15 +45,17 @@ def calculate_bloom_filters(dataset, schema, keys):
     return bloom_filters
 
 
-def python_filter_similarity_matrix(filters1, filters2):
-    result = []
-    for i, f1 in enumerate(filters1):
-        coeffs = map(lambda x:  bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])), filters2)
-        result.append(coeffs)
-    return result
-
-
 def python_filter_similarity(filters1, filters2):
+    """Pure python method for determining Bloom Filter similarity
+
+    :return: A list of tuples for each entity in filters1.
+    The tuple comprises:
+        - the index in filters1
+        - the similarity score between 0 and 1 of the best match
+        - The original index in entity A
+        - The original index in entity B
+        - The index in filters2 of the best match
+    """
     result = []
     for i, f1 in enumerate(filters1):
         coeffs = map(lambda x:  bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])), filters2)
@@ -63,7 +66,7 @@ def python_filter_similarity(filters1, filters2):
 
 def c_filter_similarity(filters1, filters2):
     length = len(filters1)
-    library_name = "dice_one_against_many"
+    library_name = "_entitymatcher"
     libpath = os.path.abspath(os.path.join(os.path.dirname(__file__), library_name))
 
     if platform.system() == "Darwin":
@@ -85,7 +88,30 @@ def c_filter_similarity(filters1, filters2):
     return result
 
 
-def calculate_filter_similarity(filters1, filters2):
-    # TODO use C++ version by default
-    return python_filter_similarity_matrix(filters1, filters2)
+def cffi_filter_similarity(filters1, filters2):
+    from _entitymatcher import ffi, lib
+    length = len(filters1)
+
+    match_one_against_many_dice_1024_c = lib.match_one_against_many_dice_1024_c
+
+    clist1 = [f[0].tobytes() for f in filters1]
+    carr2 = "".join([f[0].tobytes() for f in filters2])
+
+    result = []
+    for i, f1 in enumerate(filters1):
+        # easier to do all buffer allocations in Python and pass them to C,
+        # even for output-only arguments
+        coeff = ffi.new("double*")
+        ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length, coeff)
+        result.append((i, coeff[0], f1[1], filters2[ind][1], ind))
+
+    return result
+
+
+def calculate_filter_similarity(filters1, filters2, use_python=False):
+    # use C++ version by default
+    if use_python:
+        return python_filter_similarity(filters1, filters2)
+    else:
+        return cffi_filter_similarity(filters1, filters2)
 

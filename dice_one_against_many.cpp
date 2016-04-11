@@ -162,10 +162,10 @@ extern "C"
 
     double score = 2*count_curr/(double)(count_one + counts_many[j]); 
     if(score > best_score)
-      {
-	best_score = score;
-	best_index = j;
-      }
+    {
+	    best_score = score;
+	    best_index = j;
+    }
   }
 
   delete counts_many;

@@ -9,6 +9,7 @@ ClassList class - generate a list of length n of [id, name, dob, gender] lists
 TODO: Get female / male names right by using a gendered database to first names
 TODO: Get age distribution right by using a mortality table
 TODO: Get first name distributions right by using distributions
+TODO: Generate realistic errors
 TODO: Add RESTfull api
 """
 
@@ -51,7 +52,7 @@ def random_date(start, end):
 class NameList:
     """List of randomly generated names"""
 
-    schema = ('index', 'name', 'dob', 'gender')
+    schema = ('INDEX', 'NAME freetext', 'DOB YYYY/MM/DD', 'GENDER M or F')
 
     def __init__(self, n):
         self.load_names()
@@ -72,7 +73,7 @@ class NameList:
             yield (
                 i,
                 random.choice(self.all_first_names) + ' ' + random.choice(self.all_last_names),
-                random_date(self.earliest_birthday, self.latest_birthday).strftime("%d/%m/%Y"),
+                random_date(self.earliest_birthday, self.latest_birthday).strftime("%Y/%m/%d"),
                 'M' if random.random() > 0.5 else 'F'
             )
 

@@ -26,5 +26,16 @@ class TestRandomNames(unittest.TestCase):
                     counteq += 1
         self.assertEqual(counteq, 8)
 
+    def test_generate_large_subsets(self):
+        nl = rn.NameList(2000)
+        s1, s2 = nl.generate_subsets(1000, 0.5)
+        counteq = 0
+        for s in s1:
+            for t in s2:
+                if s[0] == t[0]:
+                    counteq += 1
+
+        self.assertEqual(counteq, 500)
+
 if __name__ == '__main__':
     unittest.main()

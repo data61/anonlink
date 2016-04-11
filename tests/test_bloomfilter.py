@@ -33,13 +33,22 @@ class TestBloomMatcher(unittest.TestCase):
         self.assertEqual(bm.dicecoeff_precount(bitarray('1000001'), bitarray('1111011'), 8.0), 0.5)
 
     def test_unigram_1(self):
-        self.assertEqual(bm.unigramlist("1/2/93"), ['1', '2', '9', '3'])
+        self.assertEqual(bm.unigramlist("1/2/93", '/'), ['1', '2', '9', '3'])
 
     def test_unigram_2(self):
         self.assertEqual(bm.unigramlist("1*2*93", '*'), ['1', '2', '9', '3'])
 
+    def test_unigram_duplicate(self):
+        self.assertEqual(bm.unigramlist("1212"), ['1', '2', '1', '2'])
+
     def test_bigram_1(self):
         self.assertEqual(bm.bigramlist("steve"), [' s', 'st', 'te', 'ev', 've', 'e '])
+
+    def test_bigram_2(self):
+        self.assertEqual(bm.bigramlist("steve", 'e'), [' s', 'st', 'tv', 'v '])
+
+    def test_bigram_duplicate(self):
+        self.assertEqual(bm.bigramlist("abab"), [' a', 'ab', 'ba', 'ab', 'b '])
 
 if __name__ == '__main__':
     unittest.main()

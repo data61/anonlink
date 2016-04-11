@@ -6,61 +6,65 @@ import numpy as np
 logging.basicConfig(level=logging.WARNING)
 
 
-def calculate_network(similarity_matrix, cutoff):
+def calculate_network(similarity, cutoff):
     """Given a adjacency matrix of edge weights, apply a
     threshold to the connections and construct a graph.
 
-    and solve the maximum flow problem.
-
-    :param similarity_matrix: The n-gram similarity scores
+    :param similarity: The tuple including n-gram similarity scores
     :param cutoff: The threshold for including a connection
     :return: The resulting networkx graph.
     """
     G = nx.DiGraph()
-    for i, row in enumerate(similarity_matrix):
-        for j, e in enumerate(row):
-            if e > cutoff:
-                logging.debug('adding ({}, {})'.format(i, j))
-                G.add_edge('row'+str(i), 'col'+str(j), weight=e, capacity=1.0)
+    for (idx1, score, orig1, orig2, idx2) in similarity:
+
+        if score > cutoff:
+            logging.debug('adding ({}, {})'.format(idx1, idx2))
+            G.add_edge('row'+str(idx1), 'col'+str(idx2), weight=score, capacity=1.0)
 
     return G
 
 
-def calculate_entity_mapping(G, altmethod=False):
+def _to_int_map(network, find_pair):
+    """Given a dictionary of edges {'rowN': 'colM', ...}, and a
+    function to find the mate node.
+    Return a dictionary of {N: M, ...}
+    """
+    entityMap = {}
+    for node in network:
+        if node.startswith("row") and len(network[node]):
+            paired_node = find_pair(network, node)
+            entityMap[int(node[3:])] = int(paired_node[3:])
+    return entityMap
+
+
+def calculate_entity_mapping(G, method=None):
     """Given the networkx graph, calculate a dictionary mapping
-    each row node to the most connected column node.
-
-    There are two possible methods for achieving this:
-
-        nx.maximum_flow(G, 'start', 'end')
-        nx.bipartite.maximum_matching(G)
+    each row node to the most highly similar column node.
 
     :param G: A `networkx.Graph` comprising of nodes from two entities,
     connected by equally weighted edges if the similarity was above a
     threshold.
 
+    :param method: The method to use to solve the entity mapping.
+    Options are
+        - None (default) - `networkx.maximum_flow` method.
+        - 'bipartite' - the `networkx.bipartite.maximum_matching` algorithm (fastest)
+        - 'weighted' - the `networkx.max_weight_matching` (slowest but most accurate
+          with close matches)
+
     :return: A dictionary mapping of row index to column index. If no mate
     is found, the node isn't included.
     """
 
-    def to_int_map(network, find_pair):
-        """Given a dictionary of edges {'rowN': 'colM', ...}, and a
-        function to find the mate node
-        Return a dictionary of {N: M, ...}
-        """
-        entityMap = {}
-        for node in network:
-            if node.startswith("row") and len(network[node]):
-                paired_node = find_pair(network, node)
-                entityMap[int(node[3:])] = int(paired_node[3:])
-        return entityMap
+    if method == 'bipartite':
+        network = bipartite.maximum_matching(G)
+        entity_map = _to_int_map(network, lambda network, node: network[node])
 
-    if altmethod:
+    elif method == 'weighted':
         network = nx.max_weight_matching(G)
-        #network = bipartite.maximum_matching(G)
-        entity_map = to_int_map(network, lambda network, node: network[node])
+        entity_map = _to_int_map(network, lambda network, node: network[node])
 
-    else:
+    elif method is None:
         # The maximum flow solver requires a SOURCE and SINK
         num_rows, num_cols = 0, 0
         for i, node in enumerate(G.nodes()):
@@ -79,17 +83,20 @@ def calculate_entity_mapping(G, altmethod=False):
         else:
             logging.info('Matching complete. (perfect matching)')
 
-        entity_map = to_int_map(network, lambda network, node: max(network[node], key=network[node].get))
+        entity_map = _to_int_map(network, lambda network, node: max(network[node], key=network[node].get))
+
+    else:
+        raise NotImplementedError("Haven't implemented that matching method")
 
     return entity_map
 
 
-def map_entities(weights, threshold=0.8, altmethod=False):
+def map_entities(weights, threshold=0.8, method=None):
     network = calculate_network(weights, threshold)
-    return calculate_entity_mapping(network, altmethod)
+    return calculate_entity_mapping(network, method)
 
 
-def solve_entity_mapping(weights, altmethod=False):
+def solve_entity_mapping(weights, method=None):
     """use a binary search tree to find the largest
     threshold that will give a perfect match"""
 
@@ -98,8 +105,10 @@ def solve_entity_mapping(weights, altmethod=False):
 
     threshold = mean_weight
 
-    # TODO
-    entity_map = map_entities(A, threshold, False)
+    # TODO binary search...
+    entity_map = map_entities(A, threshold)
+    raise NotImplementedError("TODO binary search here")
+
 
 if __name__ == "__main__":
     A = [[4.0, 3.0, 2.0, 1.0],
@@ -109,8 +118,8 @@ if __name__ == "__main__":
 
     print "Threshold | Match | Entity Mapping"
     for threshold in np.linspace(2.5, 3.5, 11):
-        entity_map = map_entities(A, threshold, True)
+        entity_map = map_entities(A, threshold)
         perfect_match = len(entity_map) == len(A)
         print "{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map)
 
-    solve_entity_mapping(A, )
+    solve_entity_mapping(A)

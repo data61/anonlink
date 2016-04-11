@@ -1,4 +1,4 @@
 __author__ = 'shardy'
 
 
-__all__ = ["randomnames", "bloommatcher"]
+__all__ = ["randomnames", "bloommatcher", "entitymatch"]

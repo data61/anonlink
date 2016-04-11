@@ -6,17 +6,24 @@ This is as described in http://www.record-linkage.de/-download=wp-grlc-2011-02.p
 
 Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
 
-## Compile the C++ library
 
+# Installation
+
+    pip install -r requirements.txt
+    python setup.py install
+
+
+## Alternative - Manually compile the C++ library
 
 For mac with:
 
-    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o dice_one_against_many.dll dice_one_against_many.cpp
+    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o _entitymatcher.dll dice_one_against_many.cpp
 
 For linux with:
 
-    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -shared -fpic -o dice_one_against_many.so dice_one_against_many.cpp
+    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -shared -fpic -o _entitymatcher.so dice_one_against_many.cpp
 
+## Benchmark
 
 ```
 $ python benchmark.py
