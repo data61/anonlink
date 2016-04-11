@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 
 
 from randomnames import NameList
-from entitymatch import calculate_bloom_filters, python_filter_similarity, c_filter_similarity
+from entitymatch import *
 
 
 def compare_python_c(ntotal=8000, nsubset=4000, frac=0.8):
@@ -33,25 +33,38 @@ def compare_python_c(ntotal=8000, nsubset=4000, frac=0.8):
     end = timer()
     python_time = end - start
 
-    # C++ Version
+    # C++ ctypes version
     start = timer()
     result2 = c_filter_similarity(filters1, filters2)
     end = timer()
     c_time = end - start
 
-    assert result == result2, "Results are different"
+    assert result == result2, "Results are different between C++ ctypes and Python"
+
+    # C++ cffi version
+    start = timer()
+    result3 = cffi_filter_similarity(filters1, filters2)
+    end = timer()
+    cffi_time = end - start
+
+    assert result == result3, "Results are different between C++ cffi and Python"
 
     # Results are the same
     return {
         "c": c_time,
+        "cffi": cffi_time,
         "python": python_time
     }
 
 
 if __name__ == '__main__':
     results = compare_python_c()
-    print("Python time:{python:8.3f}\n{sep}\nC++ time:   {c:8.3f}".format(sep="="*20, **results))
+    print("""
+Python:       {python:8.3f}
+C++ (ctypes): {c:8.3f}
+C++ (cffi):   {cffi:8.3f}
+""".format(**results))
 
-    print("Speedup: {:.1f}x".format(results['python']/results['c']))
+    print("Speedup: {:.1f}x".format(results['python']/results['cffi']))
 
 
