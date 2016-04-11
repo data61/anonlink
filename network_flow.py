@@ -1,7 +1,6 @@
 import logging
 import networkx as nx
 from networkx.algorithms import bipartite
-import numpy as np
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -100,10 +99,10 @@ def solve_entity_mapping(weights, method=None):
     """use a binary search tree to find the largest
     threshold that will give a perfect match"""
 
-    all_weights = np.array(weights).flatten()
-    min_weight, max_weight, mean_weight = all_weights.min(), all_weights.max(), all_weights.mean()
-
-    threshold = mean_weight
+    # all_weights = np.array(weights).flatten()
+    # min_weight, max_weight, mean_weight = all_weights.min(), all_weights.max(), all_weights.mean()
+    #
+    # threshold = mean_weight
 
     # TODO binary search...
     entity_map = map_entities(A, threshold)

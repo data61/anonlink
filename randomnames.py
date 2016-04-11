@@ -18,7 +18,7 @@ import os
 import csv
 import random
 from datetime import datetime, timedelta
-import numpy as np
+import math
 
 __author__ = 'shardy'
 
@@ -100,7 +100,7 @@ class NameList:
         :return: 2-tuple of lists of subsets
         """
         nrec = len(self.names)
-        overlap = int(np.floor(overlap * sz))
+        overlap = int(math.floor(overlap * sz))
         notoverlap = sz - overlap
         rsamp = random.sample(range(nrec), sz + notoverlap)
         l1 = rsamp[:sz]

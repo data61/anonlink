@@ -43,12 +43,10 @@ in a 64bit word. http://wm.ite.pl/articles/sse-popcount.html
 
 Run unit tests
 ```
-$ nosetests
-.............
+$ python -m nose
+..................................
 ----------------------------------------------------------------------
-Ran 13 tests in 0.045s
+Ran 34 tests in 3.166s
 
 OK
 ```
-
-TODO: No unit tests for the C++ version yet - just end to end comparison with the python

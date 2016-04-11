@@ -1,4 +1,4 @@
 bitarray==0.8.1
-numpy==1.10.4
-networkx
+networkx==1.11
 cffi>=1.0.0
+nose==1.3.7

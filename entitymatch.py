@@ -1,7 +1,6 @@
 import os
 import platform
 from ctypes import cdll, c_double, byref
-import numpy as np
 import bloommatcher as bm
 from identifier_types import basic_types
 
@@ -59,7 +58,8 @@ def python_filter_similarity(filters1, filters2):
     result = []
     for i, f1 in enumerate(filters1):
         coeffs = map(lambda x:  bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])), filters2)
-        best = np.argmax(coeffs)
+        # argmax
+        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
         result.append((i, coeffs[best], f1[1], filters2[best][1], best))
     return result
 
