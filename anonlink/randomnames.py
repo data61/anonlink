@@ -20,18 +20,21 @@ import random
 from datetime import datetime, timedelta
 import math
 
+import pkgutil
+
 __author__ = 'shardy'
 
 
-def loadCSV(fname):
+def loadCSV(data):
     """
     Loads a specified csv file and returns as a list
     """
     res = []
-    with open(fname, 'rU') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            res.append(row[0])
+
+    reader = csv.reader(data.splitlines())
+    for row in reader:
+        res.append(row[0])
+
     return res
 
 
@@ -85,11 +88,10 @@ class NameList:
         http://www.quietaffiliate.com/free-first-name-and-last-name-databases-csv-and-sql/
 
         """
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
 
-        self.all_first_names = loadCSV(os.path.join(dir_path, 'data', 'CSV_Database_of_First_Names.csv'))[1:]
-        self.all_last_names = loadCSV(os.path.join(dir_path, 'data', 'CSV_Database_of_Last_Names.csv'))[1:]
+
+        self.all_first_names = loadCSV(pkgutil.get_data('anonlink', 'data/CSV_Database_of_First_Names.csv'))[1:]
+        self.all_last_names = loadCSV(pkgutil.get_data('anonlink', 'data/CSV_Database_of_Last_Names.csv'))[1:]
 
     def generate_subsets(self, sz, overlap=0.8):
         """

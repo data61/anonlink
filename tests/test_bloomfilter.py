@@ -1,7 +1,8 @@
 import unittest
 
 from bitarray import bitarray
-import bloommatcher as bm
+
+from anonlink import bloommatcher as bm
 
 __author__ = 'shardy'
 

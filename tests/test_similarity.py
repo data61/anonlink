@@ -1,9 +1,9 @@
 
 
 import unittest
-import randomnames
+from anonlink import randomnames
 
-import entitymatch
+from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
 
@@ -32,9 +32,9 @@ class TestBloomFilterComparison(unittest.TestCase):
         similarity = entitymatch.cffi_filter_similarity(self.filters1, self.filters2)
         self._check_proportion(similarity),
 
-    def test_manual_c(self):
-        similarity = entitymatch.c_filter_similarity(self.filters1, self.filters2)
-        self._check_proportion(similarity)
+    # def test_manual_c(self):
+    #     similarity = entitymatch.c_filter_similarity(self.filters1, self.filters2)
+    #     self._check_proportion(similarity)
 
     def test_python(self):
         similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2)

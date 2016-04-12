@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-import randomnames as rn
+from anonlink import randomnames as rn
 
 __author__ = 'shardy'
 

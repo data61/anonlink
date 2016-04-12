@@ -1,7 +1,7 @@
 import unittest
-import randomnames
-import network_flow
-import entitymatch
+from anonlink import randomnames
+from anonlink import network_flow
+from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
 

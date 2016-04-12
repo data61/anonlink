@@ -32,7 +32,6 @@ def cryptoBloomFilter(record, tokenizers, key1="test1", key2="test2"):
 
 def calculate_bloom_filters(dataset, schema, keys):
     """
-
     :param dataset: A list of indexable records.
     :param schema: An iterable of identifier type names.
     :param keys: A tuple of two secret keys used in the HMAC.
@@ -64,28 +63,28 @@ def python_filter_similarity(filters1, filters2):
     return result
 
 
-def c_filter_similarity(filters1, filters2):
-    length = len(filters1)
-    library_name = "_entitymatcher"
-    libpath = os.path.abspath(os.path.join(os.path.dirname(__file__), library_name))
-
-    if platform.system() == "Darwin":
-        c_dice = cdll.LoadLibrary(libpath + '.dll')
-    else:
-        c_dice = cdll.LoadLibrary(libpath + '.so')
-
-    match_one_against_many_dice_1024_c = c_dice.match_one_against_many_dice_1024_c
-
-    clist1 = [f[0].tobytes() for f in filters1]
-    carr2 = "".join([f[0].tobytes() for f in filters2])
-
-    result = []
-    for i, f1 in enumerate(filters1):
-        coeff = c_double()
-        ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length, byref(coeff))
-        result.append((i, coeff.value, f1[1], filters2[ind][1], ind))
-
-    return result
+# def c_filter_similarity(filters1, filters2):
+#     length = len(filters1)
+#     library_name = "_entitymatcher"
+#     libpath = os.path.abspath(os.path.join(os.path.dirname(__file__), library_name))
+#
+#     if platform.system() == "Darwin":
+#         c_dice = cdll.LoadLibrary(libpath + '.dll')
+#     else:
+#         c_dice = cdll.LoadLibrary(libpath + '.so')
+#
+#     match_one_against_many_dice_1024_c = c_dice.match_one_against_many_dice_1024_c
+#
+#     clist1 = [f[0].tobytes() for f in filters1]
+#     carr2 = "".join([f[0].tobytes() for f in filters2])
+#
+#     result = []
+#     for i, f1 in enumerate(filters1):
+#         coeff = c_double()
+#         ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length, byref(coeff))
+#         result.append((i, coeff.value, f1[1], filters2[ind][1], ind))
+#
+#     return result
 
 
 def cffi_filter_similarity(filters1, filters2):

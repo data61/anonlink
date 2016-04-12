@@ -2,7 +2,7 @@
 import unittest
 import networkx as nx
 
-import network_flow
+from anonlink import network_flow
 
 __author__ = 'Brian Thorne'
 
