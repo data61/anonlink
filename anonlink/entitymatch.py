@@ -1,8 +1,6 @@
-import os
-import platform
-from ctypes import cdll, c_double, byref
-import bloommatcher as bm
-from identifier_types import basic_types
+from _entitymatcher import ffi, lib
+from . import bloommatcher as bm
+from .identifier_types import basic_types
 
 
 def cryptoBloomFilter(record, tokenizers, key1="test1", key2="test2"):
@@ -56,45 +54,20 @@ def python_filter_similarity(filters1, filters2):
     """
     result = []
     for i, f1 in enumerate(filters1):
-        coeffs = map(lambda x:  bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])), filters2)
+        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
         # argmax
         best = max(enumerate(coeffs), key=lambda x: x[1])[0]
         result.append((i, coeffs[best], f1[1], filters2[best][1], best))
     return result
 
 
-# def c_filter_similarity(filters1, filters2):
-#     length = len(filters1)
-#     library_name = "_entitymatcher"
-#     libpath = os.path.abspath(os.path.join(os.path.dirname(__file__), library_name))
-#
-#     if platform.system() == "Darwin":
-#         c_dice = cdll.LoadLibrary(libpath + '.dll')
-#     else:
-#         c_dice = cdll.LoadLibrary(libpath + '.so')
-#
-#     match_one_against_many_dice_1024_c = c_dice.match_one_against_many_dice_1024_c
-#
-#     clist1 = [f[0].tobytes() for f in filters1]
-#     carr2 = "".join([f[0].tobytes() for f in filters2])
-#
-#     result = []
-#     for i, f1 in enumerate(filters1):
-#         coeff = c_double()
-#         ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length, byref(coeff))
-#         result.append((i, coeff.value, f1[1], filters2[ind][1], ind))
-#
-#     return result
-
-
 def cffi_filter_similarity(filters1, filters2):
-    from _entitymatcher import ffi, lib
     length = len(filters1)
 
     match_one_against_many_dice_1024_c = lib.match_one_against_many_dice_1024_c
 
     clist1 = [f[0].tobytes() for f in filters1]
-    carr2 = "".join([f[0].tobytes() for f in filters2])
+    carr2 = b"".join([f[0].tobytes() for f in filters2])
 
     result = []
     for i, f1 in enumerate(filters1):

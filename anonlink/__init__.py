@@ -1,9 +1,9 @@
 import pkg_resources
 
-import bloommatcher
-import entitymatch
-import identifier_types
-import network_flow
-import randomnames
+from . import bloommatcher
+from . import entitymatch
+from . import identifier_types
+from . import network_flow
+from . import randomnames
 
 __version__ = pkg_resources.get_distribution('anonlink').version

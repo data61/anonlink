@@ -115,10 +115,10 @@ if __name__ == "__main__":
          [2.0, 1.0, 4.0, 3.0],
          [2.5, 3.5, 4.5, 1.5]]
 
-    print "Threshold | Match | Entity Mapping"
+    print("Threshold | Match | Entity Mapping")
     for threshold in np.linspace(2.5, 3.5, 11):
         entity_map = map_entities(A, threshold)
         perfect_match = len(entity_map) == len(A)
-        print "{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map)
+        print("{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map))
 
     solve_entity_mapping(A)

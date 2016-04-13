@@ -26,7 +26,7 @@ For linux with:
 ## Benchmark
 
 ```
-$ python benchmark.py
+$ python bin/benchmark.py
 
 Python 26.4389259815
 =======================
@@ -40,6 +40,7 @@ Records are name, date of birth and gender. Does it twice, once in Python, once 
 Results are in seconds. Single threaded performance. C++ version uses cpu instruction `POPCNT` for bitcount 
 in a 64bit word. http://wm.ite.pl/articles/sse-popcount.html
 
+# Tests
 
 Run unit tests
 ```

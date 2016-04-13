@@ -1,6 +1,6 @@
 from timeit import default_timer as timer
-from randomnames import NameList
-from entitymatch import *
+from anonlink.randomnames import NameList
+from anonlink.entitymatch import *
 
 
 def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
@@ -28,13 +28,6 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     end = timer()
     python_time = end - start
 
-    # C++ ctypes version
-    # start = timer()
-    # result2 = c_filter_similarity(filters1, filters2)
-    # end = timer()
-    c_time = 0.0
-    # assert result == result2, "Results are different between C++ ctypes and Python"
-
     # C++ cffi version
     start = timer()
     result3 = cffi_filter_similarity(filters1, filters2)
@@ -45,8 +38,7 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
     # Results are the same
     return {
-        "c": c_time,
-        "cffi": cffi_time,
+        "c (ffi)": cffi_time,
         "python": python_time
     }
 
@@ -55,7 +47,6 @@ if __name__ == '__main__':
     results = compare_python_c()
     print("""
 Python:       {python:8.3f}
-C++ (ctypes): {c:8.3f}
 C++ (cffi):   {cffi:8.3f}
 """.format(**results))
 

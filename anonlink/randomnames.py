@@ -13,8 +13,6 @@ TODO: Generate realistic errors
 TODO: Add RESTfull api
 """
 
-
-import os
 import csv
 import random
 from datetime import datetime, timedelta
@@ -25,17 +23,13 @@ import pkgutil
 __author__ = 'shardy'
 
 
-def loadCSV(data):
+def load_csv_data(resource_name):
+    """Loads a specified data file as csv and returns the first column as a Python list
     """
-    Loads a specified csv file and returns as a list
-    """
-    res = []
-
+    data = pkgutil.get_data('anonlink', 'data/{}'.format(resource_name)).decode('utf8')
     reader = csv.reader(data.splitlines())
-    for row in reader:
-        res.append(row[0])
-
-    return res
+    next(reader, None)  # skip the headers
+    return list({row[0] for row in reader})
 
 
 def random_date(start, end):
@@ -90,8 +84,8 @@ class NameList:
         """
 
 
-        self.all_first_names = loadCSV(pkgutil.get_data('anonlink', 'data/CSV_Database_of_First_Names.csv'))[1:]
-        self.all_last_names = loadCSV(pkgutil.get_data('anonlink', 'data/CSV_Database_of_Last_Names.csv'))[1:]
+        self.all_first_names = load_csv_data('CSV_Database_of_First_Names.csv')
+        self.all_last_names = load_csv_data('CSV_Database_of_Last_Names.csv')
 
     def generate_subsets(self, sz, overlap=0.8):
         """
@@ -104,7 +98,7 @@ class NameList:
         nrec = len(self.names)
         overlap = int(math.floor(overlap * sz))
         notoverlap = sz - overlap
-        rsamp = random.sample(range(nrec), sz + notoverlap)
+        rsamp = random.sample(list(range(nrec)), sz + notoverlap)
         l1 = rsamp[:sz]
         l2 = rsamp[:overlap] + rsamp[sz:sz + notoverlap]
         random.shuffle(l1)

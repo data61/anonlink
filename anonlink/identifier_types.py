@@ -3,7 +3,7 @@
 
 
 """
-import bloommatcher as bm
+from . import bloommatcher as bm
 
 
 class IdentifierType:
