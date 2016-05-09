@@ -9,15 +9,14 @@ def calculate_network(similarity, cutoff):
     """Given a adjacency matrix of edge weights, apply a
     threshold to the connections and construct a graph.
 
-    :param similarity: The tuple including n-gram similarity scores
+    :param similarity: The list of tuples including n-gram similarity scores
     :param cutoff: The threshold for including a connection
     :return: The resulting networkx graph.
     """
     G = nx.DiGraph()
+    logging.debug('Applying threshold to network')
     for (idx1, score, orig1, orig2, idx2) in similarity:
-
         if score > cutoff:
-            logging.debug('adding ({}, {})'.format(idx1, idx2))
             G.add_edge('row'+str(idx1), 'col'+str(idx2), weight=score, capacity=1.0)
 
     return G
@@ -56,14 +55,17 @@ def calculate_entity_mapping(G, method=None):
     """
 
     if method == 'bipartite':
+        logging.info('Solving entity matches with bipartite maximum matching solver')
         network = bipartite.maximum_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
 
     elif method == 'weighted':
+        logging.info('Solving entity matches with networkx maximum weight matching solver')
         network = nx.max_weight_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
 
     elif method is None:
+        logging.info('Solving entity matches with networkx maximum flow solver')
         # The maximum flow solver requires a SOURCE and SINK
         num_rows, num_cols = 0, 0
         for i, node in enumerate(G.nodes()):
