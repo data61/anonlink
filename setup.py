@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="anonlink",
-    version='0.1.1',
+    version='0.2.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.inside.nicta.com.au/magic/AnonymousLinking',
     license='Apache',
@@ -10,6 +10,5 @@ setup(
     cffi_modules=["build_matcher.py:ffi"],
     install_requires=open('requirements.txt').readlines(),
     packages=['anonlink'],
-    #package_dir={'anonlink': 'anonlink'},
     package_data={'anonlink': ['data/*.csv']},
 )

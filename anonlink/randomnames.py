@@ -6,11 +6,10 @@ Currently very simple and not realistic. Additional functions for manipulating t
 
 ClassList class - generate a list of length n of [id, name, dob, gender] lists
 
-TODO: Get female / male names right by using a gendered database to first names
 TODO: Get age distribution right by using a mortality table
 TODO: Get first name distributions right by using distributions
 TODO: Generate realistic errors
-TODO: Add RESTfull api
+TODO: Add RESTfull api to generate reasonable name data as requested
 """
 
 import csv
@@ -67,11 +66,16 @@ class NameList:
             tuple - (id: int, name: str('First Last'), birthdate: str('DD/MM/YYYY'), sex: str('M' | 'F') )
         """
         for i in range(n):
+            sex = 'M' if random.random() > 0.5 else 'F'
+            dob = random_date(self.earliest_birthday, self.latest_birthday).strftime("%Y/%m/%d")
+            first_name = random.choice(self.all_male_first_names) if sex == 'M' else random.choice(self.all_female_first_names)
+            last_name = random.choice(self.all_last_names)
+
             yield (
                 i,
-                random.choice(self.all_first_names) + ' ' + random.choice(self.all_last_names),
-                random_date(self.earliest_birthday, self.latest_birthday).strftime("%Y/%m/%d"),
-                'M' if random.random() > 0.5 else 'F'
+                first_name + ' ' + last_name,
+                dob,
+                sex
             )
 
     def load_names(self):
@@ -83,8 +87,8 @@ class NameList:
 
         """
 
-
-        self.all_first_names = load_csv_data('CSV_Database_of_First_Names.csv')
+        self.all_male_first_names = load_csv_data('male-first-names.csv')
+        self.all_female_first_names = load_csv_data('female-first-names.csv')
         self.all_last_names = load_csv_data('CSV_Database_of_Last_Names.csv')
 
     def generate_subsets(self, sz, overlap=0.8):
