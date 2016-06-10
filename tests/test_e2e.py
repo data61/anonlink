@@ -48,7 +48,7 @@ class EntityHelper(object):
 
 class TestEntityMatchingE2ESmall(EntityHelper, unittest.TestCase):
 
-    sample = 20
+    sample = 5
     proportion = 0.8
 
     @classmethod

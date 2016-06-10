@@ -28,13 +28,25 @@ class TestBloomFilterComparison(unittest.TestCase):
 
         self.assertAlmostEqual(exact_matches/len(similarity), self.proportion)
 
+    def test_cffi_manual(self):
+        nl = randomnames.NameList(30)
+        s1, s2 = nl.generate_subsets(5, 1.0)
+        keys = ('test1', 'test2')
+        f1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
+        f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
+
+        ps = entitymatch.python_filter_similarity(f1, f2)
+        cs = entitymatch.cffi_filter_similarity(f1, f2)
+
+        python_scores = [p[1] for p in ps]
+        c_scores = [c[1] for c in cs]
+
+        self.assertEqual(python_scores, c_scores)
+
+
     def test_cffi(self):
         similarity = entitymatch.cffi_filter_similarity(self.filters1, self.filters2)
-        self._check_proportion(similarity),
-
-    # def test_manual_c(self):
-    #     similarity = entitymatch.c_filter_similarity(self.filters1, self.filters2)
-    #     self._check_proportion(similarity)
+        self._check_proportion(similarity)
 
     def test_python(self):
         similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2)
@@ -43,6 +55,28 @@ class TestBloomFilterComparison(unittest.TestCase):
     def test_default(self):
         similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
         self._check_proportion(similarity)
+
+    def test_same_score(self):
+        cffi_score = entitymatch.cffi_filter_similarity(self.filters1, self.filters2)
+        python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2)
+        for i in range(len(cffi_score)):
+            self.assertEqual(cffi_score[i][1], python_score[i][1])
+
+    def test_empty_input_a(self):
+        with self.assertRaises(ValueError):
+            entitymatch.calculate_filter_similarity([], self.filters2)
+
+    def test_empty_input_b(self):
+        with self.assertRaises(ValueError):
+            entitymatch.calculate_filter_similarity(self.filters1, [])
+
+    def test_small_input_a(self):
+        similarity = entitymatch.calculate_filter_similarity(self.filters1[:10], self.filters2, use_python=True)
+        similarity = entitymatch.calculate_filter_similarity(self.filters1[:10], self.filters2, use_python=False)
+
+    def test_small_input_b(self):
+        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2[:10], use_python=True)
+        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2[:10], use_python=False)
 
 
 if __name__ == "__main__":
