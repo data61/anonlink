@@ -130,7 +130,7 @@ def cffi_filter_similarity_k(filters1, filters2, k):
         original_index_a = f1[1]
         assert ind < len(filters2)
         original_index_b = filters2[ind][1]
-        result.append((i, scores, original_index_a, original_index_b, ind))
+        result.append((i, scores, original_index_a, original_index_b, indices))
 
     return result
 
