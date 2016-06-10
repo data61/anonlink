@@ -50,6 +50,6 @@ Python:       {python:8.3f}
 C++ (cffi):   {c:8.3f}
 """.format(**results))
 
-    print("Speedup: {:.1f}x".format(results['python']/results['cffi']))
+    print("Speedup: {:.1f}x".format(results['python']/results['c']))
 
 
