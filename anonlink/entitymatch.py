@@ -63,24 +63,26 @@ def python_filter_similarity(filters1, filters2):
 
 
 def cffi_filter_similarity(filters1, filters2):
-    length = len(filters2)
+    length_f1 = len(filters1)
+    length_f2 = len(filters2)
 
     # We assume the length is 1024 bit = 128 Bytes
     match_one_against_many_dice_1024_c = lib.match_one_against_many_dice_1024_c
 
     clist1 = [ffi.new("char[128]",
                       bytes(f[0].tobytes())) for f in filters1]
-    carr2 = ffi.new("char[{}]".format(128 * length),
+    carr2 = ffi.new("char[{}]".format(128 * length_f2),
                     bytes([b for f in filters2 for b in f[0].tobytes()]))
+    c_scores = ffi.new("double[]", length_f1)
 
     result = []
     for i, f1 in enumerate(filters1):
         # easier to do all buffer allocations in Python and pass them to C,
         # even for output-only arguments
-        c_score = ffi.new("double[1]")
+        c_score = ffi.addressof(c_scores, i)   #ffi.new("double[1]")
         assert len(clist1[i]) == 128
         assert len(carr2) % 64 == 0
-        ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length, c_score)
+        ind = match_one_against_many_dice_1024_c(clist1[i], carr2, length_f2, c_score)
         score = c_score[0]
         original_index_a = f1[1]
         assert ind < len(filters2)
