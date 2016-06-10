@@ -43,28 +43,7 @@ class TestBloomFilterComparison(unittest.TestCase):
 
         self.assertEqual(python_scores, c_scores)
 
-    def test_cffi_k(self):
-        nl = randomnames.NameList(30)
-        s1, s2 = nl.generate_subsets(10, 1.0)
-        keys = ('test1', 'test2')
-        f1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
-        f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
 
-        cs = entitymatch.cffi_filter_similarity(f1, f2)
-        csk = entitymatch.cffi_filter_similarity_k(f1, f2, 4)
-
-        top_k_scores = [p[1] for p in csk]
-        top_k_indices = [p[-1] for p in csk]
-
-        for scores in top_k_scores:
-            self.assertGreaterEqual(scores[0], scores[1])
-            self.assertGreaterEqual(scores[1], scores[2])
-            self.assertGreaterEqual(scores[2], scores[3])
-
-        top_score_only =[s[0] for s in top_k_scores]
-        c_scores = [c[1] for c in cs]
-
-        self.assertEqual(top_score_only, c_scores)
 
 
     def test_cffi(self):

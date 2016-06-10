@@ -187,7 +187,7 @@ class Node {
 
 struct score_cmp{
   bool operator()(const Node& a, const Node& b) const{
-    return a.score < b.score;
+    return a.score > b.score;
   }
 };
 
@@ -196,7 +196,7 @@ struct score_cmp{
  */
 int match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores) {
 
-    std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
+    //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
 
     const uint64_t *comp1 = (const uint64_t *) one;
     const uint64_t *comp2 = (const uint64_t *) many;
@@ -247,22 +247,22 @@ int match_one_against_many_dice_1024_k_top(const char *one, const char *many, in
     // Sort scores
     std::make_heap (all_scores.begin(), all_scores.end(), score_cmp());
 
-    //std::sort_heap (all_scores.begin(), all_scores.end(), score_cmp());
+    std::sort_heap (all_scores.begin(), all_scores.end(), score_cmp());
 
     // Created by caller
     //double *scores = new double[k];
     //uint32_t *indices = new uint32_t[k];
 
-    std::cout << "final sorted range :";
+    //std::cout << "final sorted range :";
     for (int i=0; i < all_scores.size(); i++) {
-        std::cout << ' ' << all_scores[i].score;
+        //std::cout << ' ' << all_scores[i].score;
         if(i < k) {
             scores[i] = all_scores[i].score;
             indices[i] = all_scores[i].index;
         }
     }
 
-    std::cout << '\n';
+    //std::cout << '\n';
 
     //*score = ;
 

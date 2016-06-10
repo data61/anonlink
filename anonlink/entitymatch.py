@@ -92,7 +92,7 @@ def cffi_filter_similarity(filters1, filters2):
     return result
 
 
-def cffi_filter_similarity_k(filters1, filters2, k):
+def cffi_filter_similarity_k(filters1, filters2, k=3):
     length_f1 = len(filters1)
     length_f2 = len(filters2)
 
@@ -128,9 +128,12 @@ def cffi_filter_similarity_k(filters1, filters2, k):
         indices = [v for v in c_indices]
 
         original_index_a = f1[1]
-        assert ind < len(filters2)
-        original_index_b = filters2[ind][1]
-        result.append((i, scores, original_index_a, original_index_b, indices))
+
+        for j in range(k):
+            ind = indices[j]
+            assert ind < len(filters2)
+            original_index_b = filters2[ind][1]
+            result.append((i, scores[j], original_index_a, original_index_b, ind))
 
     return result
 
