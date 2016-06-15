@@ -1,3 +1,9 @@
+"""
+Solves pairwise matches for the entire network at once.
+
+Given a sparse, weighted, bipartite graph determine the matching.
+"""
+
 import logging
 import networkx as nx
 from networkx.algorithms import bipartite
@@ -31,7 +37,8 @@ def _to_int_map(network, find_pair):
     for node in network:
         if node.startswith("row") and len(network[node]):
             paired_node = find_pair(network, node)
-            entityMap[int(node[3:])] = int(paired_node[3:])
+            if paired_node is not None:
+                entityMap[int(node[3:])] = int(paired_node[3:])
     return entityMap
 
 
@@ -45,10 +52,11 @@ def calculate_entity_mapping(G, method=None):
 
     :param method: The method to use to solve the entity mapping.
     Options are
-        - None (default) - `networkx.maximum_flow` method.
+        - 'flow' or None (default) - `networkx.maximum_flow` method.
         - 'bipartite' - the `networkx.bipartite.maximum_matching` algorithm (fastest)
         - 'weighted' - the `networkx.max_weight_matching` (slowest but most accurate
           with close matches)
+        - 'greedy' - just take the first/largest
 
     :return: A dictionary mapping of row index to column index. If no mate
     is found, the node isn't included.
@@ -64,7 +72,30 @@ def calculate_entity_mapping(G, method=None):
         network = nx.max_weight_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
 
-    elif method is None:
+    elif method == 'greedy':
+        logging.info('Solving with greedy solver')
+        entity_map = {}
+        for node in G:
+            if node.startswith("row") and len(G[node]):
+                possible_nodes = G[node]
+                if len(possible_nodes) > 0:
+                    if len(possible_nodes) > 1:
+                        def get_score(node_name):
+                            node = possible_nodes[node_name]
+                            if 'weight' in node:
+                                return possible_nodes[node_name]['weight']
+                            else:
+                                return -1
+                        paired_node = max(possible_nodes, key=get_score)
+                    elif len(possible_nodes) == 1:
+                        paired_node = next(iter(possible_nodes))
+                    entity_map[int(node[3:])] = int(paired_node[3:])
+                else:
+                    # No matches for this node
+                    logging.info("No matches...")
+
+
+    elif method == 'flow' or method is None:
         logging.info('Solving entity matches with networkx maximum flow solver')
         # The maximum flow solver requires a SOURCE and SINK
         num_rows, num_cols = 0, 0
@@ -84,7 +115,18 @@ def calculate_entity_mapping(G, method=None):
         else:
             logging.info('Matching complete. (perfect matching)')
 
-        entity_map = _to_int_map(network, lambda network, node: max(network[node], key=network[node].get))
+        def find_pair(network, node):
+            # Make sure to deal with unconnected nodes
+
+            possible_nodes = [node for node in network[node] if node != 'start']
+            if len(possible_nodes) > 0:
+                def get_score(node_name):
+                    return network[node][node_name]
+                return max(possible_nodes, key=get_score)
+            else:
+                return None
+
+        entity_map = _to_int_map(network, find_pair)
 
     else:
         raise NotImplementedError("Haven't implemented that matching method")
