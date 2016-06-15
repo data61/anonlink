@@ -87,8 +87,6 @@ class TestEntityMatchTopK(unittest.TestCase):
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4)
         mapping = network_flow.map_entities(similarity, threshold=0.8, method=None)
 
-        print(mapping)
-
         for indexA in mapping:
             self.assertEquals(s1[indexA], s2[mapping[indexA]])
 

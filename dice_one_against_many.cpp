@@ -194,7 +194,7 @@ struct score_cmp{
 /**
  * Return the top k indices and scores.
  */
-int match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores) {
+void match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores) {
 
     //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
 
@@ -249,10 +249,6 @@ int match_one_against_many_dice_1024_k_top(const char *one, const char *many, in
 
     std::sort_heap (all_scores.begin(), all_scores.end(), score_cmp());
 
-    // Created by caller
-    //double *scores = new double[k];
-    //uint32_t *indices = new uint32_t[k];
-
     //std::cout << "final sorted range :";
     for (int i=0; i < all_scores.size(); i++) {
         //std::cout << ' ' << all_scores[i].score;
@@ -261,12 +257,6 @@ int match_one_against_many_dice_1024_k_top(const char *one, const char *many, in
             indices[i] = all_scores[i].index;
         }
     }
-
-    //std::cout << '\n';
-
-    //*score = ;
-
-    return best_index;
 
 }
 
