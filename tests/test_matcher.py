@@ -49,6 +49,5 @@ class TestNetworkMatching(unittest.TestCase):
         self.assertRaises(NotImplementedError, network_flow.calculate_entity_mapping, *args)
 
 
-
 if __name__ == "__main__":
     unittest.main()
