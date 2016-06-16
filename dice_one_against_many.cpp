@@ -36,7 +36,7 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
         "popcnt %6, %6  \n\t"
         "add %6, %2     \n\t"
         "popcnt %7, %7  \n\t"
-        "add %7, %3     \n\t" // +r means input/output, r means intput
+        "add %7, %3     \n\t" // +r means input/output, r means input
         : "+r" (cnt[0]), "+r" (cnt[1]), "+r" (cnt[2]), "+r" (cnt[3])
         : "r"  (buf[i]), "r"  (buf[i+1]), "r"  (buf[i+2]), "r"  (buf[i+3]));
   }
@@ -107,67 +107,67 @@ void print_filter(const uint64_t *filter) {
 
 extern "C"
 {
-int match_one_against_many_dice_c(const char *one, const char *many, int n, int l, double *score) {
-    double sc = 0.0;
-    int res = match_one_against_many_dice(one, many, n, l, sc);
-    *score = sc;
-    return res;
-}
-
-int match_one_against_many_dice_1024_c(const char *one, const char *many, int n, double *score) {
-
-    //std::cerr << "Matching " << n << " entities" << "\n";
-
-    const uint64_t *comp1 = (const uint64_t *) one;
-    const uint64_t *comp2 = (const uint64_t *) many;
-
-    //std::cout << "f ";
-    //print_filter(comp1);
-
-    uint64_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
-
-    //std::cout << count_one << std::endl;
-
-    uint64_t *counts_many = new uint64_t[n];
-
-    for (int j = 0; j < n; j++) {
-        const uint64_t *sig = comp2 + j * 16;
-        counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
+    int match_one_against_many_dice_c(const char *one, const char *many, int n, int l, double *score) {
+        double sc = 0.0;
+        int res = match_one_against_many_dice(one, many, n, l, sc);
+        *score = sc;
+        return res;
     }
 
-    double best_score = -1.0;
-    int best_index = -1;
+    int match_one_against_many_dice_1024_c(const char *one, const char *many, int n, double *score) {
 
-    for (int j = 0; j < n; j++) {
-        const uint64_t *current = comp2 + j * 16;
+        //std::cerr << "Matching " << n << " entities" << "\n";
 
-        //std::cout << j << " "; //print_filter(comp2);
+        const uint64_t *comp1 = (const uint64_t *) one;
+        const uint64_t *comp2 = (const uint64_t *) many;
 
-        uint64_t* combined = new uint64_t[16];
-        for (int i=0 ; i < 16; i++ ) {
-            combined[i] = current[i] & comp1[i];
+        //std::cout << "f ";
+        //print_filter(comp1);
+
+        uint64_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
+
+        //std::cout << count_one << std::endl;
+
+        uint64_t *counts_many = new uint64_t[n];
+
+        for (int j = 0; j < n; j++) {
+            const uint64_t *sig = comp2 + j * 16;
+            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
         }
 
-        uint64_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+        double best_score = -1.0;
+        int best_index = -1;
 
-        double score = 2 * count_curr / (double) (count_one + counts_many[j]);
+        for (int j = 0; j < n; j++) {
+            const uint64_t *current = comp2 + j * 16;
 
-        //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
-        if (score > best_score) {
-            best_score = score;
-            best_index = j;
+            //std::cout << j << " "; //print_filter(comp2);
+
+            uint64_t* combined = new uint64_t[16];
+            for (int i=0 ; i < 16; i++ ) {
+                combined[i] = current[i] & comp1[i];
+            }
+
+            uint64_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+
+            double score = 2 * count_curr / (double) (count_one + counts_many[j]);
+
+            //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
+            if (score > best_score) {
+                best_score = score;
+                best_index = j;
+            }
+            delete combined;
         }
-        delete combined;
+
+        delete counts_many;
+
+
+        //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
+
+        *score = best_score;
+        return best_index;
+
     }
-
-    delete counts_many;
-
-
-    //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
-
-    *score = best_score;
-    return best_index;
-
-}
 
 }
