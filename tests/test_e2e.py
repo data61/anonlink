@@ -24,7 +24,13 @@ class EntityHelperMixin(object):
         # Assert that there are no false matches
         for indx1 in mapping:
             indx2 = mapping[indx1]
-            self.assertEqual(self.s1[indx1], self.s2[indx2])
+            self.assertLess(indx1, len(self.s1))
+            self.assertLess(indx2, len(self.s2))
+
+            entityA = self.s1[indx1]
+            entityB = self.s2[indx2]
+
+            self.assertEqual(entityA, entityB)
 
         # Check that there were approximately the expected number of matches
         self.assertLessEqual(abs((self.sample * self.proportion) - len(mapping)), 3)
@@ -47,8 +53,7 @@ class EntityHelperTestMixin(EntityHelperMixin):
         self.check_accuracy(mapping)
 
     def test_greedy(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
-        mapping = network_flow.map_entities(similarity, threshold=0.95, method='greedy')
+        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 
@@ -95,8 +100,7 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
-        mapping = network_flow.map_entities(similarity, threshold=0.95, method='greedy')
+        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 
@@ -112,8 +116,7 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
-        mapping = network_flow.map_entities(similarity, threshold=0.95, method='greedy')
+        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 

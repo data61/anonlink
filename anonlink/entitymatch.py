@@ -46,6 +46,8 @@ def calculate_bloom_filters(dataset, schema, keys):
 def python_filter_similarity(filters1, filters2):
     """Pure python method for determining Bloom Filter similarity
 
+    Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
+
     :return: A list of tuples *one* for each entity in filters1.
     The tuple comprises:
         - the index in filters1
@@ -125,9 +127,9 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
     return result
 
 
-def python_calculate_mapping_greedy(filters1, filters2):
+def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
     """
-    Brute force pure solver.
+    Brute force pure python solver.
 
     A bitset for each entry in the set we are matching to (filters2)
     and a search per entry in the matching set over the top k matches for
@@ -142,15 +144,26 @@ def python_calculate_mapping_greedy(filters1, filters2):
     """
 
     logging.info('Solving with greedy solver')
+    mappings = {}
+    # original indicies of filters which have been claimed
+    matched_entries_a = set()
+    matched_entries_b = set()
 
-    result = []
     for i, f1 in enumerate(filters1):
-        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
-        # argmax
-        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
-        assert coeffs[best] <= 1.0
-        result.append((i, coeffs[best], f1[1], filters2[best][1], best))
-    return result
+        index_a = i
+        if index_a not in matched_entries_a:
+            # A list of 2-tuples containing (elements' index in b, and the score)
+            coeffs = [(j, bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2]))) for j, x in enumerate(filters2)]
+            # naive k-argmax, TODO replace with the C version
+            for possible_index_b, score in reversed(sorted(coeffs, key=lambda x: x[1])):
+                if possible_index_b not in matched_entries_b and score > threshold:
+                    mappings[index_a] = possible_index_b
+
+                    matched_entries_a.add(index_a)
+                    matched_entries_b.add(possible_index_b)
+                    break
+
+    return mappings
 
 
 def calculate_filter_similarity(filters1, filters2, use_python=False):

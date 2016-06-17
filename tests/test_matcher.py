@@ -51,10 +51,6 @@ class TestNetworkMatching(unittest.TestCase):
         mapping = network_flow.calculate_entity_mapping(self.G, method='weighted')
         self.assertDictEqual(self.expected_map, mapping)
 
-    def test_greedy(self):
-        mapping = network_flow.calculate_entity_mapping(self.G, method='greedy')
-        self.assertDictEqual(self.expected_map, mapping)
-
     def test_invalid(self):
         args = (self.G, 'random')
         self.assertRaises(NotImplementedError, network_flow.calculate_entity_mapping, *args)
@@ -102,10 +98,6 @@ class TestNetworkMatchingDuplicates(unittest.TestCase):
 
     def test_weighted(self):
         mapping = network_flow.calculate_entity_mapping(self.G, method='weighted')
-        self.assertDictEqual(self.expected_map, mapping)
-
-    def test_greedy(self):
-        mapping = network_flow.calculate_entity_mapping(self.G, method='greedy')
         self.assertDictEqual(self.expected_map, mapping)
 
     def test_invalid(self):
