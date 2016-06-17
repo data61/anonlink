@@ -1,6 +1,8 @@
 #include <immintrin.h>
 #include <x86intrin.h>
 
+#include <algorithm>
+#include <vector>
 #include <cstdint>
 #include <cstdlib>
 #include <cassert>
@@ -36,7 +38,7 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
         "popcnt %6, %6  \n\t"
         "add %6, %2     \n\t"
         "popcnt %7, %7  \n\t"
-        "add %7, %3     \n\t" // +r means input/output, r means input
+        "add %7, %3     \n\t" // +r means input/output, r means intput
         : "+r" (cnt[0]), "+r" (cnt[1]), "+r" (cnt[2]), "+r" (cnt[3])
         : "r"  (buf[i]), "r"  (buf[i+1]), "r"  (buf[i+2]), "r"  (buf[i+3]));
   }
@@ -124,11 +126,11 @@ extern "C"
         //std::cout << "f ";
         //print_filter(comp1);
 
-        uint64_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
+        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
 
         //std::cout << count_one << std::endl;
 
-        uint64_t *counts_many = new uint64_t[n];
+        uint32_t *counts_many = new uint32_t[n];
 
         for (int j = 0; j < n; j++) {
             const uint64_t *sig = comp2 + j * 16;
@@ -148,7 +150,7 @@ extern "C"
                 combined[i] = current[i] & comp1[i];
             }
 
-            uint64_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
 
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
 
@@ -167,6 +169,88 @@ extern "C"
 
         *score = best_score;
         return best_index;
+
+    }
+
+    class Node {
+
+        public:
+            int index;
+            double score;
+
+        // Constructor with default
+        Node( int n_index = -1, double n_score = -1.0 )
+            :index(n_index), score( n_score )
+        {
+        }
+    };
+
+    struct score_cmp{
+      bool operator()(const Node& a, const Node& b) const{
+        return a.score > b.score;
+      }
+    };
+
+    /**
+     * Return the top k indices and scores.
+     */
+    void match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores) {
+
+        //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
+
+        const uint64_t *comp1 = (const uint64_t *) one;
+        const uint64_t *comp2 = (const uint64_t *) many;
+
+        std::vector<Node> all_scores;
+
+        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
+
+        //std::cout << count_one << std::endl;
+
+        uint32_t *counts_many = new uint32_t[n];
+
+        for (int j = 0; j < n; j++) {
+            const uint64_t *sig = comp2 + j * 16;
+            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
+        }
+
+        for (int j = 0; j < n; j++) {
+            const uint64_t *current = comp2 + j * 16;
+
+            //std::cout << j << " "; //print_filter(comp2);
+
+            uint64_t* combined = new uint64_t[16];
+            for (int i=0 ; i < 16; i++ ) {
+                combined[i] = current[i] & comp1[i];
+            }
+
+            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+
+            double score = 2 * count_curr / (double) (count_one + counts_many[j]);
+            all_scores.push_back(Node(j, score));
+
+            //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
+
+            delete combined;
+        }
+
+        delete counts_many;
+
+        //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
+
+        // Sort scores
+        std::make_heap (all_scores.begin(), all_scores.end(), score_cmp());
+
+        std::sort_heap (all_scores.begin(), all_scores.end(), score_cmp());
+
+        //std::cout << "final sorted range :";
+        for (int i=0; i < all_scores.size(); i++) {
+            //std::cout << ' ' << all_scores[i].score;
+            if(i < k) {
+                scores[i] = all_scores[i].score;
+                indices[i] = all_scores[i].index;
+            }
+        }
 
     }
 

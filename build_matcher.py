@@ -8,7 +8,7 @@ ffi.set_source("_entitymatcher",
 
 ffi.cdef("""
     int match_one_against_many_dice_c(const char * one, const char * many, int n, int l, double * score);
-    int match_one_against_many_dice_1024_c(const char * one, const char * many, int n, double * score);
+    void match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores);
 """)
 
 if __name__ == "__main__":
