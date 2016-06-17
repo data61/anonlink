@@ -42,10 +42,7 @@ class TestBloomFilterComparison(unittest.TestCase):
         python_scores = [p[1] for p in ps]
         c_scores = [c[1] for c in cs]
 
-        self.assertEqual(python_scores, c_scores)
-
-
-
+        self.assertAlmostEqual(python_scores, c_scores)
 
     def test_cffi(self):
         similarity = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2)
