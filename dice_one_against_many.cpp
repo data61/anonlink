@@ -214,9 +214,6 @@ extern "C"
             counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
         }
 
-        double best_score = -1.0;
-        int best_index = -1;
-
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * 16;
 
@@ -233,10 +230,7 @@ extern "C"
             all_scores.push_back(Node(j, score));
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
-            if (score > best_score) {
-                best_score = score;
-                best_index = j;
-            }
+
             delete combined;
         }
 

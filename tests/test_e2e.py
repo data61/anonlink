@@ -88,7 +88,7 @@ class TestEntityMatchTopK(unittest.TestCase):
         mapping = network_flow.map_entities(similarity, threshold=0.8, method=None)
 
         for indexA in mapping:
-            self.assertEquals(s1[indexA], s2[mapping[indexA]])
+            self.assertEqual(s1[indexA], s2[mapping[indexA]])
 
 
 if __name__ == '__main__':
