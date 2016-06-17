@@ -26,7 +26,8 @@ class TestBloomFilterComparison(unittest.TestCase):
             if score == 1.0:
                 exact_matches += 1
 
-        self.assertAlmostEqual(exact_matches/len(similarity), self.proportion)
+        self.assertAlmostEqual(exact_matches/len(self.filters1), self.proportion)
+        self.assertAlmostEqual(exact_matches/len(self.filters2), self.proportion)
 
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
@@ -36,16 +37,15 @@ class TestBloomFilterComparison(unittest.TestCase):
         f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
 
         ps = entitymatch.python_filter_similarity(f1, f2)
-        cs = entitymatch.cffi_filter_similarity(f1, f2)
+        cs = entitymatch.cffi_filter_similarity_k(f1, f2, 1)
 
         python_scores = [p[1] for p in ps]
         c_scores = [c[1] for c in cs]
 
-        self.assertEqual(python_scores, c_scores)
-
+        self.assertAlmostEqual(python_scores, c_scores)
 
     def test_cffi(self):
-        similarity = entitymatch.cffi_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2)
         self._check_proportion(similarity)
 
     def test_python(self):
@@ -57,7 +57,7 @@ class TestBloomFilterComparison(unittest.TestCase):
         self._check_proportion(similarity)
 
     def test_same_score(self):
-        cffi_score = entitymatch.cffi_filter_similarity(self.filters1, self.filters2)
+        cffi_score = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1)
         python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2)
         for i in range(len(cffi_score)):
             self.assertEqual(cffi_score[i][1], python_score[i][1])

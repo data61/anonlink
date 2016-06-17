@@ -117,5 +117,20 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
         self.check_accuracy(mapping)
 
 
+class TestEntityMatchTopK(unittest.TestCase):
+    def test_cffi_k(self):
+        nl = randomnames.NameList(300)
+        s1, s2 = nl.generate_subsets(150, 0.8)
+        keys = ('test1', 'test2')
+        f1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
+        f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
+
+        similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4)
+        mapping = network_flow.map_entities(similarity, threshold=0.8, method=None)
+
+        for indexA in mapping:
+            self.assertEqual(s1[indexA], s2[mapping[indexA]])
+
+
 if __name__ == '__main__':
     unittest.main()
