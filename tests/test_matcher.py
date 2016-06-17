@@ -7,8 +7,6 @@ from anonlink import network_flow
 __author__ = 'Brian Thorne'
 
 
-
-
 class TestNetworkMatching(unittest.TestCase):
     """Network tests on following graph:
 
