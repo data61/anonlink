@@ -1,6 +1,8 @@
 from _entitymatcher import ffi, lib
 from . import bloommatcher as bm
 from .identifier_types import basic_types
+import logging
+logging.basicConfig(level=logging.WARNING)
 
 
 def cryptoBloomFilter(record, tokenizers, key1="test1", key2="test2"):
@@ -89,6 +91,34 @@ def cffi_filter_similarity(filters1, filters2):
         original_index_b = filters2[ind][1]
         result.append((i, score, original_index_a, original_index_b, ind))
 
+    return result
+
+
+def python_calculate_mapping_greedy(filters1, filters2):
+    """
+    Brute force pure solver.
+
+    A bitset for each entry in the set we are matching to (filters2)
+    and a search per entry in the matching set over the top k matches for
+    the first unmatched entry.
+
+    We don't calculate/store the graph at all, and process each record in turn.
+
+    Memory requirements are:
+        - to store the bloom filter arrays
+        - the mapping and a bit per target
+
+    """
+
+    logging.info('Solving with greedy solver')
+
+    result = []
+    for i, f1 in enumerate(filters1):
+        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
+        # argmax
+        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
+        assert coeffs[best] <= 1.0
+        result.append((i, coeffs[best], f1[1], filters2[best][1], best))
     return result
 
 

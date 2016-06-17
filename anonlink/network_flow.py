@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.WARNING)
 
 
 def calculate_network(similarity, cutoff):
-    """Given a adjacency matrix of edge weights, apply a
+    """Given an adjacency matrix of edge weights, apply a
     threshold to the connections and construct a graph.
 
     :param similarity: The list of tuples including n-gram similarity scores
@@ -56,7 +56,6 @@ def calculate_entity_mapping(G, method=None):
         - 'bipartite' - the `networkx.bipartite.maximum_matching` algorithm (fastest)
         - 'weighted' - the `networkx.max_weight_matching` (slowest but most accurate
           with close matches)
-        - 'greedy' - just take the first/largest
 
     :return: A dictionary mapping of row index to column index. If no mate
     is found, the node isn't included.
@@ -71,29 +70,6 @@ def calculate_entity_mapping(G, method=None):
         logging.info('Solving entity matches with networkx maximum weight matching solver')
         network = nx.max_weight_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
-
-    elif method == 'greedy':
-        logging.info('Solving with greedy solver')
-        entity_map = {}
-        for node in G:
-            if node.startswith("row") and len(G[node]):
-                possible_nodes = G[node]
-                if len(possible_nodes) > 0:
-                    if len(possible_nodes) > 1:
-                        def get_score(node_name):
-                            node = possible_nodes[node_name]
-                            if 'weight' in node:
-                                return possible_nodes[node_name]['weight']
-                            else:
-                                return -1
-                        paired_node = max(possible_nodes, key=get_score)
-                    elif len(possible_nodes) == 1:
-                        paired_node = next(iter(possible_nodes))
-                    entity_map[int(node[3:])] = int(paired_node[3:])
-                else:
-                    # No matches for this node
-                    logging.info("No matches...")
-
 
     elif method == 'flow' or method is None:
         logging.info('Solving entity matches with networkx maximum flow solver')
@@ -135,25 +111,24 @@ def calculate_entity_mapping(G, method=None):
 
 
 def map_entities(weights, threshold=0.8, method=None):
+    """Calculate a dictionary mapping using similarity scores.
+
+    :param weights: The list of tuples including n-gram similarity scores
+    :param threshold: The threshold for including a connection
+    :param method: The method to use to solve the entity mapping.
+    Options are
+        - 'flow' or None (default for datasets under 100K records) - `networkx.maximum_flow` method.
+        - 'bipartite' - the `networkx.bipartite.maximum_matching` algorithm
+        - 'weighted' - the `networkx.max_weight_matching` (slowest but most accurate
+          with close matches)
+    """
+
     network = calculate_network(weights, threshold)
     return calculate_entity_mapping(network, method)
 
 
-def solve_entity_mapping(weights, method=None):
-    """use a binary search tree to find the largest
-    threshold that will give a perfect match"""
-
-    # all_weights = np.array(weights).flatten()
-    # min_weight, max_weight, mean_weight = all_weights.min(), all_weights.max(), all_weights.mean()
-    #
-    # threshold = mean_weight
-
-    # TODO binary search...
-    entity_map = map_entities(A, threshold)
-    raise NotImplementedError("TODO binary search here")
-
-
 if __name__ == "__main__":
+    import numpy as np
     A = [[4.0, 3.0, 2.0, 1.0],
          [1.0, 4.0, 3.0, 2.0],
          [2.0, 1.0, 4.0, 3.0],
@@ -164,5 +139,3 @@ if __name__ == "__main__":
         entity_map = map_entities(A, threshold)
         perfect_match = len(entity_map) == len(A)
         print("{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map))
-
-    solve_entity_mapping(A)
