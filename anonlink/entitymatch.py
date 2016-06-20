@@ -92,8 +92,10 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
     # We assume the length is 1024 bit = 128 Bytes
     match_one_against_many_dice_1024_k_top = lib.match_one_against_many_dice_1024_k_top
 
+    # An array of the *one* filter
     clist1 = [ffi.new("char[128]",
                       bytes(f[0].tobytes())) for f in filters1]
+
     carr2 = ffi.new("char[{}]".format(128 * length_f2),
                     bytes([b for f in filters2 for b in f[0].tobytes()]))
 
@@ -139,29 +141,27 @@ def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
 
     Memory requirements are:
         - to store the bloom filter arrays
-        - the mapping and a bit per target
+        - the mapping
+        - whether each target has been used
 
     """
 
     logging.info('Solving with greedy solver')
     mappings = {}
     # original indicies of filters which have been claimed
-    matched_entries_a = set()
     matched_entries_b = set()
 
-    for i, f1 in enumerate(filters1):
-        index_a = i
-        if index_a not in matched_entries_a:
-            # A list of 2-tuples containing (elements' index in b, and the score)
-            coeffs = [(j, bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2]))) for j, x in enumerate(filters2)]
-            # naive k-argmax, TODO replace with the C version
-            for possible_index_b, score in reversed(sorted(coeffs, key=lambda x: x[1])):
-                if possible_index_b not in matched_entries_b and score > threshold:
-                    mappings[index_a] = possible_index_b
+    for index_a, f1 in enumerate(filters1):
 
-                    matched_entries_a.add(index_a)
-                    matched_entries_b.add(possible_index_b)
-                    break
+        # A list of 2-tuples containing (elements' index in b, and the score)
+        coeffs = [(j, bm.dicecoeff(f1[0], x[0])) for j, x in enumerate(filters2)]
+        # naive k-argmax, TODO replace with the C version
+        for possible_index_b, score in reversed(sorted(coeffs, key=lambda x: x[1])):
+            if possible_index_b not in matched_entries_b and score > threshold:
+                mappings[index_a] = possible_index_b
+
+                matched_entries_b.add(possible_index_b)
+                break
 
     return mappings
 

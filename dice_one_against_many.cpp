@@ -45,6 +45,32 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
   return cnt[0] + cnt[1] + cnt[2] + cnt[3];
 }
 
+/**
+ * Compute the Dice coefficient similarity measure of two bit patterns.
+ */
+double dice_coeff_1024(const char *e1, const char *e2) {
+    int nbyte = 128; // 1024 bit key, 128 bytes
+    int nuint64 = int(nbyte / sizeof(uint64_t)); // assume l is divisible by 64
+
+    const uint64_t *comp1 = (const uint64_t *) e1;
+    const uint64_t *comp2 = (const uint64_t *) e2;
+
+    uint32_t count_both = 0;
+
+    count_both += builtin_popcnt_unrolled_errata_manual(comp1, nuint64);
+    count_both += builtin_popcnt_unrolled_errata_manual(comp2, nuint64);
+
+    uint64_t* combined = new uint64_t[nuint64];
+    for (int i=0 ; i < nuint64; i++ ) {
+        combined[i] = comp1[i] & comp2[i];
+    }
+
+    uint32_t count_and = builtin_popcnt_unrolled_errata_manual(combined, nuint64);
+
+    delete combined;
+
+    return 2 * count_and / (double) (count_both);
+}
 
 // length in bits of key
 // n number of keys to compare against
@@ -109,6 +135,7 @@ void print_filter(const uint64_t *filter) {
 
 extern "C"
 {
+
     int match_one_against_many_dice_c(const char *one, const char *many, int n, int l, double *score) {
         double sc = 0.0;
         int res = match_one_against_many_dice(one, many, n, l, sc);
@@ -151,7 +178,7 @@ extern "C"
             }
 
             uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
-
+            delete combined;
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
@@ -159,7 +186,7 @@ extern "C"
                 best_score = score;
                 best_index = j;
             }
-            delete combined;
+
         }
 
         delete counts_many;

@@ -1,6 +1,7 @@
 from hashlib import sha1, md5
 import hmac
 from bitarray import bitarray
+from _entitymatcher import ffi, lib
 
 __author__ = 'shardy'
 
@@ -58,13 +59,25 @@ def unigramlist(instr, toremove=None):
     return list(instr)
 
 
-def dicecoeff(e1, e2):
+def dicecoeff_pure_python(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns
 
     :return: real 0-1 similarity measure
     """
     return 2*(e1 & e2).count()/float(e1.count() + e2.count())
+
+
+def dicecoeff(e1, e2):
+    """
+    Dice coefficient measures the similarity of two bit patterns
+
+    :return: real 0-1 similarity measure
+    """
+    e1array = ffi.new("char[]", e1.tobytes())
+    e2array = ffi.new("char[]", e2.tobytes())
+
+    return lib.dice_coeff_1024(e1array, e2array)
 
 
 def dicecoeff_precount(e1, e2, count):
