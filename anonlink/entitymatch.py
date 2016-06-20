@@ -160,10 +160,11 @@ def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
     carr2 = ffi.new("char[{}]".format(128 * length_f2),
                     bytes([b for f in filters2 for b in f[0].tobytes()]))
 
+    clist1 = ffi.new("char[]", 128)
+
     for index_a, f1 in enumerate(filters1):
-        clist1 = ffi.new("char[128]", f1[0].tobytes())
-        assert len(clist1) == 128
         assert len(carr2) % 64 == 0
+        ffi.memmove(clist1, f1[0].tobytes(), 128)
 
         lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, c_indices, c_scores)
 

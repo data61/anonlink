@@ -238,6 +238,7 @@ extern "C"
         //std::cout << count_one << std::endl;
 
         uint32_t *counts_many = new uint32_t[n];
+        uint64_t* combined = new uint64_t[16];
 
         for (int j = 0; j < n; j++) {
             const uint64_t *sig = comp2 + j * 16;
@@ -249,7 +250,6 @@ extern "C"
 
             //std::cout << j << " "; //print_filter(comp2);
 
-            uint64_t* combined = new uint64_t[16];
             for (int i=0 ; i < 16; i++ ) {
                 combined[i] = current[i] & comp1[i];
             }
@@ -264,9 +264,9 @@ extern "C"
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
 
-            delete combined;
         }
 
+        delete combined;
         delete counts_many;
 
         int i = 0;
