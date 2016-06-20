@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <queue>
 #include <cstdint>
 #include <cstdlib>
 #include <cassert>
@@ -71,6 +72,8 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 
     return 2 * count_and / (double) (count_both);
 }
+
+
 
 // length in bits of key
 // n number of keys to compare against
@@ -228,7 +231,7 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
-        std::vector<Node> all_scores;
+        std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
 
@@ -254,7 +257,10 @@ extern "C"
             uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
 
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-            all_scores.push_back(Node(j, score));
+
+            //if(score >= max_k_scores.top().score)
+            max_k_scores.push(Node(j, score));
+            if(max_k_scores.size() > k) max_k_scores.pop();
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
 
@@ -263,20 +269,14 @@ extern "C"
 
         delete counts_many;
 
-        //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
+        int i = 0;
+        while (!max_k_scores.empty())
+        {
 
-        // Sort scores
-        std::make_heap (all_scores.begin(), all_scores.end(), score_cmp());
+           scores[i] = max_k_scores.top().score;
+           indices[i] = max_k_scores.top().index;
 
-        std::sort_heap (all_scores.begin(), all_scores.end(), score_cmp());
-
-        //std::cout << "final sorted range :";
-        for (int i=0; i < all_scores.size(); i++) {
-            //std::cout << ' ' << all_scores[i].score;
-            if(i < k) {
-                scores[i] = all_scores[i].score;
-                indices[i] = all_scores[i].index;
-            }
+           max_k_scores.pop(); i+=1;
         }
 
     }

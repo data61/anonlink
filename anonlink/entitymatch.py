@@ -98,13 +98,13 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
 
     carr2 = ffi.new("char[{}]".format(128 * length_f2),
                     bytes([b for f in filters2 for b in f[0].tobytes()]))
+    # easier to do all buffer allocations in Python and pass them to C,
+    # even for output-only arguments
+    c_scores = ffi.new("double[]", k)
+    c_indices = ffi.new("int[]", k)
 
     result = []
     for i, f1 in enumerate(filters1):
-        # easier to do all buffer allocations in Python and pass them to C,
-        # even for output-only arguments
-        c_scores = ffi.new("double[]", k)
-        c_indices = ffi.new("int[]", k)
         assert len(clist1[i]) == 128
         assert len(carr2) % 64 == 0
         match_one_against_many_dice_1024_k_top(
@@ -151,15 +151,28 @@ def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
     # original indicies of filters which have been claimed
     matched_entries_b = set()
 
-    for index_a, f1 in enumerate(filters1):
+    k = 5
+    c_scores = ffi.new("double[]", k)
+    c_indices = ffi.new("int[]", k)
 
-        # A list of 2-tuples containing (elements' index in b, and the score)
-        coeffs = [(j, bm.dicecoeff(f1[0], x[0])) for j, x in enumerate(filters2)]
-        # naive k-argmax, TODO replace with the C version
-        for possible_index_b, score in reversed(sorted(coeffs, key=lambda x: x[1])):
+    # All filters in org B
+    length_f2 = len(filters2)
+    carr2 = ffi.new("char[{}]".format(128 * length_f2),
+                    bytes([b for f in filters2 for b in f[0].tobytes()]))
+
+    for index_a, f1 in enumerate(filters1):
+        clist1 = ffi.new("char[128]", f1[0].tobytes())
+        assert len(clist1) == 128
+        assert len(carr2) % 64 == 0
+
+        lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, c_indices, c_scores)
+
+        scores = [v for v in c_scores]
+        indices = [v for v in c_indices]
+
+        for possible_index_b, score in zip(indices, scores):
             if possible_index_b not in matched_entries_b and score > threshold:
                 mappings[index_a] = possible_index_b
-
                 matched_entries_b.add(possible_index_b)
                 break
 
