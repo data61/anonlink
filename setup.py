@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="anonlink",
-    version='0.2.0',
+    version='0.3.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.inside.nicta.com.au/magic/AnonymousLinking',
     license='Apache',
