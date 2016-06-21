@@ -53,7 +53,7 @@ class EntityHelperTestMixin(EntityHelperMixin):
         self.check_accuracy(mapping)
 
     def test_greedy(self):
-        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 
@@ -100,7 +100,7 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 
@@ -116,7 +116,7 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        mapping = entitymatch.python_calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
         self.check_accuracy(mapping)
 
 

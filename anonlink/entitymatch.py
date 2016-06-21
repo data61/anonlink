@@ -129,7 +129,7 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
     return result
 
 
-def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
+def calculate_mapping_greedy(filters1, filters2, threshold=0.95):
     """
     Brute force pure python solver.
 
@@ -168,10 +168,7 @@ def python_calculate_mapping_greedy(filters1, filters2, threshold=0.95):
 
         lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, c_indices, c_scores)
 
-        scores = [v for v in c_scores]
-        indices = [v for v in c_indices]
-
-        for possible_index_b, score in zip(indices, scores):
+        for possible_index_b, score in zip(c_indices, c_scores):
             if possible_index_b not in matched_entries_b and score > threshold:
                 mappings[index_a] = possible_index_b
                 matched_entries_b.add(possible_index_b)
