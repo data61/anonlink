@@ -1,6 +1,40 @@
+import random
+from bitarray import bitarray
 from timeit import default_timer as timer
 from anonlink.randomnames import NameList
 from anonlink.entitymatch import *
+
+
+def generate_bitarray(length):
+    return bitarray(
+        ''.join('1' if random.random() > 0.5 else '0' for _ in range(length))
+    )
+
+some_filters = [(generate_bitarray(1024),) for _ in range(10000)]
+
+def compute_comparison_speed(n1=100, n2=100):
+    """
+    Using the greedy solver, how fast can hashes be computed.
+
+
+    """
+
+
+    filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
+    filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
+
+
+    # Greedy C++ cffi version
+    start = timer()
+    result3 = calculate_mapping_greedy(filters1, filters2)
+    end = timer()
+    elapsed_time = end - start
+    print("{:8d} x {:<8d} = {:8d}, {:8.3f}s,  {:12.3f}    (k = {:8.3f})".format(
+        n1, n1, n1*n2, elapsed_time, (n1*n2)/(elapsed_time), (n1*n2)/elapsed_time))
+    return elapsed_time
+
+
+
 
 
 def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
@@ -44,12 +78,24 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
 
 if __name__ == '__main__':
-    results = compare_python_c()
-    print("""
-Python:       {python:8.3f}
-C++ (cffi):   {c:8.3f}
-""".format(**results))
+    print("Size, Time, Comparisons per second")
 
-    print("Speedup: {:.1f}x".format(results['python']/results['c']))
+    for size in [
+        10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 10000,
+        #50000, 100000
+        #20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000
+        #1000000
+    ]:
+        elapsed = compute_comparison_speed(size, size)
 
 
+#
+#     results = compare_python_c()
+#     print("""
+# Python:       {python:8.3f}
+# C++ (cffi):   {c:8.3f}
+# """.format(**results))
+#
+#     print("Speedup: {:.1f}x".format(results['python']/results['c']))
+#
+#
