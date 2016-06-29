@@ -66,7 +66,7 @@ def python_filter_similarity(filters1, filters2):
     return result
 
 
-def cffi_filter_similarity_k(filters1, filters2, k=3):
+def cffi_filter_similarity_k(filters1, filters2, k=3, threshold=0.1):
     """Accelerated method for determining Bloom Filter similarity.
 
     Computes a sparse similarity matrix with:
@@ -76,6 +76,8 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
     :param filters1: A list of cryptoBloomFilters
     :param filters2: A list of cryptoBloomFilters
     :param k: The top k edges will be included in the result.
+    :param threshold: The scores (between 0 and 1) must be greater than this threshold
+
     :return: A sparse matrix as a list of tuples, *k* for each entity
         in filters1.
 
@@ -112,6 +114,7 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
             carr2,
             length_f2,
             k,
+            threshold,
             c_indices,
             c_scores)
 
@@ -129,9 +132,31 @@ def cffi_filter_similarity_k(filters1, filters2, k=3):
     return result
 
 
-def calculate_mapping_greedy(filters1, filters2, threshold=0.95):
+def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
     """
-    Brute force pure python solver.
+    Brute-force one-shot solver.
+
+    """
+
+    logging.info('Solving with greedy solver')
+
+    mappings = {}
+
+    # original indicies of filters which have been claimed
+    matched_entries_b = set()
+
+    for results in match_one_against_many(filters1, filters2, threshold, k):
+        for index_a, possible_index_b, score in results:
+            if possible_index_b not in matched_entries_b:
+                mappings[index_a] = possible_index_b
+                matched_entries_b.add(possible_index_b)
+                break
+
+    return mappings
+
+
+def match_one_against_many(filters1, filters2, threshold=0.95, k=5):
+    """
 
     A bitset for each entry in the set we are matching to (filters2)
     and a search per entry in the matching set over the top k matches for
@@ -144,14 +169,11 @@ def calculate_mapping_greedy(filters1, filters2, threshold=0.95):
         - the mapping
         - whether each target has been used
 
+    Returns a list of top matches for every entity in filters1
     """
 
-    logging.info('Solving with greedy solver')
-    mappings = {}
-    # original indicies of filters which have been claimed
-    matched_entries_b = set()
+    logging.info('Calculating the top k matches for {} x {} entities'.format(len(filters1), len(filters2)))
 
-    k = 5
     c_scores = ffi.new("double[]", k)
     c_indices = ffi.new("int[]", k)
 
@@ -161,20 +183,15 @@ def calculate_mapping_greedy(filters1, filters2, threshold=0.95):
                     bytes([b for f in filters2 for b in f[0].tobytes()]))
 
     clist1 = ffi.new("char[]", 128)
+    results = []
 
     for index_a, f1 in enumerate(filters1):
         assert len(carr2) % 64 == 0
         ffi.memmove(clist1, f1[0].tobytes(), 128)
+        matches = lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, threshold, c_indices, c_scores)
+        results.append([(index_a, c_indices[i], c_scores[i]) for i in range(matches)])
 
-        lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, c_indices, c_scores)
-
-        for possible_index_b, score in zip(c_indices, c_scores):
-            if possible_index_b not in matched_entries_b and score > threshold:
-                mappings[index_a] = possible_index_b
-                matched_entries_b.add(possible_index_b)
-                break
-
-    return mappings
+    return results
 
 
 def calculate_filter_similarity(filters1, filters2, use_python=False):
