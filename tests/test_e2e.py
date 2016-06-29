@@ -1,11 +1,12 @@
 import os
 import unittest
+import random
+from bitarray import bitarray
 from anonlink import randomnames
 from anonlink import network_flow
 from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
-
 
 def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
@@ -77,7 +78,6 @@ class TestEntityMatchingE2E_100(EntityHelperTestMixin, unittest.TestCase):
         cls.s1, cls.s2, cls.filters1, cls.filters2 = generate_data(cls.sample, cls.proportion)
 
 
-
 class TestEntityMatchingE2E_1K(EntityHelperTestMixin, unittest.TestCase):
 
     sample = 1000
@@ -128,11 +128,57 @@ class TestEntityMatchTopK(unittest.TestCase):
         f1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
         f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
 
-        similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4)
-        mapping = network_flow.map_entities(similarity, threshold=0.8, method=None)
+        threshold = 0.8
+        similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
+        mapping = network_flow.map_entities(similarity, threshold=threshold, method=None)
 
         for indexA in mapping:
             self.assertEqual(s1[indexA], s2[mapping[indexA]])
+
+
+def generate_bitarray(length):
+    return bitarray(
+        ''.join('1' if random.random() > 0.5 else '0' for _ in range(length))
+    )
+
+
+class TestGreedy(unittest.TestCase):
+
+    some_filters = [(generate_bitarray(1024),) for _ in range(1000)]
+
+    def test_greedy_matching_works(self):
+        filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
+        filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
+        result = entitymatch.calculate_mapping_greedy(filters1, filters2)
+
+    def test_greedy_chunked_matching_works(self):
+        filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
+        filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
+
+        all_in_one_mapping = entitymatch.calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5)
+
+        filters1_chunk1, filters1_chunk2 = filters1[:500],  filters1[500:]
+        assert len(filters1_chunk1) == 500
+
+        chunk_1 = entitymatch.calculate_filter_similarity(filters1_chunk1, filters2, threshold=0.95, k=5)
+        chunk_2_orig = entitymatch.calculate_filter_similarity(filters1_chunk2, filters2, threshold=0.95, k=5)
+        chunk_2 = []
+        # offset chunk2's index by 500
+        for (ia, score, ib) in chunk_2_orig:
+            chunk_2.append((ia + 500, score, ib))
+
+        full_similarity_scores = entitymatch.calculate_filter_similarity(filters1, filters2, threshold=0.95, k=5)
+
+        sparse_matrix = chunk_1
+        sparse_matrix.extend(chunk_2)
+
+        self.assertEqual(len(full_similarity_scores), len(sparse_matrix))
+
+        partial_mapping = entitymatch.greedy_solver(sparse_matrix)
+
+        for entityA in all_in_one_mapping:
+            assert entityA in partial_mapping
+            self.assertEqual(all_in_one_mapping[entityA], partial_mapping[entityA])
 
 
 if __name__ == '__main__':

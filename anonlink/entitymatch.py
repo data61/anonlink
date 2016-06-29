@@ -52,8 +52,6 @@ def python_filter_similarity(filters1, filters2):
     The tuple comprises:
         - the index in filters1
         - the similarity score between 0 and 1 of the best match
-        - The original index in entity A
-        - The original index in entity B
         - The index in filters2 of the best match
     """
     result = []
@@ -62,31 +60,12 @@ def python_filter_similarity(filters1, filters2):
         # argmax
         best = max(enumerate(coeffs), key=lambda x: x[1])[0]
         assert coeffs[best] <= 1.0
-        result.append((i, coeffs[best], f1[1], filters2[best][1], best))
+        result.append((i, coeffs[best], best))
     return result
 
 
-def cffi_filter_similarity_k(filters1, filters2, k=3, threshold=0.1):
+def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     """Accelerated method for determining Bloom Filter similarity.
-
-    Computes a sparse similarity matrix with:
-        - size of k * len(filters1)
-        - order of len(filters1) + len(filters2)
-
-    :param filters1: A list of cryptoBloomFilters
-    :param filters2: A list of cryptoBloomFilters
-    :param k: The top k edges will be included in the result.
-    :param threshold: The scores (between 0 and 1) must be greater than this threshold
-
-    :return: A sparse matrix as a list of tuples, *k* for each entity
-        in filters1.
-
-        The tuple comprises:
-            - the index in filters1
-            - the similarity score between 0 and 1 of the best match
-            - The original index in entity A
-            - The original index in entity B
-            - The index in filters2 of the best match
     """
     length_f1 = len(filters1)
     length_f2 = len(filters2)
@@ -109,7 +88,7 @@ def cffi_filter_similarity_k(filters1, filters2, k=3, threshold=0.1):
     for i, f1 in enumerate(filters1):
         assert len(clist1[i]) == 128
         assert len(carr2) % 64 == 0
-        match_one_against_many_dice_1024_k_top(
+        matches = match_one_against_many_dice_1024_k_top(
             clist1[i],
             carr2,
             length_f2,
@@ -118,83 +97,73 @@ def cffi_filter_similarity_k(filters1, filters2, k=3, threshold=0.1):
             c_indices,
             c_scores)
 
-        scores = [v for v in c_scores]
-        indices = [v for v in c_indices]
-
-        original_index_a = f1[1]
-
-        for j in range(k):
-            ind = indices[j]
+        for j in range(matches):
+            ind = c_indices[j]
             assert ind < len(filters2)
-            original_index_b = filters2[ind][1]
-            result.append((i, scores[j], original_index_a, original_index_b, ind))
+            result.append((i, c_scores[j], ind))
 
     return result
+
+
+def greedy_solver(sparse_similarity_matrix):
+    mappings = {}
+
+    # original indicies of filters which have been claimed
+    matched_entries_b = set()
+
+    for result in sparse_similarity_matrix:
+        index_a, score, possible_index_b = result
+        if possible_index_b not in matched_entries_b:
+            mappings[index_a] = possible_index_b
+            matched_entries_b.add(possible_index_b)
+
+    return mappings
 
 
 def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
     """
     Brute-force one-shot solver.
 
+    :param filters1: A list of cryptoBloomFilters from first organization
+    :param filters2: A list of cryptoBloomFilters from second organization
+    :param float threshold: The score above which to consider
+    :param int k: Consider up to the top k matches.
+
+    :returns A mapping dictionary of index in filters1 to index in filters2.
     """
 
     logging.info('Solving with greedy solver')
 
-    mappings = {}
-
-    # original indicies of filters which have been claimed
-    matched_entries_b = set()
-
-    for results in match_one_against_many(filters1, filters2, threshold, k):
-        for index_a, possible_index_b, score in results:
-            if possible_index_b not in matched_entries_b:
-                mappings[index_a] = possible_index_b
-                matched_entries_b.add(possible_index_b)
-                break
-
-    return mappings
+    sparse_matrix = calculate_filter_similarity(filters1, filters2, k, threshold)
+    return greedy_solver(sparse_matrix)
 
 
-def match_one_against_many(filters1, filters2, threshold=0.95, k=5):
+def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_python=False):
+    """Computes a sparse similarity matrix with:
+        - size no larger than k * len(filters1)
+        - order of len(filters1) + len(filters2)
+
+    This method is used as part of the all in one function `calculate_mapping_greedy`
+    however you may wish to call it yourself in order to break a large mapping into
+    more sizable chunks. These partial similarity results can be reduced into one
+    list and passed to the `greedy_solver` function. Note the returned index for
+    filters1 will need to be offset.
+
+    :param filters1: A list of cryptoBloomFilters from first organization
+    :param filters2: A list of cryptoBloomFilters from second organization
+    :param k: The top k edges will be included in the result.
+    :param threshold: Only scores greater than this threshold will be considered
+        (between 0 and 1)
+    :param use_python: Use the slower pure python method instead of C++ implementation
+
+    :return: A sparse matrix as a list of tuples, up to *k* for each entity
+        in filters1. Will be shorter if there are no qualifying matches.
+
+        The tuple comprises:
+            - the index in filters1
+            - the similarity score between 0 and 1 of the best match
+            - The index in filters2 of the best match
     """
-
-    A bitset for each entry in the set we are matching to (filters2)
-    and a search per entry in the matching set over the top k matches for
-    the first unmatched entry.
-
-    We don't calculate/store the graph at all, and process each record in turn.
-
-    Memory requirements are:
-        - to store the bloom filter arrays
-        - the mapping
-        - whether each target has been used
-
-    Returns a list of top matches for every entity in filters1
-    """
-
-    logging.info('Calculating the top k matches for {} x {} entities'.format(len(filters1), len(filters2)))
-
-    c_scores = ffi.new("double[]", k)
-    c_indices = ffi.new("int[]", k)
-
-    # All filters in org B
-    length_f2 = len(filters2)
-    carr2 = ffi.new("char[{}]".format(128 * length_f2),
-                    bytes([b for f in filters2 for b in f[0].tobytes()]))
-
-    clist1 = ffi.new("char[]", 128)
-    results = []
-
-    for index_a, f1 in enumerate(filters1):
-        assert len(carr2) % 64 == 0
-        ffi.memmove(clist1, f1[0].tobytes(), 128)
-        matches = lib.match_one_against_many_dice_1024_k_top(clist1, carr2, length_f2, k, threshold, c_indices, c_scores)
-        results.append([(index_a, c_indices[i], c_scores[i]) for i in range(matches)])
-
-    return results
-
-
-def calculate_filter_similarity(filters1, filters2, use_python=False):
     MIN_LENGTH = 5
     if len(filters1) < MIN_LENGTH or len(filters2) < MIN_LENGTH:
         raise ValueError("Didn't meet minimum number of entities")
@@ -202,5 +171,5 @@ def calculate_filter_similarity(filters1, filters2, use_python=False):
     if use_python:
         return python_filter_similarity(filters1, filters2)
     else:
-        return cffi_filter_similarity_k(filters1, filters2, k=10)
+        return cffi_filter_similarity_k(filters1, filters2, k=k, threshold=threshold)
 

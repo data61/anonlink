@@ -21,7 +21,7 @@ def calculate_network(similarity, cutoff):
     """
     G = nx.DiGraph()
     logging.debug('Applying threshold to network')
-    for (idx1, score, orig1, orig2, idx2) in similarity:
+    for (idx1, score, idx2) in similarity:
         if score > cutoff:
             G.add_edge('row'+str(idx1), 'col'+str(idx2), weight=score, capacity=1.0)
 

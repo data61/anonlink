@@ -222,9 +222,9 @@ extern "C"
     };
 
     /**
-     * Return the top k indices and scores.
+     * Calculate upto the top k indices and scores. Returns the number matched above a threshold.
      */
-    void match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, int *indices, double *scores) {
+    int match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, double threshold, int *indices, double *scores) {
 
         //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
 
@@ -240,6 +240,8 @@ extern "C"
         uint32_t *counts_many = new uint32_t[n];
         uint64_t* combined = new uint64_t[16];
 
+        double *all_scores = new double[n];
+
         for (int j = 0; j < n; j++) {
             const uint64_t *sig = comp2 + j * 16;
             counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
@@ -248,8 +250,6 @@ extern "C"
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * 16;
 
-            //std::cout << j << " "; //print_filter(comp2);
-
             for (int i=0 ; i < 16; i++ ) {
                 combined[i] = current[i] & comp1[i];
             }
@@ -257,17 +257,21 @@ extern "C"
             uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
 
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
+            all_scores[j] = score;
+        }
 
-            //if(score >= max_k_scores.top().score)
-            max_k_scores.push(Node(j, score));
+        for (int j = 0; j < n; j++) {
+
+            if(all_scores[j] >= threshold) {
+                max_k_scores.push(Node(j, all_scores[j]));
+            }
+
             if(max_k_scores.size() > k) max_k_scores.pop();
-
-            //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
-
         }
 
         delete combined;
         delete counts_many;
+        delete all_scores;
 
         int i = 0;
         while (!max_k_scores.empty())
@@ -276,9 +280,10 @@ extern "C"
            scores[i] = max_k_scores.top().score;
            indices[i] = max_k_scores.top().index;
 
-           max_k_scores.pop(); i+=1;
+           max_k_scores.pop();
+           i+=1;
         }
-
+        return i;
     }
 
 }
