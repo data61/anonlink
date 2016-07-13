@@ -82,6 +82,11 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
 
 
 def greedy_solver(sparse_similarity_matrix):
+    """
+    For optimal results consider sorting input by score for each row.
+
+    :param sparse_similarity_matrix:
+    """
     mappings = {}
 
     # original indicies of filters which have been claimed
