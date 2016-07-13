@@ -94,7 +94,7 @@ def calculate_entity_mapping(G, method=None):
         def find_pair(network, node):
             # Make sure to deal with unconnected nodes
 
-            possible_nodes = [node for node in network[node] if node != 'start']
+            possible_nodes = [n for n in network[node] if n != 'start']
             if len(possible_nodes) > 0:
                 def get_score(node_name):
                     return network[node][node_name]

@@ -1,6 +1,7 @@
 import pkg_resources
 
 from . import bloommatcher
+from . import bloomfilter
 from . import entitymatch
 from . import identifier_types
 from . import network_flow

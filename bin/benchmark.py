@@ -1,8 +1,11 @@
 import random
-from bitarray import bitarray
 from timeit import default_timer as timer
-from anonlink.randomnames import NameList
+
+from bitarray import bitarray
+
+from anonlink.bloomfilter import calculate_bloom_filters
 from anonlink.entitymatch import *
+from anonlink.randomnames import NameList
 
 
 def generate_bitarray(length):
@@ -88,7 +91,7 @@ if __name__ == '__main__':
         5000, 6000, 7000, 8000,
         10000,
         #50000,
-        #100000,
+        100000,
         #20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000
         #1000000
     ]:

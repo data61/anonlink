@@ -2,6 +2,8 @@ import os
 import unittest
 import random
 from bitarray import bitarray
+
+import anonlink.bloomfilter
 from anonlink import randomnames
 from anonlink import network_flow
 from anonlink import entitymatch
@@ -13,8 +15,8 @@ def generate_data(samples, proportion=0.75):
     s1, s2 = nl.generate_subsets(samples, proportion)
 
     keys = ('test1', 'test2')
-    filters1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
-    filters2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
+    filters1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
+    filters2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
 
     return (s1, s2, filters1, filters2)
 
@@ -125,8 +127,8 @@ class TestEntityMatchTopK(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(150, 0.8)
         keys = ('test1', 'test2')
-        f1 = entitymatch.calculate_bloom_filters(s1, nl.schema, keys)
-        f2 = entitymatch.calculate_bloom_filters(s2, nl.schema, keys)
+        f1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
+        f2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
