@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+import base64
 
 from anonlink.identifier_types import basic_types
 
-from . import bloommatcher as bm
+from anonlink import bloommatcher as bm
 import logging
 logging.basicConfig(level=logging.WARNING)
 
@@ -37,9 +38,28 @@ def calculate_bloom_filters(dataset, schema, keys):
     :param dataset: A list of indexable records.
     :param schema: An iterable of identifier type names.
     :param keys: A tuple of two secret keys used in the HMAC.
-    :return: List of bloom filters
+    :return: List of bloom filters as 3-tuples, each containing
+             bloom filter (bitarray), index (int), bitcount (int)
+    """
+    return list(stream_bloom_filters(dataset, schema, keys))
+
+
+def stream_bloom_filters(dataset, schema, keys):
+    """
+    Yield bloom filters
+
+    :param dataset: An iterable of indexable records.
+    :param schema: An iterable of identifier type names.
+    :param keys: A tuple of two secret keys used in the HMAC.
+    :return: Yields bloom filters as bitarrays
     """
     schema_types = [basic_types[column] for column in schema]
-    bloom_filters = [cryptoBloomFilter(s, schema_types, key1=keys[0], key2=keys[1])
-                     for s in dataset]
-    return bloom_filters
+    for s in dataset:
+        yield cryptoBloomFilter(s, schema_types, key1=keys[0], key2=keys[1])[0]
+
+
+def serialize_bitarray(ba):
+    """Serialize a bitarray (bloomfilter)
+
+    """
+    return base64.encodebytes(ba.tobytes()).decode('utf8')
