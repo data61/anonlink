@@ -11,4 +11,9 @@ setup(
     install_requires=open('requirements.txt').readlines(),
     packages=['anonlink'],
     package_data={'anonlink': ['data/*.csv']},
+    entry_points={
+        'console_scripts': [
+            'clkutil = anonlink.hashdata_cli:cli'
+        ],
+    },
 )

@@ -2,3 +2,4 @@ bitarray==0.8.1
 networkx==1.11
 cffi>=1.0.0
 nose==1.3.7
+click==6.2
