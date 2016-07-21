@@ -19,8 +19,6 @@ import math
 
 import pkgutil
 
-__author__ = 'shardy'
-
 
 def load_csv_data(resource_name):
     """Loads a specified data file as csv and returns the first column as a Python list
@@ -29,6 +27,20 @@ def load_csv_data(resource_name):
     reader = csv.reader(data.splitlines())
     next(reader, None)  # skip the headers
     return list({row[0] for row in reader})
+
+
+def save_csv(data, schema, file):
+    """
+    Output generated data as csv with header.
+
+    :param data: An iterable of tuples containing raw data.
+    :param schema: Tuple of column names as defined in anonlink.identifier_types
+    :param file: A writeable stream in which to write the csv
+    """
+
+    print(','.join(schema), file=file)
+    writer = csv.writer(file)
+    writer.writerows(data)
 
 
 def random_date(start, end):
@@ -108,4 +120,3 @@ class NameList:
         random.shuffle(l1)
         random.shuffle(l2)
         return [self.names[i] for i in l1],  [self.names[i] for i in l2]
-
