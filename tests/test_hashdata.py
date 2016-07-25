@@ -11,7 +11,8 @@ from anonlink.hashdata_cli import cli
 import anonlink
 from anonlink import randomnames
 
-
+@unittest.skipUnless("INCLUDE_CLI" in os.environ,
+                     "Set envvar INCLUDE_CLI to run. Disabled for jenkins")
 class TestHasherDefaultSchema(unittest.TestCase):
 
     samples = 100
@@ -57,6 +58,8 @@ class TestHasherDefaultSchema(unittest.TestCase):
             json.loads(output.read().decode('utf-8'))
 
 
+@unittest.skipUnless("INCLUDE_CLI" in os.environ,
+                     "Set envvar INCLUDE_CLI to run. Disabled for jenkins")
 class TestHasherSimpleSchema(unittest.TestCase):
 
     samples = 100
