@@ -7,6 +7,7 @@ import anonlink.bloomfilter
 from anonlink import randomnames
 from anonlink import network_flow
 from anonlink import entitymatch
+from anonlink import concurrent
 
 __author__ = 'Brian Thorne'
 
@@ -131,6 +132,20 @@ class TestEntityMatchTopK(unittest.TestCase):
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
+        mapping = network_flow.map_entities(similarity, threshold=threshold, method=None)
+
+        for indexA in mapping:
+            self.assertEqual(s1[indexA], s2[mapping[indexA]])
+
+    def test_concurrent(self):
+        nl = randomnames.NameList(300)
+        s1, s2 = nl.generate_subsets(150, 0.8)
+        keys = ('test1', 'test2')
+        f1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
+        f2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
+
+        threshold = 0.8
+        similarity = concurrent.calculate_filter_similarity(f1, f2, 4, threshold)
         mapping = network_flow.map_entities(similarity, threshold=threshold, method=None)
 
         for indexA in mapping:
