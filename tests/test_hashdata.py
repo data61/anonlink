@@ -6,7 +6,7 @@ import random
 from tempfile import NamedTemporaryFile, TemporaryFile
 from click.testing import CliRunner
 
-from anonlink.hashdata_cli import cli
+from anonlink.cli import cli
 
 import anonlink
 from anonlink import randomnames

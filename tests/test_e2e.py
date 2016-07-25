@@ -106,7 +106,6 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
         self.check_accuracy(mapping)
 
 
-# @unittest.skip("takes too long")
 @unittest.skipUnless("INCLUDE_100K" in os.environ,
                      "Set envvar INCLUDE_100K to run")
 class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):

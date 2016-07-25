@@ -13,6 +13,32 @@ Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Joi
     python setup.py install
 
 
+# CLI Tool
+
+After installation of the anonlink library you should have a `clkutil` program in your path.
+
+This can be used to process PII data into Cryptographic Longterm Keys. The tool also has an 
+option for generating fake pii data.
+
+
+    $ clkutil generate 1000 ~/tmp/fake-pii-out.csv
+    $ head -n 4  ~/tmp/fake-pii-out.csv
+    INDEX,NAME freetext,DOB YYYY/MM/DD,GENDER M or F
+    0,Libby Slemmer,1933/09/13,F
+    1,Garold Staten,1928/11/23,M
+    2,Yaritza Edman,1972/11/30,F
+    $ hash ~/tmp/fake-pii-out.csv ~/tmp/fake-clk.json
+    Assuming default schema
+    Hashing data
+    CLK data written to /home/brian/tmp/fake-clk.json
+
+To use the clkutil without installation just run:
+
+    python -m anonlink.cli
+
+
+    
+
 ## Alternative - Manually compile the C++ library
 
 For mac with:
