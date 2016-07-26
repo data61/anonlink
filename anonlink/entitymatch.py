@@ -128,7 +128,7 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_pyt
     however you may wish to call it yourself in order to break a large mapping into
     more sizable chunks. These partial similarity results can be reduced into one
     list and passed to the `greedy_solver` function. Note the returned index for
-    filters1 will need to be offset.
+    filters1 will need to be offset, see anonlink.concurrent for an example.
 
     :param filters1: A list of cryptoBloomFilters from first organization
     :param filters2: A list of cryptoBloomFilters from second organization

@@ -34,11 +34,11 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5):
     """
 
     results = []
+    chunk_size = int(20000000 / len(filters2))
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
-
         futures = []
-        chunk_size = int(20000000 / len(filters2))
+
         for i, chunk in enumerate(chunks(filters1, chunk_size)):
             future = executor.submit(calc_chunk_result, i, chunk, filters2, k, threshold)
             futures.append(future)

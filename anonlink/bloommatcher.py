@@ -61,8 +61,9 @@ def unigramlist(instr, toremove=None):
 
 def dicecoeff_pure_python(e1, e2):
     """
-    Dice coefficient measures the similarity of two bit patterns
+    Dice coefficient measures the similarity of two bit patterns.
 
+    :param e1,e2: bitset arrays of same length
     :return: real 0-1 similarity measure
     """
     return 2*(e1 & e2).count()/float(e1.count() + e2.count())

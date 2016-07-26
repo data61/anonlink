@@ -2,7 +2,7 @@
 
 Python and optimised C++ demonstrating the anonymous linkage using cryptographic hashes and bloom filters
 
-This is as described in http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf
+This is as described by Rainer Schnell, Tobias Bachteler, and Jörg Reiher in [A Novel Error-Tolerant Anonymous Linking Code](http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf)
 
 Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
 
@@ -11,7 +11,6 @@ Further description on possible speedups in http://dbs.uni-leipzig.de/file/P4Joi
 
     pip install -r requirements.txt
     python setup.py install
-
 
 # CLI Tool
 
@@ -27,7 +26,7 @@ option for generating fake pii data.
     0,Libby Slemmer,1933/09/13,F
     1,Garold Staten,1928/11/23,M
     2,Yaritza Edman,1972/11/30,F
-    $ hash ~/tmp/fake-pii-out.csv ~/tmp/fake-clk.json
+    $ clkutil hash ~/tmp/fake-pii-out.csv ~/tmp/fake-clk.json
     Assuming default schema
     Hashing data
     CLK data written to /home/brian/tmp/fake-clk.json
@@ -36,8 +35,6 @@ To use the clkutil without installation just run:
 
     python -m anonlink.cli
 
-
-    
 
 ## Alternative - Manually compile the C++ library
 
