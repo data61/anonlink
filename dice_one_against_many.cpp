@@ -222,9 +222,28 @@ extern "C"
     };
 
     /**
-     * Calculate upto the top k indices and scores. Returns the number matched above a threshold.
+     * Count lots of bits.
+    */
+    void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
+        for (int i = 0; i < n; i++) {
+            const uint64_t *sig = (uint64_t *) many + i * 16;
+            counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig, 16);
+        }
+    }
+
+    /**
+     * Calculate up to the top k indices and scores.
+     * Returns the number matched above a threshold.
      */
-    int match_one_against_many_dice_1024_k_top(const char *one, const char *many, int n, int k, double threshold, int *indices, double *scores) {
+    int match_one_against_many_dice_1024_k_top(
+        const char *one,
+        const char *many,
+        const uint32_t *counts_many,
+        int n,
+        uint32_t k,
+        double threshold,
+        int *indices,
+        double *scores) {
 
         //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
 
@@ -235,17 +254,9 @@ extern "C"
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
 
-        //std::cout << count_one << std::endl;
-
-        uint32_t *counts_many = new uint32_t[n];
         uint64_t* combined = new uint64_t[16];
 
         double *all_scores = new double[n];
-
-        for (int j = 0; j < n; j++) {
-            const uint64_t *sig = comp2 + j * 16;
-            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
-        }
 
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * 16;
@@ -270,7 +281,6 @@ extern "C"
         }
 
         delete combined;
-        delete counts_many;
         delete all_scores;
 
         int i = 0;

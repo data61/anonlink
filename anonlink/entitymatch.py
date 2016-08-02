@@ -4,6 +4,7 @@ from _entitymatcher import ffi, lib
 import sys
 
 from . import bloommatcher as bm
+from . import util
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -55,6 +56,8 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
         carr2 = ffi.new("char[{}]".format(128 * length_f2),
                         bytes([b for f in filters2 for b in f[0].tobytes()]))
 
+    c_popcounts = ffi.new("uint32_t[{}]".format(length_f2), [f[2] for f in filters2])
+
     # easier to do all buffer allocations in Python and pass them to C,
     # even for output-only arguments
     c_scores = ffi.new("double[]", k)
@@ -67,6 +70,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
         matches = match_one_against_many_dice_1024_k_top(
             clist1[i],
             carr2,
+            c_popcounts,
             length_f2,
             k,
             threshold,

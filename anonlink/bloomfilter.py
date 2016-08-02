@@ -15,7 +15,7 @@ def cryptoBloomFilter(record, tokenizers, key1="test1", key2="test2"):
     Using the method from
     http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf
 
-    :param record: record tuple. E.g. (index, name, dob, gender)
+    :param record: plaintext record tuple. E.g. (index, name, dob, gender)
     :param tokenizers: A list of IdentifierType tokenizers (one for each record element)
     :param key1: key for first hash function
     :param key2: key for second hash function

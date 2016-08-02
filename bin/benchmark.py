@@ -1,4 +1,5 @@
 import random
+import os
 from timeit import default_timer as timer
 
 from bitarray import bitarray
@@ -6,14 +7,38 @@ from bitarray import bitarray
 from anonlink.bloomfilter import calculate_bloom_filters
 from anonlink.entitymatch import *
 from anonlink.randomnames import NameList
+from anonlink.util import popcount_vector
 import anonlink.concurrent
 
-def generate_bitarray(length):
-    return bitarray(
-        ''.join('1' if random.random() > 0.5 else '0' for _ in range(length))
-    )
 
-some_filters = [(generate_bitarray(1024),) for _ in range(10000)]
+def generate_bitarray(length):
+    a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
+    a.frombytes(os.urandom(length//8))
+    return a
+
+
+some_filters = []
+for i in range(10000):
+    ba = generate_bitarray(1024)
+    some_filters.append((ba, i, ba.count()))
+
+
+def compute_popcount_speed(n):
+    """
+    Just do as much counting of bits.
+    """
+    print("Generating data to count", end='')
+    start = timer()
+    clks = [generate_bitarray(1024) for _ in range(n)]
+    print(". Done in {:.6f}s".format(timer() - start))
+    print("Counting")
+    start = timer()
+    popcounts = popcount_vector(clks)
+    end = timer()
+    elapsed_time = end - start
+    print("{:6d} CLK popcounts in {:.6f} seconds".format(n, elapsed_time))
+    print("{:.2f} MB/s".format(n/(1024*8*elapsed_time)))
+
 
 
 def compute_comparison_speed(n1=100, n2=100):
@@ -29,7 +54,7 @@ def compute_comparison_speed(n1=100, n2=100):
     end = timer()
     elapsed_time = end - start
     print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n1, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
+        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
     return elapsed_time
 
 
@@ -49,11 +74,8 @@ def compute_comparison_speed_parallel(n1=100, n2=100):
     end = timer()
     elapsed_time = end - start
     print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n1, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
+        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
     return elapsed_time
-
-
-
 
 
 def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
@@ -83,7 +105,7 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
     # C++ cffi version
     start = timer()
-    result3 = cffi_filter_similarity(filters1, filters2)
+    result3 = cffi_filter_similarity_k(filters1, filters2, 1, 0.0)
     end = timer()
     cffi_time = end - start
 
@@ -97,7 +119,8 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
 
 if __name__ == '__main__':
-
+    compute_popcount_speed(10000)
+    #print(compare_python_c(ntotal=1000, nsubset=600))
     print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
 
     for size in [
@@ -114,4 +137,4 @@ if __name__ == '__main__':
         elapsed = compute_comparison_speed_parallel(size, size)
 
     print("Single Core:")
-    compute_comparison_speed(10000, 10000)
+    compute_comparison_speed(1000, 1000)
