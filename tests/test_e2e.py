@@ -8,8 +8,10 @@ from anonlink import randomnames
 from anonlink import network_flow
 from anonlink import entitymatch
 from anonlink import concurrent
+from anonlink.util import *
 
 __author__ = 'Brian Thorne'
+
 
 def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
@@ -152,15 +154,9 @@ class TestEntityMatchTopK(unittest.TestCase):
             self.assertEqual(s1[indexA], s2[mapping[indexA]])
 
 
-def generate_bitarray(length):
-    return bitarray(
-        ''.join('1' if random.random() > 0.5 else '0' for _ in range(length))
-    )
-
-
 class TestGreedy(unittest.TestCase):
 
-    some_filters = [(generate_bitarray(1024),) for _ in range(1000)]
+    some_filters = generate_clks(1000)
 
     def test_greedy_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]

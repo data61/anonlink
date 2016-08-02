@@ -1,26 +1,14 @@
 import random
-import os
 from timeit import default_timer as timer
-
-from bitarray import bitarray
 
 from anonlink.bloomfilter import calculate_bloom_filters
 from anonlink.entitymatch import *
 from anonlink.randomnames import NameList
-from anonlink.util import popcount_vector
+from anonlink.util import popcount_vector, generate_clks, generate_bitarray
 import anonlink.concurrent
 
 
-def generate_bitarray(length):
-    a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
-    a.frombytes(os.urandom(length//8))
-    return a
-
-
-some_filters = []
-for i in range(10000):
-    ba = generate_bitarray(1024)
-    some_filters.append((ba, i, ba.count()))
+some_filters = generate_clks(10000)
 
 
 def compute_popcount_speed(n):

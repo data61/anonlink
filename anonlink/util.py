@@ -1,16 +1,32 @@
 #!/usr/bin/env python3.4
 
-#from _entitymatcher import ffi, lib
+import os
+import random
+from bitarray import bitarray
 
 
-def popcount_vector(clks):
+def generate_bitarray(length):
+    a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
+    a.frombytes(os.urandom(length//8))
+    return a
+
+
+def generate_clks(n):
+    res = []
+    for i in range(n):
+        ba = generate_bitarray(1024)
+        res.append((ba, i, ba.count()))
+    return res
+
+
+def popcount_vector(bitarrays):
     """
     Note, due to the overhead of converting bitarrays into
     bytes, it is more expensive to call our C implementation
     than just calling bitarray.count()
 
     """
-    return [clk.count() for clk in clks]
+    return [clk.count() for clk in bitarrays]
 
     # n = len(clks)
     # c_popcounts = ffi.new("uint32_t[{}]".format(n))
