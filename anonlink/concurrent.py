@@ -1,7 +1,13 @@
 #!/usr/bin/env python3.4
 
-import anonlink.entitymatch
+"""
+Concurrent implementations.
+"""
+
 import concurrent.futures
+
+import anonlink.entitymatch
+import anonlink.bloomfilter
 
 
 def chunks(l, n):
@@ -41,6 +47,31 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5):
 
         for i, chunk in enumerate(chunks(filters1, chunk_size)):
             future = executor.submit(calc_chunk_result, i, chunk, filters2, k, threshold)
+            futures.append(future)
+
+        for future in futures:
+            results.extend(future.result())
+
+    return results
+
+
+def bloom_filters(dataset, schema, keys):
+    """
+    :param dataset: A list of indexable records.
+    :param schema: An iterable of identifier type names.
+    :param keys: A tuple of two secret keys used in the HMAC.
+    :return: List of bloom filters as 3-tuples, each containing
+             bloom filter (bitarray), index (int), bitcount (int)
+    """
+    results = []
+    chunk_size = int(1000)
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+
+        for i, chunk in enumerate(chunks(dataset, chunk_size)):
+            future = executor.submit(anonlink.bloomfilter.calculate_bloom_filters,
+                                     chunk, schema, keys)
             futures.append(future)
 
         for future in futures:
