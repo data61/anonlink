@@ -62,9 +62,10 @@ weighted_types = {
 
     'DOB DD': IdentifierType(unigram=True, weight=2),
     'DOB MM': IdentifierType(unigram=True, weight=2),
-    'DOB YYYY': IdentifierType(unigram=True, toremove='/', weight=2),
+    'DOB YYYY': IdentifierType(unigram=True, toremove='/', weight=2, positional=True),
 
     'ADDRESS House Number': IdentifierType(weight=2),
+    'ADDRESS POSTCODE': IdentifierType(unigram=True, weight=2, positional=True),
     'ADDRESS Place Name': IdentifierType(weight=1),
 
     'NAME First Name': IdentifierType(),

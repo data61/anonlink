@@ -45,7 +45,7 @@ def bigramlist(word, toremove=None):
     return [word[i:i+2] for i in range(len(word)-1)]
 
 
-def unigramlist(instr, toremove=None):
+def unigramlist(instr, toremove=None, positional=False):
     """
     Make 1-grams (unigrams) from a word, possibly excluding particular substrings
 
@@ -56,7 +56,11 @@ def unigramlist(instr, toremove=None):
     if toremove is not None:
         for substr in toremove:
             instr = instr.replace(substr, "")
-    return list(instr)
+
+    if positional:
+        return positional_unigrams(instr)
+    else:
+        return list(instr)
 
 
 def positional_unigrams(instr):

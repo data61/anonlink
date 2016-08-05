@@ -47,6 +47,9 @@ class TestBloomMatcher(unittest.TestCase):
     def test_unigram_duplicate(self):
         self.assertEqual(bm.unigramlist("1212"), ['1', '2', '1', '2'])
 
+    def test_unigram_1_positional(self):
+        self.assertEqual(bm.unigramlist("1/2/93", '/', positional=True), ['1 1', '2 2', '3 9', '4 3'])
+
     def test_positional_unigram_1(self):
         self.assertEqual(bm.positional_unigrams("123"), ['1 1', '2 2', '3 3'])
 
