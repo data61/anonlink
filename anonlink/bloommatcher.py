@@ -59,6 +59,18 @@ def unigramlist(instr, toremove=None):
     return list(instr)
 
 
+def positional_unigrams(instr):
+    """
+    Make positional unigrams from a word.
+
+    E.g. 1987 -> ["1 1", "2 9", "3 8", "4 7"]
+
+    :param instr: input string
+    :return: list of strings with unigrams
+    """
+    return ["{index} {value}".format(index=i, value=c) for i, c in enumerate(instr, start=1)]
+
+
 def dicecoeff_pure_python(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
@@ -95,7 +107,9 @@ def dicecoeff_precount(e1, e2, count):
 
 def tanimoto(e1, e2):
     """
-    Tanimoto coefficient measures the similarity of two bit patterns
+    Tanimoto coefficient measures the similarity of two bit patterns.
+
+    Also referred to as the Jaccard similarity
 
     :return: real 0-1 similarity measure
     """
