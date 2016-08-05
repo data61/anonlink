@@ -47,3 +47,28 @@ basic_types = {
     'PHONE freetext': IdentifierType(unigram=True, toremove='()-')
 }
 
+# Weighted Types
+# Zip Code, Birth Year, Birth Month, Birth Day, Sex, and House number
+# can be regarding as identifiers with low error rates and First name,
+# last name, street name, place name are in most applications found to
+# be more error prone.
+
+
+weighted_types = {
+    'INDEX': IdentifierType(weight=0),
+
+    # gender weight = 1 due to lower identifier entropy
+    'GENDER M or F': IdentifierType(unigram=True),
+
+    'DOB DD': IdentifierType(unigram=True, weight=2),
+    'DOB MM': IdentifierType(unigram=True, weight=2),
+    'DOB YYYY': IdentifierType(unigram=True, toremove='/', weight=2),
+
+    'ADDRESS House Number': IdentifierType(weight=2),
+    'ADDRESS Place Name': IdentifierType(weight=1),
+
+    'NAME First Name': IdentifierType(),
+    'NAME Surname': IdentifierType(),
+
+    'PHONE freetext': IdentifierType(unigram=True, toremove='()-')
+}
