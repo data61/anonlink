@@ -136,6 +136,15 @@ void print_filter(const uint64_t *filter) {
     std::cout << std::endl;
 }
 
+/**
+ *
+ */
+uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
+
+    return 2 * popcnt_a * (1/threshold - 1);
+
+}
+
 extern "C"
 {
 
@@ -258,17 +267,34 @@ extern "C"
 
         double *all_scores = new double[n];
 
+        uint32_t max_popcnt_delta = 1024;
+        if(threshold > 0) {
+            max_popcnt_delta = calculate_max_difference(count_one, threshold);
+        }
+        uint32_t current_delta;
+
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * 16;
 
-            for (int i=0 ; i < 16; i++ ) {
-                combined[i] = current[i] & comp1[i];
+            if(count_one > counts_many[j]){
+                current_delta = count_one - counts_many[j];
+            } else {
+                current_delta = counts_many[j] - count_one;
             }
 
-            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+            if(current_delta <= max_popcnt_delta){
+                for (int i=0 ; i < 16; i++ ) {
+                    combined[i] = current[i] & comp1[i];
+                }
 
-            double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-            all_scores[j] = score;
+                uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+
+                double score = 2 * count_curr / (double) (count_one + counts_many[j]);
+                all_scores[j] = score;
+            } else {
+                // Skipping because popcount difference to large
+                all_scores[j] = -1;
+            }
         }
 
         for (int j = 0; j < n; j++) {
