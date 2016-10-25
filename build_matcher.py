@@ -4,7 +4,7 @@ ffi = FFI()
 ffi.set_source("_entitymatcher",
                open('dice_one_against_many.cpp', 'r').read(),
                source_extension='.cpp',
-               extra_compile_args=['-std=c++11', '-mssse3', '-mpopcnt'])
+               extra_compile_args=['-std=c++11', '-stdlib=libc++', '-mssse3', '-mpopcnt'])
 
 ffi.cdef("""
     int match_one_against_many_dice_c(const char * one, const char * many, int n, int l, double * score);
