@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="anonlink",
-    version='0.4.1',
+    version='0.4.2',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.inside.nicta.com.au/magic/AnonymousLinking',
     license='Apache',
@@ -13,7 +13,7 @@ setup(
     package_data={'anonlink': ['data/*.csv']},
     entry_points={
         'console_scripts': [
-            'clkutil = anonlink.hashdata_cli:cli'
+            'clkutil = anonlink.cli:cli'
         ],
     },
 )
