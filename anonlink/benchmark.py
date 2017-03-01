@@ -15,18 +15,19 @@ def compute_popcount_speed(n):
     """
     Just do as much counting of bits.
     """
-    print("Generating data to count", end='')
-    start = timer()
     clks = [generate_bitarray(1024) for _ in range(n)]
-    print(". Done in {:.6f}s".format(timer() - start))
-    print("Counting")
     start = timer()
     popcounts = popcount_vector(clks)
     end = timer()
     elapsed_time = end - start
-    print("{:6d} CLK popcounts in {:.6f} seconds".format(n, elapsed_time))
-    print("{:.2f} MB/s".format(n/(1024*8*elapsed_time)))
+    print("{:6d} x 1024 bit popcounts in {:.6f} seconds".format(n, elapsed_time))
+    speed_in_MiB = n / (1024 * 8 * elapsed_time)
+    print("Popcount speed: {:.2f} MiB/s".format(speed_in_MiB))
+    return speed_in_MiB
 
+
+def print_comparison_header():
+    print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
 
 
 def compute_comparison_speed(n1=100, n2=100):
@@ -106,23 +107,3 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     }
 
 
-if __name__ == '__main__':
-    compute_popcount_speed(10000)
-    #print(compare_python_c(ntotal=1000, nsubset=600))
-    print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
-
-    for size in [
-        1000, 2000, 3000,4000,
-        5000, 6000, 7000, 8000, 9000,
-        10000,
-        #20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000,
-        #1000000,
-        #2000000
-    ]:
-        # Using just one core
-        #elapsed = compute_comparison_speed(size, size)
-
-        elapsed = compute_comparison_speed_parallel(size, size)
-
-    print("Single Core:")
-    compute_comparison_speed(1000, 1000)

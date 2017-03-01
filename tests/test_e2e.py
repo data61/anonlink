@@ -19,7 +19,7 @@ def generate_data(samples, proportion=0.75):
 
     keys = ('test1', 'test2')
     filters1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
-    filters2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
+    filters2 = anonlink.concurrent.bloom_filters(s2, nl.schema, keys)
 
     return (s1, s2, filters1, filters2)
 
@@ -173,11 +173,8 @@ class TestGreedy(unittest.TestCase):
         assert len(filters1_chunk1) == 500
 
         chunk_1 = entitymatch.calculate_filter_similarity(filters1_chunk1, filters2, threshold=0.95, k=5)
-        chunk_2_orig = entitymatch.calculate_filter_similarity(filters1_chunk2, filters2, threshold=0.95, k=5)
-        chunk_2 = []
-        # offset chunk2's index by 500
-        for (ia, score, ib) in chunk_2_orig:
-            chunk_2.append((ia + 500, score, ib))
+
+        chunk_2 = concurrent.calc_chunk_result(1, filters1_chunk2, filters2, k=5, threshold=0.95)
 
         full_similarity_scores = entitymatch.calculate_filter_similarity(filters1, filters2, threshold=0.95, k=5)
 

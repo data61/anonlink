@@ -5,7 +5,6 @@ from anonlink import util
 
 class TestUtilDataGeneration(unittest.TestCase):
 
-
     def test_generate_bitarray(self):
         for i in range(100):
             ba = util.generate_bitarray(1024)

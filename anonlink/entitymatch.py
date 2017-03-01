@@ -1,5 +1,5 @@
 import logging
-from _entitymatcher import ffi, lib
+from anonlink._entitymatcher import ffi, lib
 
 import sys
 

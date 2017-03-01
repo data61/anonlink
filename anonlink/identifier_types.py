@@ -44,6 +44,8 @@ basic_types = {
 
     'NAME freetext': IdentifierType(),
 
+    'ANY freetext': IdentifierType(),
+
     'PHONE freetext': IdentifierType(unigram=True, toremove='()-')
 }
 
