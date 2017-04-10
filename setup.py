@@ -10,14 +10,14 @@ requirements = [
 
 setup(
     name="anonlink",
-    version='0.4.5',
+    version='0.5.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.inside.nicta.com.au/magic/AnonymousLinking',
     license='Apache',
     setup_requires=requirements,
     install_requires=requirements,
     test_requires=requirements,
-    packages=find_packages('anonlink', exclude=['cpp_code', 'cpp_code.*']),
+    packages=find_packages(exclude=['cpp_code', 'cpp_code.*', 'tests']),
     package_data={'anonlink': ['data/*.csv']},
     entry_points={
         'console_scripts': [
