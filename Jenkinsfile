@@ -33,19 +33,15 @@ node {
     // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
     stage ("Install Dependencies") {
         sh '''
-            source ./bin/activate
-            pip install -r requirements.txt
-            deactivate
+            ./bin/pip install -r requirements.txt
            '''
     }
 
     // Build the extension
     stage ("Compile Library") {
         sh '''
-            source ./bin/activate
-            python setup.py bdist
-            pip install -e .
-            deactivate
+            ./bin/python setup.py bdist
+            ./bin/pip install -e .
            '''
     }
 
@@ -54,9 +50,8 @@ node {
         def testsError = null
         try {
             sh '''
-                source ./bin/activate
-                nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
-                deactivate
+                ./bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+                
                '''
         }
         catch(err) {
@@ -65,9 +60,7 @@ node {
         }
         finally {
             sh '''
-            source ./bin/activate
-            coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-            deactivate
+            ./bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
             '''
 
             junit 'nosetests.xml'
