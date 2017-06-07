@@ -51,7 +51,7 @@ For linux with:
 ## Benchmark
 
 ```
-$ python -m bin.benchmark
+$ python -m anonlink.cli benchmark
 Popcount speed: 587.88 MB/s
 Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second
   1000 |   1000 |      1000000 |    0.110s    |         9.077
