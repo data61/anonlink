@@ -15,7 +15,7 @@ node {
             sh '''
             rm -fr venv
             rm -fr build
-            python3.5 -m venv --clear --no-site-packages .
+            python3.5 -m venv --clear .
             ./bin/pip install --upgrade pip coverage setuptools
             '''
         }
