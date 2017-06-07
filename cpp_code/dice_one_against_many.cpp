@@ -178,19 +178,19 @@ extern "C"
 
         double best_score = -1.0;
         int best_index = -1;
+        uint64_t combined[16];
 
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * 16;
 
             //std::cout << j << " "; //print_filter(comp2);
 
-            uint64_t* combined = new uint64_t[16];
             for (int i=0 ; i < 16; i++ ) {
                 combined[i] = current[i] & comp1[i];
             }
 
             uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
-            delete[] combined;
+
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
@@ -201,7 +201,7 @@ extern "C"
 
         }
 
-        delete counts_many;
+        delete[] counts_many;
 
 
         //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
