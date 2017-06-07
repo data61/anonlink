@@ -12,7 +12,12 @@ node {
 
     if (!installed) {
         stage("Install Python Virtual Enviroment") {
-            sh 'virtualenv --no-site-packages .'
+            sh '''
+            rm -fr venv
+            rm -fr build
+            python3.5 -m venv --clear --no-site-packages .
+            ./bin/pip install --upgrade pip coverage setuptools
+            '''
         }
     }
 
