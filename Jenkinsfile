@@ -59,9 +59,11 @@ node {
             currentBuild.result = 'FAILURE'
         }
         finally {
+            sh '''
             coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+            '''
 
-            junit 'reports/junit.xml'
+            junit 'nosetests.xml'
 
             if (testsError) {
                 throw testsError
