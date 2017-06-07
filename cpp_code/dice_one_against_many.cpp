@@ -263,7 +263,7 @@ extern "C"
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
 
-        uint64_t* combined = new uint64_t[16];
+        uint64_t combined[16];
 
         double *all_scores = new double[n];
 
@@ -306,7 +306,6 @@ extern "C"
             if(max_k_scores.size() > k) max_k_scores.pop();
         }
 
-        delete[] combined;
         delete[] all_scores;
 
         int i = 0;
