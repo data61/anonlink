@@ -68,7 +68,7 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 
     uint32_t count_and = builtin_popcnt_unrolled_errata_manual(combined, nuint64);
 
-    delete combined;
+    delete[] combined;
 
     return 2 * count_and / (double) (count_both);
 }
@@ -120,7 +120,7 @@ int match_one_against_many_dice(const char *one, const char *many, int n, int l,
         }
     }
 
-    delete counts_many;
+    delete[] counts_many;
 
     score = best_score;
     return best_index;
@@ -190,7 +190,7 @@ extern "C"
             }
 
             uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
-            delete combined;
+            delete[] combined;
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
 
             //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
@@ -306,8 +306,8 @@ extern "C"
             if(max_k_scores.size() > k) max_k_scores.pop();
         }
 
-        delete combined;
-        delete all_scores;
+        delete[] combined;
+        delete[] all_scores;
 
         int i = 0;
         while (!max_k_scores.empty())
