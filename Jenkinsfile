@@ -57,7 +57,7 @@ node {
         // Build the extension
         stage ("Compile Library") {
             sh '''
-                which python
+                which python3.5
                 python3.5 setup.py bdist
                 python3.5 ${VENV}/bin/pip install -e .
                '''
@@ -69,7 +69,6 @@ node {
             try {
                 sh '''
                     python3.5 ${VENV}/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
-
                    '''
             }
             catch(err) {
@@ -93,7 +92,7 @@ node {
         stage("Benchmark") {
             try {
                 sh '''
-                    python -m anonlink.cli benchmark
+                    python3.5 -m anonlink.cli benchmark
                     deactivate
                    '''
             }
