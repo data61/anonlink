@@ -14,6 +14,9 @@ node {
 
     env.PATH = "${env.WORKSPACE}/env/bin:/usr/bin:${env.PATH}"
 
+    stage (name : 'Cleanup') {
+        sh "test -d ${env.WORKSPACE}/env && rm -rf ${env.WORKSPACE}/env || echo 'no env, skipping cleanup'"
+    }
 
     stage("Install Python Virtual Enviroment") {
         sh '''
@@ -36,15 +39,34 @@ node {
     // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
     // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
     stage ("Install Dependencies") {
-        sh '''
-            pip install -r requirements.txt
-           '''
+        try {
+            sh '''
+                pip install -r requirements.txt
+               '''
+           } catch (err) {
+            sh 'echo "failed to install 1"'
+           }
+
+       try {
+            sh '''
+                ${env.WORKSPACE}/env/bin/pip install -r requirements.txt
+               '''
+           } catch (err) {
+            sh 'echo "failed to install 2"'
+           }
+       try {
+            sh '''
+                ./env/bin/pip install -r requirements.txt
+               '''
+           } catch (err) {
+            sh 'echo "failed to install 3"'
+           }
     }
 
     // Build the extension
     stage ("Compile Library") {
         sh '''
-            ${workspace}/env/bin/python setup.py bdist
+            ${env.WORKSPACE}/env/bin/python setup.py bdist
             ${workspace}/env/bin/pip install -e .
            '''
     }
@@ -90,9 +112,7 @@ node {
         }
     }
 
-    stage (name : 'Cleanup') {
-        sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-    }
+
 
 
 }
