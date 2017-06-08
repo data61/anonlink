@@ -12,97 +12,98 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 node {
 
     def workspace = pwd();
-    // ${workspace} will now contain an absolute path to job workspace on
     echo "workspace directory is ${workspace}"
-
     env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
 
-    stage (name : 'Cleanup') {
-        sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-    }
 
-    stage("Install Python Virtual Enviroment") {
-        sh '''
-        rm -fr build
-        echo "workspace directory is ${workspace}"
-        echo "env.workspace directory is ${env.workspace}"
-        echo "env.WORKSPACE directory is ${env.WORKSPACE}"
-        python3.5 -m venv --clear ${env.workspace}/env
-        pip install --upgrade pip coverage setuptools
-        '''
-    }
+    withEnv(['VENV={$workspace}/env']) {
+        // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
-
-    // The stage below is attempting to get the latest version of our application code.
-    // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
-    // pipeline project then you can replace this with the regular 'git url:' pipeline command.
-    // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-    stage ("Get Latest Code") {
-        checkout scm
-    }
-
-    // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
-    // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
-    stage ("Install Dependencies") {
-        try {
-            sh '''
-                which pip
-                pip install -r requirements.txt
-               '''
-           } catch (err) {
-            sh 'echo "failed to install requirements"'
-           }
-    }
-
-    // Build the extension
-    stage ("Compile Library") {
-        sh '''
-            which python
-            python setup.py bdist
-            pip install -e .
-           '''
-    }
-
-    // After all of the dependencies are installed, you can start to run your tests.
-    stage ("Run Unit/Integration Tests") {
-        def testsError = null
-        try {
-            sh '''
-                nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
-                
-               '''
+        stage (name : 'Cleanup') {
+            sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
         }
-        catch(err) {
-            testsError = err
-            currentBuild.result = 'FAILURE'
-        }
-        finally {
+
+        stage("Install Python Virtual Enviroment") {
             sh '''
-            coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+            rm -fr build
+            echo "venv directory is ${VENV}"
+
+            python3.5 -m venv --clear ${VENV}
+            pip install --upgrade pip coverage setuptools
             '''
+        }
 
-            junit 'nosetests.xml'
 
-            if (testsError) {
-                throw testsError
+        // The stage below is attempting to get the latest version of our application code.
+        // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
+        // pipeline project then you can replace this with the regular 'git url:' pipeline command.
+        // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
+        stage ("Get Latest Code") {
+            checkout scm
+        }
+
+        // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
+        // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
+        stage ("Install Dependencies") {
+            try {
+                sh '''
+                    which pip
+                    pip install -r requirements.txt
+                   '''
+               } catch (err) {
+                sh 'echo "failed to install requirements"'
+               }
+        }
+
+        // Build the extension
+        stage ("Compile Library") {
+            sh '''
+                which python
+                python setup.py bdist
+                pip install -e .
+               '''
+        }
+
+        // After all of the dependencies are installed, you can start to run your tests.
+        stage ("Run Unit/Integration Tests") {
+            def testsError = null
+            try {
+                sh '''
+                    nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+
+                   '''
+            }
+            catch(err) {
+                testsError = err
+                currentBuild.result = 'FAILURE'
+            }
+            finally {
+                sh '''
+                coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                '''
+
+                junit 'nosetests.xml'
+
+                if (testsError) {
+                    throw testsError
+                }
+            }
+        }
+
+
+        stage("Benchmark") {
+            try {
+                sh '''
+                    python -m anonlink.cli benchmark
+                    deactivate
+                   '''
+            }
+            catch(err) {
+                testsError = err
+                currentBuild.result = 'FAILURE'
             }
         }
     }
-
-
-    stage("Benchmark") {
-        try {
-            sh '''
-                python -m anonlink.cli benchmark
-                deactivate
-               '''
-        }
-        catch(err) {
-            testsError = err
-            currentBuild.result = 'FAILURE'
-        }
-    }
-
 
 
 
