@@ -9,9 +9,9 @@ def isMaster = env.BRANCH_NAME == 'master'
 def isDevelop = env.BRANCH_NAME == 'develop'
 
 
-node("McNode") {
+node("linux") {
 
-    stage ("Test on OSX") {
+    stage ("Test on linux") {
 
         def workspace = pwd();
         echo "workspace directory is ${workspace}"
