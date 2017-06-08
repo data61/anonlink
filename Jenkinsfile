@@ -33,10 +33,9 @@ node("linux") {
             // Install Python Virtual Enviroment
             sh '''
                 rm -fr build
-                echo "venv directory is ${VENV}"
-                ls ${VENV}
-
+                echo "Creating venv in ${VENV}"
                 python3.5 -m venv --clear ${VENV}
+                ls ${VENV}
                 ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
             '''
 
@@ -95,7 +94,5 @@ node("linux") {
             }
         }
     }
-
-
 
 }
