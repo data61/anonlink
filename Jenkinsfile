@@ -57,7 +57,6 @@ parallel (
                 // Build the extension
                 stage ("Compile Library") {
                     sh '''
-                        which python3.5
                         ${VENV}/bin/python setup.py bdist
                         ${VENV}/bin/python ${VENV}/bin/pip install -e .
                        '''
@@ -130,7 +129,7 @@ parallel (
                     sh '''
                     rm -fr build
                     echo "Installing venv in ${VENV}"
-                    python3.5 -m venv --clear ${VENV}
+                    python3 -m venv --clear ${VENV}
                     ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
                     '''
                 }
@@ -152,7 +151,6 @@ parallel (
                 // Build the extension
                 stage ("Compile Library") {
                     sh '''
-                        which python3.5
                         ${VENV}/bin/python setup.py bdist
                         ${VENV}/bin/python ${VENV}/bin/pip install -e .
                        '''
