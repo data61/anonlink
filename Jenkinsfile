@@ -24,7 +24,10 @@ node {
     stage("Install Python Virtual Enviroment") {
         sh '''
         rm -fr build
-        python3.5 -m venv --clear ${workspace}/env
+        echo "workspace directory is ${workspace}"
+        echo "env.workspace directory is ${env.workspace}"
+        echo "env.WORKSPACE directory is ${env.WORKSPACE}"
+        python3.5 -m venv --clear ${env.workspace}/env
         pip install --upgrade pip coverage setuptools
         '''
     }
