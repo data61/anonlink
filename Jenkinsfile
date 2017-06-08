@@ -8,20 +8,23 @@ void setBuildStatus(String message, String state) {
 def isMaster = env.BRANCH_NAME == 'master'
 def isDevelop = env.BRANCH_NAME == 'develop'
 
-node {
-    // It's often recommended to run a Python project from a virtual environment.
-    // This way you can manage all of your dependencies without affecting the rest of your system.
 
-    env.PATH = "${env.WORKSPACE}/env/bin:/usr/bin:${env.PATH}"
+node {
+
+    def workspace = pwd();
+    // ${workspace} will now contain an absolute path to job workspace on
+    echo "workspace directory is ${workspace}"
+
+    env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
 
     stage (name : 'Cleanup') {
-        sh "test -d ${env.WORKSPACE}/env && rm -rf ${env.WORKSPACE}/env || echo 'no env, skipping cleanup'"
+        sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
     }
 
     stage("Install Python Virtual Enviroment") {
         sh '''
         rm -fr build
-        python3.5 -m venv --clear ${env.WORKSPACE}/env
+        python3.5 -m venv --clear ${workspace}/env
         pip install --upgrade pip coverage setuptools
         '''
     }
