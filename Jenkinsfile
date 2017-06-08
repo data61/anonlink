@@ -37,7 +37,7 @@ node {
     // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
     stage ("Install Dependencies") {
         sh '''
-            ${workspace}/env/bin/pip install -r requirements.txt
+            pip install -r requirements.txt
            '''
     }
 
