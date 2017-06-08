@@ -29,7 +29,7 @@ node {
             echo "venv directory is ${VENV}"
 
             python3.5 -m venv --clear ${VENV}
-            python3.5 ${VENV}/bin/pip install --upgrade pip coverage setuptools
+            ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
             '''
         }
 
@@ -47,7 +47,7 @@ node {
         stage ("Install Dependencies") {
             try {
                 sh '''
-                    python3.5 ${VENV}/bin/pip install -r requirements.txt
+                    ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
                    '''
                } catch (err) {
                 sh 'echo "failed to install requirements"'
@@ -58,8 +58,8 @@ node {
         stage ("Compile Library") {
             sh '''
                 which python3.5
-                python3.5 setup.py bdist
-                python3.5 ${VENV}/bin/pip install -e .
+                ${VENV}/bin/python setup.py bdist
+                ${VENV}/bin/python ${VENV}/bin/pip install -e .
                '''
         }
 
@@ -68,7 +68,7 @@ node {
             def testsError = null
             try {
                 sh '''
-                    python3.5 ${VENV}/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+                    ${VENV}/bin/python ${VENV}/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
                    '''
             }
             catch(err) {
@@ -77,7 +77,7 @@ node {
             }
             finally {
                 sh '''
-                python3.5 ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
                 '''
 
                 junit 'nosetests.xml'
@@ -92,7 +92,7 @@ node {
         stage("Benchmark") {
             try {
                 sh '''
-                    python3.5 -m anonlink.cli benchmark
+                    ${VENV}/bin/python -m anonlink.cli benchmark
                     deactivate
                    '''
             }
