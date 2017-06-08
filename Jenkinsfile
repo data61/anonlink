@@ -23,7 +23,7 @@ node {
         rm -fr venv
         rm -fr build
         python3.5 -m venv --clear env
-        source ./env/bin/activate && pip install --upgrade pip coverage setuptools
+        pip install --upgrade pip coverage setuptools
         '''
     }
 
