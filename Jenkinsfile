@@ -8,18 +8,22 @@ void setBuildStatus(String message, String state) {
 node {
     // It's often recommended to run a Python project from a virtual environment.
     // This way you can manage all of your dependencies without affecting the rest of your system.
-    def installed = fileExists 'bin/activate'
 
-    if (!installed) {
-        stage("Install Python Virtual Enviroment") {
-            sh '''
-            rm -fr venv
-            rm -fr build
-            python3.5 -m venv --clear .
-            ./bin/pip install --upgrade pip coverage setuptools
-            '''
-        }
+    workspace = pwd()
+    env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"  // for python projects
+    def isMaster = env.BRANCH_NAME == 'master'
+    def isDevelop = env.BRANCH_NAME == 'develop'
+
+
+    stage("Install Python Virtual Enviroment") {
+        sh '''
+        rm -fr venv
+        rm -fr build
+        python3.5 -m venv --clear env
+        ${workspace}/env/bin/pip install --upgrade pip coverage setuptools
+        '''
     }
+
 
     // The stage below is attempting to get the latest version of our application code.
     // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
@@ -33,15 +37,15 @@ node {
     // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
     stage ("Install Dependencies") {
         sh '''
-            ./bin/pip install -r requirements.txt
+            ${workspace}/env/bin/pip install -r requirements.txt
            '''
     }
 
     // Build the extension
     stage ("Compile Library") {
         sh '''
-            ./bin/python setup.py bdist
-            ./bin/pip install -e .
+            ${workspace}/env/bin/python setup.py bdist
+            ${workspace}/env/bin/pip install -e .
            '''
     }
 
@@ -50,7 +54,7 @@ node {
         def testsError = null
         try {
             sh '''
-                ./bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+                ${workspace}/env/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
                 
                '''
         }
@@ -60,7 +64,7 @@ node {
         }
         finally {
             sh '''
-            ./bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+            ${workspace}/env/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
             '''
 
             junit 'nosetests.xml'
@@ -75,7 +79,7 @@ node {
     stage("Benchmark") {
         try {
             sh '''
-                source ../bin/activate
+                source ${workspace}/env/bin/activate
                 python -m anonlink.cli benchmark
                 deactivate
                '''
@@ -84,6 +88,10 @@ node {
             testsError = err
             currentBuild.result = 'FAILURE'
         }
+    }
+
+    stage (name : 'Cleanup') {
+        sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
     }
 
 
