@@ -11,39 +11,36 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 node("linux") {
 
-    def workspace = pwd();
-    echo "workspace directory is ${workspace}"
-    env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
+    stage (name : 'Test on Linux') {
+        def workspace = pwd();
+        echo "workspace directory is ${workspace}"
+        env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
 
-    withEnv(["VENV=${workspace}/env"]) {
-        // ${workspace} contains an absolute path to job workspace (not available within a stage)
+        withEnv(["VENV=${workspace}/env"]) {
+            // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
-        stage (name : 'Cleanup') {
+            // clean up
             sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-        }
 
-        // The stage below is attempting to get the latest version of our application code.
-        // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
-        // pipeline project then you can replace this with the regular 'git url:' pipeline command.
-        // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-        stage ("Get Latest Code") {
+
+            // The stage below is attempting to get the latest version of our application code.
+            // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
+            // pipeline project then you can replace this with the regular 'git url:' pipeline command.
+            // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
             checkout scm
-        }
 
-        stage("Install Python Virtual Enviroment") {
+
+            // Install Python Virtual Enviroment
             sh '''
-            rm -fr build
-            echo "venv directory is ${VENV}"
-            ls ${VENV}
+                rm -fr build
+                echo "venv directory is ${VENV}"
+                ls ${VENV}
 
-            python3.5 -m venv --clear ${VENV}
-            ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
+                python3.5 -m venv --clear ${VENV}
+                ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
             '''
-        }
 
-        // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
-        // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
-        stage ("Install Dependencies") {
+            // Install Dependencies
             try {
                 sh '''
                     echo "venv directory is ${VENV}"
@@ -53,19 +50,16 @@ node("linux") {
                } catch (err) {
                 sh 'echo "failed to install requirements"'
                }
-        }
 
-        // Build the extension
-        stage ("Compile Library") {
+            // Build the extension
             sh '''
-                which python3.5
                 ${VENV}/bin/python setup.py bdist
                 ${VENV}/bin/python ${VENV}/bin/pip install -e .
                '''
-        }
 
-        // After all of the dependencies are installed, you can start to run your tests.
-        stage ("Run Unit/Integration Tests") {
+
+            // After all of the dependencies are installed, you can start to run your tests.
+            // Run Unit/Integration Tests
             def testsError = null
             try {
                 sh '''
@@ -87,10 +81,8 @@ node("linux") {
                     throw testsError
                 }
             }
-        }
 
-
-        stage("Benchmark") {
+            // Benchmark
             try {
                 sh '''
                     ${VENV}/bin/python -m anonlink.cli benchmark
