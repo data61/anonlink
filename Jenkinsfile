@@ -93,7 +93,6 @@ parallel (
                     try {
                         sh '''
                             ${VENV}/bin/python -m anonlink.cli benchmark
-                            deactivate
                            '''
                     }
                     catch(err) {
@@ -189,7 +188,6 @@ parallel (
                     try {
                         sh '''
                             ${VENV}/bin/python -m anonlink.cli benchmark
-                            deactivate
                            '''
                     }
                     catch(err) {
