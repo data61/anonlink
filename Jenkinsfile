@@ -20,9 +20,8 @@ node {
 
     stage("Install Python Virtual Enviroment") {
         sh '''
-        rm -fr venv
         rm -fr build
-        python3.5 -m venv --clear env
+        python3.5 -m venv --clear ${env.WORKSPACE}/env
         pip install --upgrade pip coverage setuptools
         '''
     }
