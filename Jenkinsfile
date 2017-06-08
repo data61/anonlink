@@ -16,7 +16,7 @@ node {
     env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
 
 
-    withEnv(['VENV={$workspace}/env']) {
+    withEnv(['VENV=${workspace}/env']) {
         // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
         stage (name : 'Cleanup') {
