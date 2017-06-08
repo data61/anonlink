@@ -5,14 +5,14 @@ void setBuildStatus(String message, String state) {
   ]);
 }
 
+def isMaster = env.BRANCH_NAME == 'master'
+def isDevelop = env.BRANCH_NAME == 'develop'
+
 node {
     // It's often recommended to run a Python project from a virtual environment.
     // This way you can manage all of your dependencies without affecting the rest of your system.
 
-    workspace = pwd()
-    env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"  // for python projects
-    def isMaster = env.BRANCH_NAME == 'master'
-    def isDevelop = env.BRANCH_NAME == 'develop'
+    env.PATH = "${env.WORKSPACE}/env/bin:/usr/bin:${env.PATH}"
 
 
     stage("Install Python Virtual Enviroment") {
@@ -20,7 +20,7 @@ node {
         rm -fr venv
         rm -fr build
         python3.5 -m venv --clear env
-        ${workspace}/env/bin/pip install --upgrade pip coverage setuptools
+        pip install --upgrade pip coverage setuptools
         '''
     }
 
