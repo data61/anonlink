@@ -41,33 +41,20 @@ node {
     stage ("Install Dependencies") {
         try {
             sh '''
+                which pip
                 pip install -r requirements.txt
                '''
            } catch (err) {
-            sh 'echo "failed to install 1"'
-           }
-
-       try {
-            sh '''
-                ${env.WORKSPACE}/env/bin/pip install -r requirements.txt
-               '''
-           } catch (err) {
-            sh 'echo "failed to install 2"'
-           }
-       try {
-            sh '''
-                ./env/bin/pip install -r requirements.txt
-               '''
-           } catch (err) {
-            sh 'echo "failed to install 3"'
+            sh 'echo "failed to install requirements"'
            }
     }
 
     // Build the extension
     stage ("Compile Library") {
         sh '''
-            ${env.WORKSPACE}/env/bin/python setup.py bdist
-            ${workspace}/env/bin/pip install -e .
+            which python
+            python setup.py bdist
+            pip install -e .
            '''
     }
 
@@ -76,7 +63,7 @@ node {
         def testsError = null
         try {
             sh '''
-                ${workspace}/env/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+                nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
                 
                '''
         }
@@ -86,7 +73,7 @@ node {
         }
         finally {
             sh '''
-            ${workspace}/env/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+            coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
             '''
 
             junit 'nosetests.xml'
@@ -101,7 +88,6 @@ node {
     stage("Benchmark") {
         try {
             sh '''
-                source ${workspace}/env/bin/activate
                 python -m anonlink.cli benchmark
                 deactivate
                '''
