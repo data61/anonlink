@@ -29,7 +29,7 @@ node {
             echo "venv directory is ${VENV}"
 
             python3.5 -m venv --clear ${VENV}
-            pip install --upgrade pip coverage setuptools
+            python3.5 ${VENV}/pip install --upgrade pip coverage setuptools
             '''
         }
 
@@ -47,8 +47,7 @@ node {
         stage ("Install Dependencies") {
             try {
                 sh '''
-                    which pip
-                    pip install -r requirements.txt
+                    python3.5 ${VENV}/pip install -r requirements.txt
                    '''
                } catch (err) {
                 sh 'echo "failed to install requirements"'
@@ -59,8 +58,8 @@ node {
         stage ("Compile Library") {
             sh '''
                 which python
-                python setup.py bdist
-                pip install -e .
+                python3.5 setup.py bdist
+                python3.5 ${VENV}/pip install -e .
                '''
         }
 
@@ -69,7 +68,7 @@ node {
             def testsError = null
             try {
                 sh '''
-                    nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
+                    python3.5 ${VENV}/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
 
                    '''
             }
@@ -79,7 +78,7 @@ node {
             }
             finally {
                 sh '''
-                coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                python3.5 ${VENV}/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
                 '''
 
                 junit 'nosetests.xml'
