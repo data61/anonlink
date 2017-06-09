@@ -60,6 +60,9 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 
     count_both += builtin_popcnt_unrolled_errata_manual(comp1, nuint64);
     count_both += builtin_popcnt_unrolled_errata_manual(comp2, nuint64);
+    if(count_both == 0) {
+        return 0.0;
+    }
 
     uint64_t* combined = new uint64_t[nuint64];
     for (int i=0 ; i < nuint64; i++ ) {
