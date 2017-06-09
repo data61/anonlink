@@ -82,7 +82,14 @@ def dicecoeff_pure_python(e1, e2):
     :param e1,e2: bitset arrays of same length
     :return: real 0-1 similarity measure
     """
-    return 2*(e1 & e2).count()/float(e1.count() + e2.count())
+    count1 = e1.count()
+    count2 = e2.count()
+    combined_count = count1 + count2
+    overlap_count = (e1 & e2).count()
+    if combined_count == 0:
+        return 0.0
+    else:
+        return 2.0 * overlap_count / combined_count
 
 
 def dicecoeff(e1, e2):
@@ -94,7 +101,10 @@ def dicecoeff(e1, e2):
     e1array = ffi.new("char[]", e1.tobytes())
     e2array = ffi.new("char[]", e2.tobytes())
 
-    return lib.dice_coeff_1024(e1array, e2array)
+    if len(e1) == 1024 and len(e2) == 1024:
+        return lib.dice_coeff_1024(e1array, e2array)
+    else:
+        return dicecoeff_pure_python(e1, e2)
 
 
 def dicecoeff_precount(e1, e2, count):
@@ -106,6 +116,8 @@ def dicecoeff_precount(e1, e2, count):
     :param count: float bitcount1 + bitcount2
     :return: real 0-1 similarity measure
     """
+    if count == 0:
+        return 0
     return 2*(e1 & e2).count()/count
 
 
