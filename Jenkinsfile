@@ -10,7 +10,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 def configs = [
     [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
-    [label: 'GPU 1', pythons: ['python3.5', 'pypy3'], compilers: ['clang', 'gcc']]
+    [label: 'GPU 1', pythons: ['python3.5', 'pypy3'], compilers: ['clang', 'gcc']],
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
@@ -43,7 +43,7 @@ def build(python_version, compiler, label) {
                     printenv
 
                     rm -fr build
-                    python3.5 -m venv --clear ${VENV}
+                    python3.5 -m venv -p ${python_version} --clear ${VENV}
                     ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
