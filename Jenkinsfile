@@ -8,193 +8,110 @@ void setBuildStatus(String message, String state) {
 def isMaster = env.BRANCH_NAME == 'master'
 def isDevelop = env.BRANCH_NAME == 'develop'
 
-parallel (
-    'linux': {
-        node("linux") {
+def configs = [
+    [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
+    [label: 'GPU 1', pythons: ['python3.5', 'pypy3'], compilers: ['clang', 'gcc']]
+    [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
+]
 
-            def workspace = pwd();
-            echo "workspace directory is ${workspace}"
-            env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
+def build(python_version, compiler, label) {
+    try {
+        def workspace = pwd();
+        echo "${label}"
+        echo "workspace directory is ${workspace}"
+        env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
 
-            withEnv(["VENV=${workspace}/env"]) {
-                // ${workspace} contains an absolute path to job workspace (not available within a stage)
+        withEnv(["VENV=${workspace}/env"]) {
+        // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
-                stage (name : 'Cleanup') {
-                    sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-                }
 
-                // The stage below is attempting to get the latest version of our application code.
-                // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
-                // pipeline project then you can replace this with the regular 'git url:' pipeline command.
-                // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-                stage ("Get Latest Code") {
-                    checkout scm
-                }
+            sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
 
-                stage("Install Python Virtual Enviroment") {
-                    sh '''
+            // The stage below is attempting to get the latest version of our application code.
+            // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
+            // pipeline project then you can replace this with the regular 'git url:' pipeline command.
+            // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
+            checkout scm
+
+
+            def testsError = null
+            try {
+                sh """#!/usr/bin/env bash
+
+                    # Jenkins logs in as a non-interactive shell, so we don't even have /usr/local/bin in PATH
+                    export PATH="/usr/local/bin:\${PATH}"
+                    printenv
+
                     rm -fr build
-                    echo "Installing venv in ${VENV}"
                     python3.5 -m venv --clear ${VENV}
                     ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
-                    '''
-                }
 
-                // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
-                // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
-                stage ("Install Dependencies") {
-                    try {
-                        sh '''
-                            echo "venv directory is ${VENV}"
+                    ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
 
-                            ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
-                           '''
-                       } catch (err) {
-                        sh 'echo "failed to install requirements"'
-                       }
-                }
+                    ${VENV}/bin/python setup.py bdist
+                    ${VENV}/bin/python ${VENV}/bin/pip install -e .
+                    ${VENV}/bin/python ${VENV}/bin/nosetests \
+                        --ignore-files="tests/test_cli.py" \
+                        --with-xunit --with-coverage --cover-inclusive \
+                        --cover-package=anonlink
+                   """
+            }
+            catch(err) {
+                testsError = err
+                currentBuild.result = 'FAILURE'
+            }
+            finally {
+                sh '''
+                ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                '''
 
-                // Build the extension
-                stage ("Compile Library") {
-                    sh '''
-                        ${VENV}/bin/python setup.py bdist
-                        ${VENV}/bin/python ${VENV}/bin/pip install -e .
-                       '''
-                }
+                junit 'nosetests.xml'
 
-                // After all of the dependencies are installed, you can start to run your tests.
-                stage ("Run Unit/Integration Tests") {
-                    def testsError = null
-                    try {
-                        sh '''
-                            ${VENV}/bin/python ${VENV}/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
-                           '''
-                    }
-                    catch(err) {
-                        testsError = err
-                        currentBuild.result = 'FAILURE'
-                    }
-                    finally {
-                        sh '''
-                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-                        '''
-
-                        junit 'nosetests.xml'
-
-                        if (testsError) {
-                            throw testsError
-                        }
-                    }
-                }
-
-
-                stage("Benchmark") {
-                    try {
-                        sh '''
-                            ${VENV}/bin/python -m anonlink.cli benchmark
-                           '''
-                    }
-                    catch(err) {
-                        testsError = err
-                        currentBuild.result = 'FAILURE'
-                    }
+                if (testsError) {
+                    throw testsError
                 }
             }
-        }
-    },
-    "osx": {
 
-        node("McNode") {
-
-            def workspace = pwd();
-            echo "workspace directory is ${workspace}"
-            env.PATH = "${workspace}/env/bin:/usr/bin:${env.PATH}"
-
-            withEnv(["VENV=${workspace}/env"]) {
-                // ${workspace} contains an absolute path to job workspace (not available within a stage)
-
-                stage (name : 'Cleanup') {
-                    sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-                }
-
-                // The stage below is attempting to get the latest version of our application code.
-                // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
-                // pipeline project then you can replace this with the regular 'git url:' pipeline command.
-                // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-                stage ("Get Latest Code") {
-                    checkout scm
-                }
-
-                stage("Install Python Virtual Enviroment") {
-                    sh '''
-                    rm -fr build
-                    echo "Installing venv in ${VENV}"
-                    python3 -m venv --clear ${VENV}
-                    ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
-                    '''
-                }
-
-                // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
-                // In this stage, you should first activate the virtual environment and then run through a pip install of the requirements file.
-                stage ("Install Dependencies") {
-                    try {
-                        sh '''
-                            echo "venv directory is ${VENV}"
-
-                            ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
-                           '''
-                       } catch (err) {
-                        sh 'echo "failed to install requirements"'
-                       }
-                }
-
-                // Build the extension
-                stage ("Compile Library") {
-                    sh '''
-                        ${VENV}/bin/python setup.py bdist
-                        ${VENV}/bin/python ${VENV}/bin/pip install -e .
-                       '''
-                }
-
-                // After all of the dependencies are installed, you can start to run your tests.
-                stage ("Run Unit/Integration Tests") {
-                    def testsError = null
-                    try {
-                        sh '''
-                            ${VENV}/bin/python ${VENV}/bin/nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink
-                           '''
-                    }
-                    catch(err) {
-                        testsError = err
-                        currentBuild.result = 'FAILURE'
-                    }
-                    finally {
-                        sh '''
-                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-                        '''
-
-                        junit 'nosetests.xml'
-
-                        if (testsError) {
-                            throw testsError
-                        }
-                    }
-                }
-
-
-                stage("Benchmark") {
-                    try {
-                        sh '''
-                            ${VENV}/bin/python -m anonlink.cli benchmark
-                           '''
-                    }
-                    catch(err) {
-                        testsError = err
-                        currentBuild.result = 'FAILURE'
-                    }
-                }
+            try {
+                sh '''
+                    ${VENV}/bin/python -m anonlink.cli benchmark
+                   '''
+            }
+            catch(err) {
+                testsError = err
+                currentBuild.result = 'FAILURE'
             }
         }
 
+    } finally {
+        deleteDir()
     }
-)
+}
+
+
+def builders = [:]
+for (config in configs) {
+    def label = config["label"]
+    def pythons = config["pythons"]
+    def compilers = config["compilers"]
+
+    for (_py_version in pythons) {
+        for (_compiler in compilers) {
+
+            def py_version = _py_version
+            def compiler = _compiler
+
+            def combinedName = "${label}-${python}-${compiler}"
+
+            builders[combinedName] = {
+                node(label) {
+                    stage(combinedName) {
+                        build(python_version, compiler, label)
+                    }
+                }
+            }
+        }
+    }
+}
+
+parallel builders
