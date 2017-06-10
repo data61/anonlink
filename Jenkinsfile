@@ -43,7 +43,7 @@ def build(python_version, compiler, label) {
                     printenv
 
                     rm -fr build
-                    python3.5 -m venv -p ${python_version} --clear ${VENV}
+                    ${python_version} -m venv --clear ${VENV}
                     ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
