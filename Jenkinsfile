@@ -52,7 +52,6 @@ def build(python_version, compiler, label) {
                     CC=${compiler} ${VENV}/bin/python setup.py bdist
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
                     ${VENV}/bin/python ${VENV}/bin/nosetests \
-                        --ignore-files=".*test_cli.py" \
                         --with-xunit --with-coverage --cover-inclusive \
                         --cover-package=anonlink
                    """
