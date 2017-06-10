@@ -78,6 +78,8 @@ class CLITestHelper(unittest.TestCase):
         return json.loads(std_out)
 
 
+@unittest.skipUnless("INCLUDE_CLI" in os.environ,
+                     "Set envvar INCLUDE_CLI to run. Disabled for jenkins")
 class BasicCLITests(unittest.TestCase):
 
     def test_list_commands(self):
@@ -121,6 +123,8 @@ class BasicCLITests(unittest.TestCase):
         assert 'Comparisons per second' in result.output
 
 
+@unittest.skipUnless("INCLUDE_CLI" in os.environ,
+                     "Set envvar INCLUDE_CLI to run. Disabled for jenkins")
 class TestHashCommand(unittest.TestCase):
 
     def setUp(self):

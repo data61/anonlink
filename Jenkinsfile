@@ -10,7 +10,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 def configs = [
     [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
-    [label: 'GPU 1', pythons: ['python3.5', 'pypy3'], compilers: ['clang', 'gcc']],
+    [label: 'GPU 1', pythons: ['python3.5'], compilers: ['clang', 'gcc']],
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
@@ -49,7 +49,7 @@ def build(python_version, compiler, label) {
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
 
-                    CC=${compiler} ${VENV}/bin/python setup.py bdist
+                    CC=${compiler} ${VENV}/bin/python setup.py bdist_wheel
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
                     ${VENV}/bin/python ${VENV}/bin/nosetests \
                         --with-xunit --with-coverage --cover-inclusive \
