@@ -37,6 +37,7 @@ def build(python_version, compiler, label) {
             def testsError = null
             try {
                 sh """#!/usr/bin/env bash
+                    set -xe
 
                     # Jenkins logs in as a non-interactive shell, so we don't even have /usr/local/bin in PATH
                     export PATH="/usr/local/bin:\${PATH}"
@@ -44,14 +45,14 @@ def build(python_version, compiler, label) {
 
                     rm -fr build
                     ${python_version} -m venv --clear ${VENV}
-                    ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools
+                    ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools wheel
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
 
-                    ${VENV}/bin/python setup.py bdist
+                    CC=${compiler} ${VENV}/bin/python setup.py bdist
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
                     ${VENV}/bin/python ${VENV}/bin/nosetests \
-                        --ignore-files="tests/test_cli.py" \
+                        --ignore-files=".*test_cli.py" \
                         --with-xunit --with-coverage --cover-inclusive \
                         --cover-package=anonlink
                    """
