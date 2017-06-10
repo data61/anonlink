@@ -101,12 +101,12 @@ for (config in configs) {
             def py_version = _py_version
             def compiler = _compiler
 
-            def combinedName = "${label}-${python}-${compiler}"
+            def combinedName = "${label}-${py_version}-${compiler}"
 
             builders[combinedName] = {
                 node(label) {
                     stage(combinedName) {
-                        build(python_version, compiler, label)
+                        build(py_version, compiler, label)
                     }
                 }
             }
