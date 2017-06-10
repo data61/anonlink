@@ -35,6 +35,9 @@ class TestBloomMatcher(unittest.TestCase):
     def test_dice_3(self):
         self.assertEqual(bm.dicecoeff_pure_python(bitarray('1000001'), bitarray('1111011')), 0.5)
 
+    def test_dice_4(self):
+        self.assertEqual(bm.dicecoeff_pure_python(bitarray('00000000'), bitarray('00000000')), 0.0)
+
     def test_dice_precount_1(self):
         self.assertEqual(bm.dicecoeff_precount(bitarray('1000001'), bitarray('1111011'), 8.0), 0.5)
 
@@ -68,6 +71,10 @@ class TestBloomMatcher(unittest.TestCase):
     def test_bigram_duplicate(self):
         self.assertEqual(bm.bigramlist("abab"), [' a', 'ab', 'ba', 'ab', 'b '])
 
+    def test_dice_small(self):
+        ba = self.generate_bitarray(64)
+        self.assertEqual(bm.dicecoeff(ba, ba), 1.0)
+
     def test_dice_1_c(self):
         ba = self.generate_bitarray(1024)
         self.assertEqual(bm.dicecoeff(ba, ba), 1.0)
@@ -85,6 +92,13 @@ class TestBloomMatcher(unittest.TestCase):
 
         self.assertGreaterEqual(result, 0.0)
         self.assertLessEqual(result, 1.0)
+
+    def test_dice_4_c(self):
+        ba = bitarray('0' * 1024)
+        bb = bitarray('0' * 1024)
+        result = bm.dicecoeff(ba, bb)
+
+        self.assertEqual(result, 0.0)
 
 
 if __name__ == '__main__':

@@ -25,12 +25,18 @@ static uint64_t POPCNT64(uint64_t x) {
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
 uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
   assert(len % 4 == 0);
-  uint64_t cnt[4];
-  for (int i = 0; i < 4; ++i) {
-    cnt[i] = 0;
-  }
+  uint64_t c0, c1, c2, c3;
+  c0 = c1 = c2 = c3 = 0;
 
   for (int i = 0; i < len; i+=4) {
+    // NB: Dan Luu's original assembly is incorrect because it
+    // clobbers registers marked as "input only" (see warning at
+    // https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
+    // -- this mistake does not materialise with GCC (4.9), but it
+    // does with Clang (3.6 and 3.8)).  We fix the mistake by
+    // explicitly loading the contents of buf into registers and using
+    // same registers for the intermediate popcnts.
+    uint64_t b0 = buf[i], b1 = buf[i + 1], b2 = buf[i + 2], b3 = buf[i + 3];
     __asm__(
         "popcnt %4, %4  \n\t"
         "add %4, %0     \n\t"
@@ -39,11 +45,12 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
         "popcnt %6, %6  \n\t"
         "add %6, %2     \n\t"
         "popcnt %7, %7  \n\t"
-        "add %7, %3     \n\t" // +r means input/output, r means intput
-        : "+r" (cnt[0]), "+r" (cnt[1]), "+r" (cnt[2]), "+r" (cnt[3])
-        : "r"  (buf[i]), "r"  (buf[i+1]), "r"  (buf[i+2]), "r"  (buf[i+3]));
+        "add %7, %3     \n\t"
+        // +r means input/output
+        : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
+          "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
   }
-  return cnt[0] + cnt[1] + cnt[2] + cnt[3];
+  return c0 + c1 + c2 + c3;
 }
 
 /**
@@ -60,6 +67,9 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 
     count_both += builtin_popcnt_unrolled_errata_manual(comp1, nuint64);
     count_both += builtin_popcnt_unrolled_errata_manual(comp2, nuint64);
+    if(count_both == 0) {
+        return 0.0;
+    }
 
     uint64_t* combined = new uint64_t[nuint64];
     for (int i=0 ; i < nuint64; i++ ) {
