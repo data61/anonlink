@@ -74,6 +74,9 @@ def build(python_version, compiler, label) {
 
             try {
                 sh '''
+                    export LC_ALL=C.UTF-8
+                    export LANG=C.UTF-8
+
                     ${VENV}/bin/python -m anonlink.cli benchmark
                    '''
             }
