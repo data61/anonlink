@@ -72,22 +72,7 @@ def build(python_version, compiler, label) {
                 }
             }
 
-            // The shells are all out of whack so skip benchmarking except for on the gpu machines
-            if (label.contains("GPU")){
 
-                try {
-                    sh '''
-                        export LC_ALL=C.UTF-8
-                        export LANG=C.UTF-8
-
-                        ${VENV}/bin/python -m anonlink.cli benchmark
-                       '''
-                }
-                catch(err) {
-                    testsError = err
-                    currentBuild.result = 'FAILURE'
-                }
-            }
         }
 
     } finally {
