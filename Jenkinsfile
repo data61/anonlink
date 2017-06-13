@@ -70,13 +70,14 @@ def build(python_version, compiler, label, release=false) {
 
 
                 if (!release) {
-                    sh 'ls'
                     junit 'nosetests.xml'
-
+                } else {
+                    // Code coverage only needs to be done once
                     sh '''#!/usr/bin/env bash
-                    set -xe
+                        set -xe
 
-                    ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                        ls
                     '''
 
                     // publish html of coverage
@@ -88,6 +89,7 @@ def build(python_version, compiler, label, release=false) {
                       reportFiles: 'index.html',
                       reportName: "Coverage Report"
                     ])
+
 
                 }
 
