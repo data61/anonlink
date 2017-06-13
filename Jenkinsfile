@@ -56,7 +56,7 @@ def build(python_version, compiler, label) {
 
                    """
 
-                   //archiveArtifacts artifacts: "dist/anonlink-*.whl"
+                   archiveArtifacts artifacts: "dist/anonlink-*.whl"
             }
             catch(err) {
                 testsError = err
@@ -117,6 +117,5 @@ node {
 parallel builders
 
 node {
-    //checkout scm
     setBuildStatus("Tests Passed", "SUCCESS");
 }
