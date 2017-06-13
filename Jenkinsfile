@@ -71,7 +71,9 @@ def build(python_version, compiler, label, release=false) {
                 ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
                 '''
 
-                junit 'nosetests.xml'
+                if (!release) {
+                    junit 'nosetests.xml'
+                }
 
                 if (testsError) {
                     throw testsError
@@ -120,5 +122,5 @@ parallel builders
 node('linux') {
     setBuildStatus("Tests Passed", "SUCCESS");
 
-    build('python3.5', 'clang', 'GPU 1', true)
+    build('python3.5', 'gcc', 'GPU 1', true)
 }
