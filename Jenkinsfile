@@ -55,8 +55,6 @@ def build(python_version, compiler, label) {
                         --cover-package=anonlink
 
                    """
-
-                   archiveArtifacts artifacts: "dist/anonlink-*.whl"
             }
             catch(err) {
                 testsError = err
@@ -73,6 +71,11 @@ def build(python_version, compiler, label) {
                 if (testsError) {
                     throw testsError
                 }
+            }
+
+            if(label == 'linux') {
+                // This will be the official release
+                archiveArtifacts artifacts: "dist/anonlink-*.whl"
             }
 
 
