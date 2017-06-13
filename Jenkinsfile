@@ -11,7 +11,6 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 def configs = [
     [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
     [label: 'GPU 1', pythons: ['python3.5'], compilers: ['clang', 'gcc']],
-    [label: 'GPU 1', pythons: ['pypy3'], compilers: ['gcc']],
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
@@ -55,11 +54,14 @@ def build(python_version, compiler, label) {
                     ${VENV}/bin/python ${VENV}/bin/nosetests \
                         --with-xunit --with-coverage --cover-inclusive \
                         --cover-package=anonlink
+
+                    archiveArtifacts artifacts: "dist/*.whl"
                    """
             }
             catch(err) {
                 testsError = err
                 currentBuild.result = 'FAILURE'
+                setBuildStatus("Build failed", "FAILURE");
             }
             finally {
                 sh '''
@@ -107,4 +109,6 @@ for (config in configs) {
     }
 }
 
+setBuildStatus("Build in progress", "PENDING");
 parallel builders
+setBuildStatus("Tests Passed", "SUCCESS");
