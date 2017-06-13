@@ -55,7 +55,7 @@ def build(python_version, compiler, label) {
                         --with-xunit --with-coverage --cover-inclusive \
                         --cover-package=anonlink
 
-                    archiveArtifacts artifacts: "dist/*.whl"
+                    archiveArtifacts artifacts: "dist/anonlink-*.whl"
                    """
             }
             catch(err) {
@@ -111,4 +111,7 @@ for (config in configs) {
 
 setBuildStatus("Build in progress", "PENDING");
 parallel builders
-setBuildStatus("Tests Passed", "SUCCESS");
+
+node {
+    setBuildStatus("Tests Passed", "SUCCESS");
+}
