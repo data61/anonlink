@@ -14,7 +14,7 @@ def configs = [
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
-def build(python_version, compiler, label) {
+def build(python_version, compiler, label, release=false) {
     try {
         def workspace = pwd();
         echo "${label}"
@@ -56,7 +56,7 @@ def build(python_version, compiler, label) {
 
                    """
 
-                if(label == 'linux') {
+                if(release) {
                     // This will be the official release
                     archiveArtifacts artifacts: "dist/anonlink-*.whl"
                 }
@@ -102,7 +102,7 @@ for (config in configs) {
             builders[combinedName] = {
                 node(label) {
                     stage(combinedName) {
-                        build(py_version, compiler, label)
+                        build(py_version, compiler, label, false)
                     }
                 }
             }
@@ -117,6 +117,8 @@ node {
 
 parallel builders
 
-node {
+node('linux') {
     setBuildStatus("Tests Passed", "SUCCESS");
+
+    build('python3.5', 'clang', 'GPU 1', true)
 }
