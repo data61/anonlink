@@ -58,6 +58,7 @@ def build(python_version, compiler, label, release=false) {
                 if(release) {
                     // This will be the official release
                     archiveArtifacts artifacts: "dist/anonlink-*.whl"
+
                 }
             }
             catch(err) {
@@ -71,9 +72,19 @@ def build(python_version, compiler, label, release=false) {
                 '''
 
                 if (!release) {
-                    jacoco(execPattern: '**/*.exec')
-                    //step([$class: 'JacocoPublisher', ...])
+                    sh 'ls'
                     junit 'nosetests.xml'
+
+                    // publish html of coverage
+                    publishHTML (target: [
+                      allowMissing: false,
+                      alwaysLinkToLastBuild: false,
+                      keepAll: true,
+                      reportDir: 'htmlcov',
+                      reportFiles: 'index.html',
+                      reportName: "Coverage Report"
+                    ])
+
                 }
 
                 if (testsError) {
