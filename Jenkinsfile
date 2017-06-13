@@ -110,7 +110,9 @@ for (config in configs) {
     }
 }
 
-setBuildStatus("Build in progress", "PENDING");
+node {
+    setBuildStatus("Build in progress", "PENDING");
+}
 parallel builders
 
 //node {
