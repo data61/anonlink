@@ -9,7 +9,6 @@ def isMaster = env.BRANCH_NAME == 'master'
 def isDevelop = env.BRANCH_NAME == 'develop'
 
 def configs = [
-    [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
@@ -120,7 +119,9 @@ node {
 parallel builders
 
 node('linux') {
-    setBuildStatus("Tests Passed", "SUCCESS");
 
-    build('python3.5', 'gcc', 'GPU 1', true)
+    stage('Release') {
+        build('python3.5', 'gcc', 'GPU 1', true)
+        setBuildStatus("Tests Passed", "SUCCESS");
+    }
 }
