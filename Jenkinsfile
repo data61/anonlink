@@ -79,17 +79,7 @@ def build(python_version, compiler, label, release=false) {
                         ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
                         ls
                     '''
-
-                    // publish html of coverage
-                    publishHTML (target: [
-                      allowMissing: false,
-                      alwaysLinkToLastBuild: false,
-                      keepAll: true,
-                      reportDir: 'htmlcov',
-                      reportFiles: 'index.html',
-                      reportName: "Coverage Report"
-                    ])
-
+                    cobertura
 
                 }
 
