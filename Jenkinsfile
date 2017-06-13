@@ -79,7 +79,8 @@ def build(python_version, compiler, label, release=false) {
                         ${VENV}/bin/python ${VENV}/bin/coverage xml --omit="*/cpp_code/*" --omit="*build_matcher.py*"
 
                     '''
-                    cobertura
+
+                    //cobertura
 
                 }
 
