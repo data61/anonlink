@@ -10,7 +10,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 def configs = [
     [label: 'linux', pythons: ['python3.5'], compilers: ['gcc']],
-    [label: 'GPU 1', pythons: ['python3.5'], compilers: ['clang', 'gcc']],
+    [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
     [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
