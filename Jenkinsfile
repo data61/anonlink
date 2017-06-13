@@ -67,13 +67,17 @@ def build(python_version, compiler, label, release=false) {
                 setBuildStatus("Build failed", "FAILURE");
             }
             finally {
-                sh '''
-                ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-                '''
+
 
                 if (!release) {
                     sh 'ls'
                     junit 'nosetests.xml'
+
+                    sh '''#!/usr/bin/env bash
+                    set -xe
+
+                    ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                    '''
 
                     // publish html of coverage
                     publishHTML (target: [
