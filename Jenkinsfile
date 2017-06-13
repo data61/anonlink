@@ -76,8 +76,8 @@ def build(python_version, compiler, label, release=false) {
                     sh '''#!/usr/bin/env bash
                         set -xe
 
-                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-                        ls
+                        ${VENV}/bin/python ${VENV}/bin/coverage xml --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+
                     '''
                     cobertura
 
