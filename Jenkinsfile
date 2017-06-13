@@ -33,9 +33,6 @@ def build(python_version, compiler, label) {
             // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
             checkout scm
 
-            setBuildStatus("Build in progress", "PENDING");
-
-
             def testsError = null
             try {
                 sh """#!/usr/bin/env bash
@@ -112,9 +109,14 @@ for (config in configs) {
     }
 }
 
+node {
+    checkout scm
+    setBuildStatus("Build in progress", "PENDING");
+}
 
 parallel builders
 
-//node {
-//    setBuildStatus("Tests Passed", "SUCCESS");
-//}
+node {
+    //checkout scm
+    setBuildStatus("Tests Passed", "SUCCESS");
+}
