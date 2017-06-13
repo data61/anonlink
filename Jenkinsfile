@@ -112,6 +112,6 @@ for (config in configs) {
 setBuildStatus("Build in progress", "PENDING");
 parallel builders
 
-node {
-    setBuildStatus("Tests Passed", "SUCCESS");
-}
+//node {
+//    setBuildStatus("Tests Passed", "SUCCESS");
+//}
