@@ -213,5 +213,54 @@ extern "C"
 
         return res;
     }
+
+     class Tuple {
+
+        public:
+            int index_i;
+            int index_j;
+            double score;
+
+        // Constructor with default
+        Node( int n_index = -1, int m_index = -1, double n_score = -1.0 )
+            :index_i(n_index), index_j(m_index), score(n_score)
+        {
+        }
+    };
+
+    /**
+     * Calculate scores for two arrays of bloomfilters.
+     *
+     * Returns a sparse matrix as a map of scores between f_i and f_j
+     * if the similarity was above the passed threshold.
+
+     For now we allocate memory in C++ and return a pointer to Python
+     If not handled correctly this is potentially a memory leak!
+     */
+    int match_many_against_many_dice_1024(
+        const char *filters1,
+        const char *filters2,
+        const uint32_t *counts_filters1,
+        const uint32_t *counts_filters2,
+        double threshold,
+        //double *scores // TODO return results
+        ) {
+
+        std::cerr << "Matches above " << threshold << " for " << counts_filters1 << " x " + counts_filters2 + " entities" << "\n";
+
+        const uint64_t *comp1 = (const uint64_t *) f1;
+        const uint64_t *comp2 = (const uint64_t *) f2;
+
+        //(i, j, score)
+        std::vector<Tuple> sparse_scores;
+
+        for (int i = 0; i < counts_filters1; i++) {
+            // Extract the one
+
+            match_one_against_many_dice_1024_c(filters1[i], filters2, counts_filters2, threshold);
+
+        }
+    }
+
 }
 
