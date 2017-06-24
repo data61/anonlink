@@ -10,6 +10,7 @@
 #include <bitset>
 #include <iostream>
 
+
 // From ChemFP library - MIT license
 static uint64_t POPCNT64(uint64_t x) {
     /* GNU GCC >= 4.2 supports the POPCNT instruction */
@@ -19,16 +20,20 @@ static uint64_t POPCNT64(uint64_t x) {
     return x;
 }
 
-
+#define WORDBYTES (sizeof(uint64_t))
+#define WORDBITS (WORDBYTES * 8)
+#define KEYBITS 1024
+#define KEYBYTES (KEYBITS / 8)
+#define KEYWORDS (KEYBYTES / WORDBYTES)
 
 // Source: http://danluu.com/assembly-intrinsics/
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
-uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
+uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
   assert(len % 4 == 0);
   uint64_t c0, c1, c2, c3;
   c0 = c1 = c2 = c3 = 0;
 
-  for (int i = 0; i < len; i+=4) {
+  for (int i = 0; i < KEYWORDS; i+=4) {
     // NB: Dan Luu's original assembly is incorrect because it
     // clobbers registers marked as "input only" (see warning at
     // https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
@@ -57,70 +62,55 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int len) {
  * Compute the Dice coefficient similarity measure of two bit patterns.
  */
 double dice_coeff_1024(const char *e1, const char *e2) {
-    int nbyte = 128; // 1024 bit key, 128 bytes
-    int nuint64 = int(nbyte / sizeof(uint64_t)); // assume l is divisible by 64
-
     const uint64_t *comp1 = (const uint64_t *) e1;
     const uint64_t *comp2 = (const uint64_t *) e2;
 
     uint32_t count_both = 0;
 
-    count_both += builtin_popcnt_unrolled_errata_manual(comp1, nuint64);
-    count_both += builtin_popcnt_unrolled_errata_manual(comp2, nuint64);
+    count_both += builtin_popcnt_unrolled_errata_manual(comp1);
+    count_both += builtin_popcnt_unrolled_errata_manual(comp2);
     if(count_both == 0) {
         return 0.0;
     }
 
-    uint64_t* combined = new uint64_t[nuint64];
-    for (int i=0 ; i < nuint64; i++ ) {
+    uint64_t combined[KEYWORDS];
+    for (int i=0 ; i < KEYWORDS; i++ ) {
         combined[i] = comp1[i] & comp2[i];
     }
 
-    uint32_t count_and = builtin_popcnt_unrolled_errata_manual(combined, nuint64);
+    uint32_t count_and = builtin_popcnt_unrolled_errata_manual(combined);
 
-    delete[] combined;
-
-    return 2 * count_and / (double) (count_both);
+    return 2 * count_and / (double)count_both;
 }
 
 
 
-// length in bits of key
 // n number of keys to compare against
-int match_one_against_many_dice(const char *one, const char *many, int n, int l, double &score) {
-    int nbyte = int(l / 8); // assume l is divisible by 8 - 1024 bit key, 128 bytes
-    int nuint64 = int(nbyte / sizeof(uint64_t)); // assume l is divisible by 64
-
-    //  std::cerr << nbyte << " " <<nuint64<<" "<<n<<" " <<l<<"\n";
-
+int match_one_against_many_dice(const char *one, const char *many, int n, double &score) {
     const uint64_t *comp1 = (const uint64_t *) one;
     const uint64_t *comp2 = (const uint64_t *) many;
 
     uint32_t count_one = 0;
-    for (int i = 0; i < nuint64; i++) {
+    for (int i = 0; i < KEYWORDS; i++) {
         count_one += POPCNT64(comp1[i]);
     }
-    //  std::cerr << "count_one: " << count_one << "\n";
-
 
     uint32_t *counts_many = new uint32_t[n];
     for (int j = 0; j < n; j++) {
         counts_many[j] = 0;
-        const uint64_t *sig = comp2 + j * nuint64;
-        for (int i = 0; i < nuint64; i++) {
+        const uint64_t *sig = comp2 + j * KEYWORDS;
+        for (int i = 0; i < KEYWORDS; i++) {
             counts_many[j] += POPCNT64(sig[i]);
         }
     }
 
-    //  std::cerr << "count_many: " <<counts_many[2] << "\n";
-    //  std::cerr << std::flush;
     double best_score = -1.0;
     int best_index = -1;
 
     for (int j = 0; j < n; j++) {
         int count_curr = 0;
-        const uint64_t *current = comp2 + j * nuint64;
-        for (int i = 0; i < nuint64; i++) {
+        const uint64_t *current = comp2 + j * KEYWORDS;
+        for (int i = 0; i < KEYWORDS; i++) {
             count_curr += POPCNT64(*(current + i) & *(comp1 + i));
         }
         double score = 2 * count_curr / (double) (count_one + counts_many[j]);
@@ -139,8 +129,8 @@ int match_one_against_many_dice(const char *one, const char *many, int n, int l,
 
 
 void print_filter(const uint64_t *filter) {
-    for (int i = 0; i < 16; i++) {
-        std::cout << std::bitset<64>(*(filter + i));
+    for (int i = 0; i < KEYWORDS; i++) {
+        std::cout << std::bitset<WORDBITS>(*(filter + i));
     }
 
     std::cout << std::endl;
@@ -158,52 +148,41 @@ uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
 extern "C"
 {
 
-    int match_one_against_many_dice_c(const char *one, const char *many, int n, int l, double *score) {
+    int match_one_against_many_dice_c(const char *one, const char *many, int n, double *score) {
         double sc = 0.0;
-        int res = match_one_against_many_dice(one, many, n, l, sc);
+        int res = match_one_against_many_dice(one, many, n, sc);
         *score = sc;
         return res;
     }
 
     int match_one_against_many_dice_1024_c(const char *one, const char *many, int n, double *score) {
 
-        //std::cerr << "Matching " << n << " entities" << "\n";
-
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
-        //std::cout << "f ";
-        //print_filter(comp1);
-
-        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
-
-        //std::cout << count_one << std::endl;
+        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
 
         uint32_t *counts_many = new uint32_t[n];
 
         for (int j = 0; j < n; j++) {
-            const uint64_t *sig = comp2 + j * 16;
-            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig, 16);
+            const uint64_t *sig = comp2 + j * KEYWORDS;
+            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig);
         }
 
         double best_score = -1.0;
         int best_index = -1;
-        uint64_t combined[16];
+        uint64_t combined[KEYWORDS];
 
         for (int j = 0; j < n; j++) {
-            const uint64_t *current = comp2 + j * 16;
+            const uint64_t *current = comp2 + j * KEYWORDS;
 
-            //std::cout << j << " "; //print_filter(comp2);
-
-            for (int i=0 ; i < 16; i++ ) {
+            for (int i=0 ; i < KEYWORDS; i++ ) {
                 combined[i] = current[i] & comp1[i];
             }
 
-            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
-
+            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
             double score = 2 * count_curr / (double) (count_one + counts_many[j]);
 
-            //std::cout << "shared popcnt: " << count_curr << " count_j: " << counts_many[j] << " Score: " << score <<  std::endl;
             if (score > best_score) {
                 best_score = score;
                 best_index = j;
@@ -212,9 +191,6 @@ extern "C"
         }
 
         delete[] counts_many;
-
-
-        //std::cerr << "Best score: " << best_score << " at index " << best_index << "\n";
 
         *score = best_score;
         return best_index;
@@ -245,8 +221,8 @@ extern "C"
     */
     void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
         for (int i = 0; i < n; i++) {
-            const uint64_t *sig = (uint64_t *) many + i * 16;
-            counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig, 16);
+            const uint64_t *sig = (uint64_t *) many + i * KEYWORDS;
+            counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
         }
     }
 
@@ -264,16 +240,14 @@ extern "C"
         int *indices,
         double *scores) {
 
-        //std::cerr << "Matching top " << k << " of " << n << " entities" << "\n";
-
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
-        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1, 16);
+        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
 
-        uint64_t combined[16];
+        uint64_t combined[KEYWORDS];
 
         double *all_scores = new double[n];
 
@@ -284,7 +258,7 @@ extern "C"
         uint32_t current_delta;
 
         for (int j = 0; j < n; j++) {
-            const uint64_t *current = comp2 + j * 16;
+            const uint64_t *current = comp2 + j * KEYWORDS;
 
             if(count_one > counts_many[j]){
                 current_delta = count_one - counts_many[j];
@@ -293,11 +267,11 @@ extern "C"
             }
 
             if(current_delta <= max_popcnt_delta){
-                for (int i=0 ; i < 16; i++ ) {
+                for (int i=0 ; i < KEYWORDS; i++ ) {
                     combined[i] = current[i] & comp1[i];
                 }
 
-                uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined, 16);
+                uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
 
                 double score = 2 * count_curr / (double) (count_one + counts_many[j]);
                 all_scores[j] = score;
