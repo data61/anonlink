@@ -11,15 +11,6 @@
 #include <iostream>
 
 
-// From ChemFP library - MIT license
-static uint64_t POPCNT64(uint64_t x) {
-    /* GNU GCC >= 4.2 supports the POPCNT instruction */
-#if !defined(__GNUC__) || (__GNUC__ >= 4 && __GNUC_MINOR__ >= 2)
-    __asm__ ("popcnt %1, %0" : "=r" (x) : "0" (x));
-#endif
-    return x;
-}
-
 #define WORDBYTES (sizeof(uint64_t))
 #define WORDBITS (WORDBYTES * 8)
 #define KEYBITS 1024
@@ -84,50 +75,7 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 }
 
 
-
 // n number of keys to compare against
-int match_one_against_many_dice(const char *one, const char *many, int n, double &score) {
-    const uint64_t *comp1 = (const uint64_t *) one;
-    const uint64_t *comp2 = (const uint64_t *) many;
-
-    uint32_t count_one = 0;
-    for (int i = 0; i < KEYWORDS; i++) {
-        count_one += POPCNT64(comp1[i]);
-    }
-
-    uint32_t *counts_many = new uint32_t[n];
-    for (int j = 0; j < n; j++) {
-        counts_many[j] = 0;
-        const uint64_t *sig = comp2 + j * KEYWORDS;
-        for (int i = 0; i < KEYWORDS; i++) {
-            counts_many[j] += POPCNT64(sig[i]);
-        }
-    }
-
-    double best_score = -1.0;
-    int best_index = -1;
-
-    for (int j = 0; j < n; j++) {
-        int count_curr = 0;
-        const uint64_t *current = comp2 + j * KEYWORDS;
-        for (int i = 0; i < KEYWORDS; i++) {
-            count_curr += POPCNT64(*(current + i) & *(comp1 + i));
-        }
-        double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-        if (score > best_score) {
-            best_score = score;
-            best_index = j;
-        }
-    }
-
-    delete[] counts_many;
-
-    score = best_score;
-    return best_index;
-
-}
-
-
 void print_filter(const uint64_t *filter) {
     for (int i = 0; i < KEYWORDS; i++) {
         std::cout << std::bitset<WORDBITS>(*(filter + i));
@@ -148,14 +96,7 @@ uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
 extern "C"
 {
 
-    int match_one_against_many_dice_c(const char *one, const char *many, int n, double *score) {
-        double sc = 0.0;
-        int res = match_one_against_many_dice(one, many, n, sc);
-        *score = sc;
-        return res;
-    }
-
-    int match_one_against_many_dice_1024_c(const char *one, const char *many, int n, double *score) {
+    int match_one_against_many_dice(const char *one, const char *many, int n, double *score) {
 
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
