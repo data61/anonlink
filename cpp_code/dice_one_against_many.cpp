@@ -1,13 +1,8 @@
-#include <immintrin.h>
-#include <x86intrin.h>
-
 #include <algorithm>
 #include <vector>
 #include <queue>
 #include <cstdint>
 #include <cstdlib>
-#include <cassert>
-#include <bitset>
 #include <iostream>
 
 
@@ -15,16 +10,17 @@
 #define WORDBITS (WORDBYTES * 8)
 #define KEYBITS 1024
 #define KEYBYTES (KEYBITS / 8)
+// KEYWORDS must be divisible by 4. It is currently equal to 16.
 #define KEYWORDS (KEYBYTES / WORDBYTES)
 
 // Source: http://danluu.com/assembly-intrinsics/
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
-uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
-  assert(len % 4 == 0);
+static inline uint32_t
+builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
   uint64_t c0, c1, c2, c3;
   c0 = c1 = c2 = c3 = 0;
 
-  for (int i = 0; i < KEYWORDS; i+=4) {
+  for (int i = 0; i < KEYWORDS; i += 4) {
     // NB: Dan Luu's original assembly is incorrect because it
     // clobbers registers marked as "input only" (see warning at
     // https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
@@ -52,7 +48,8 @@ uint32_t builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
 /**
  * Compute the Dice coefficient similarity measure of two bit patterns.
  */
-double dice_coeff_1024(const char *e1, const char *e2) {
+static double
+dice_coeff_1024(const char *e1, const char *e2) {
     const uint64_t *comp1 = (const uint64_t *) e1;
     const uint64_t *comp2 = (const uint64_t *) e2;
 
@@ -75,19 +72,40 @@ double dice_coeff_1024(const char *e1, const char *e2) {
 }
 
 
-// n number of keys to compare against
-void print_filter(const uint64_t *filter) {
-    for (int i = 0; i < KEYWORDS; i++) {
-        std::cout << std::bitset<WORDBITS>(*(filter + i));
-    }
+class Node {
 
-    std::cout << std::endl;
+public:
+    int index;
+    double score;
+
+    // Constructor with default
+    Node( int n_index = -1, double n_score = -1.0 )
+        :index(n_index), score( n_score )
+        {
+        }
+};
+
+struct score_cmp{
+    bool operator()(const Node& a, const Node& b) const{
+        return a.score > b.score;
+    }
+};
+
+
+/**
+ * Count lots of bits.
+ */
+static void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
+    for (int i = 0; i < n; i++) {
+        const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
+        counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
+    }
 }
 
 /**
  *
  */
-uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
+static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
 
     return 2 * popcnt_a * (1/threshold - 1);
 
@@ -95,78 +113,6 @@ uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
 
 extern "C"
 {
-
-    int match_one_against_many_dice(const char *one, const char *many, int n, double *score) {
-
-        const uint64_t *comp1 = (const uint64_t *) one;
-        const uint64_t *comp2 = (const uint64_t *) many;
-
-        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
-
-        uint32_t *counts_many = new uint32_t[n];
-
-        for (int j = 0; j < n; j++) {
-            const uint64_t *sig = comp2 + j * KEYWORDS;
-            counts_many[j] = builtin_popcnt_unrolled_errata_manual(sig);
-        }
-
-        double best_score = -1.0;
-        int best_index = -1;
-        uint64_t combined[KEYWORDS];
-
-        for (int j = 0; j < n; j++) {
-            const uint64_t *current = comp2 + j * KEYWORDS;
-
-            for (int i=0 ; i < KEYWORDS; i++ ) {
-                combined[i] = current[i] & comp1[i];
-            }
-
-            uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
-            double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-
-            if (score > best_score) {
-                best_score = score;
-                best_index = j;
-            }
-
-        }
-
-        delete[] counts_many;
-
-        *score = best_score;
-        return best_index;
-
-    }
-
-    class Node {
-
-        public:
-            int index;
-            double score;
-
-        // Constructor with default
-        Node( int n_index = -1, double n_score = -1.0 )
-            :index(n_index), score( n_score )
-        {
-        }
-    };
-
-    struct score_cmp{
-      bool operator()(const Node& a, const Node& b) const{
-        return a.score > b.score;
-      }
-    };
-
-    /**
-     * Count lots of bits.
-    */
-    void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
-        for (int i = 0; i < n; i++) {
-            const uint64_t *sig = (uint64_t *) many + i * KEYWORDS;
-            counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
-        }
-    }
-
     /**
      * Calculate up to the top k indices and scores.
      * Returns the number matched above a threshold.
@@ -217,7 +163,7 @@ extern "C"
                 double score = 2 * count_curr / (double) (count_one + counts_many[j]);
                 all_scores[j] = score;
             } else {
-                // Skipping because popcount difference to large
+                // Skipping because popcount difference too large
                 all_scores[j] = -1;
             }
         }
@@ -234,8 +180,7 @@ extern "C"
         delete[] all_scores;
 
         int i = 0;
-        while (!max_k_scores.empty())
-        {
+        while (!max_k_scores.empty()) {
 
            scores[i] = max_k_scores.top().score;
            indices[i] = max_k_scores.top().index;
@@ -246,4 +191,18 @@ extern "C"
         return i;
     }
 
+    int match_one_against_many_dice(const char *one, const char *many, int n, double *score) {
+
+        static const double threshold = 0.0;
+        static const int k = 1;
+        int idx_unused;
+        uint32_t *counts_many = new uint32_t[n];
+        popcount_1024_array(many, n, counts_many);
+        int res = match_one_against_many_dice_1024_k_top(
+            one, many, counts_many, n, k, threshold, &idx_unused, score);
+        delete[] counts_many;
+
+        return res;
+    }
 }
+
