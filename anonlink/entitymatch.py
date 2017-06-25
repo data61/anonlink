@@ -40,8 +40,8 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     match_one_against_many_dice_1024_k_top = lib.match_one_against_many_dice_1024_k_top
 
     # An array of the *one* filter
-    clist1 = [ffi.new("char[128]",
-                      bytes(f[0].tobytes())) for f in filters1]
+    clist1 = [ffi.new("char[128]", bytes(f[0].tobytes()))
+              for f in filters1]
 
     if sys.version_info < (3, 0):
         # Python 2 version
