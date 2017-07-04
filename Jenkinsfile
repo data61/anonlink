@@ -80,8 +80,6 @@ def build(python_version, compiler, label, release=false) {
 
                     '''
 
-                    //cobertura
-
                 }
 
                 if (testsError) {
@@ -102,9 +100,11 @@ for (config in configs) {
     def pythons = config["pythons"]
     def compilers = config["compilers"]
 
-    for (py_version in pythons) {
-        for (compiler in compilers) {
+    for (_py_version in pythons) {
+        for (_compiler in compilers) {
 
+            def py_version = _py_version
+            def compiler = _compiler
             def combinedName = "${label}-${py_version}-${compiler}"
 
             builders[combinedName] = {
