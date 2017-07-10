@@ -48,9 +48,9 @@ builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
   } while (0)
 
   LOOP_BODY(0);
-  LOOP_BODY(1);
-  LOOP_BODY(2);
-  LOOP_BODY(3);
+  LOOP_BODY(4);
+  LOOP_BODY(8);
+  LOOP_BODY(12);
 
   return c0 + c1 + c2 + c3;
 }
