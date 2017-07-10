@@ -15,33 +15,43 @@
 
 // Source: http://danluu.com/assembly-intrinsics/
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
+//
+// NB: Dan Luu's original assembly is incorrect because it
+// clobbers registers marked as "input only" (see warning at
+// https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
+// -- this mistake does not materialise with GCC (4.9), but it
+// does with Clang (3.6 and 3.8)).  We fix the mistake by
+// explicitly loading the contents of buf into registers and using
+// these same registers for the intermediate popcnts.
 static inline uint32_t
 builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
+  uint64_t b0, b1, b2, b3;
   uint64_t c0, c1, c2, c3;
   c0 = c1 = c2 = c3 = 0;
 
-  for (int i = 0; i < KEYWORDS; i += 4) {
-    // NB: Dan Luu's original assembly is incorrect because it
-    // clobbers registers marked as "input only" (see warning at
-    // https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
-    // -- this mistake does not materialise with GCC (4.9), but it
-    // does with Clang (3.6 and 3.8)).  We fix the mistake by
-    // explicitly loading the contents of buf into registers and using
-    // same registers for the intermediate popcnts.
-    uint64_t b0 = buf[i], b1 = buf[i + 1], b2 = buf[i + 2], b3 = buf[i + 3];
-    __asm__(
-        "popcnt %4, %4  \n\t"
-        "add %4, %0     \n\t"
-        "popcnt %5, %5  \n\t"
-        "add %5, %1     \n\t"
-        "popcnt %6, %6  \n\t"
-        "add %6, %2     \n\t"
-        "popcnt %7, %7  \n\t"
-        "add %7, %3     \n\t"
-        // +r means input/output
-        : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
-          "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
-  }
+  // We unroll this manually because some versions of GCC don't do so
+  // of their own volition.  Speedup from this in such cases is ~10%.
+#undef LOOP_BODY
+#define LOOP_BODY(i) do {                                         \
+  b0 = buf[i]; b1 = buf[i + 1]; b2 = buf[i + 2]; b3 = buf[i + 3]; \
+  __asm__(                                                        \
+    "popcnt %4, %4  \n\t"                                         \
+    "add %4, %0     \n\t"                                         \
+    "popcnt %5, %5  \n\t"                                         \
+    "add %5, %1     \n\t"                                         \
+    "popcnt %6, %6  \n\t"                                         \
+    "add %6, %2     \n\t"                                         \
+    "popcnt %7, %7  \n\t"                                         \
+    "add %7, %3     \n\t"                                         \
+    : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),                 \
+      "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));                \
+  } while (0)
+
+  LOOP_BODY(0);
+  LOOP_BODY(1);
+  LOOP_BODY(2);
+  LOOP_BODY(3);
+
   return c0 + c1 + c2 + c3;
 }
 
