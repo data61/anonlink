@@ -30,7 +30,7 @@ builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
   c0 = c1 = c2 = c3 = 0;
 
   // We unroll this manually because some versions of GCC don't do so
-  // of their own volition.  Speedup from this in such cases is ~10%.
+  // of their own volition.  Speedup from this in such cases is >20%.
 #undef LOOP_BODY
 #define LOOP_BODY(i) do {                                         \
   b0 = buf[i]; b1 = buf[i + 1]; b2 = buf[i + 2]; b3 = buf[i + 3]; \

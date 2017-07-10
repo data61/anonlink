@@ -21,6 +21,7 @@ ffibuilder.set_source(
 ffibuilder.cdef("""
     int match_one_against_many_dice(const char * one, const char * many, int n, double * score);
     int match_one_against_many_dice_1024_k_top(const char *one, const char *many, const uint32_t *counts_many, int n, uint32_t k, double threshold, int *indices, double *scores);
+    double dice_coeff_1024(const char *e1, const char *e2);
 """)
 
 
