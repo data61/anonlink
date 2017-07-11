@@ -72,7 +72,7 @@ dice_coeff_1024(const char *e1, const char *e2) {
     }
 
     uint64_t combined[KEYWORDS];
-    for (int i=0 ; i < KEYWORDS; i++ ) {
+    for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
         combined[i] = comp1[i] & comp2[i];
     }
 
@@ -115,10 +115,9 @@ static void popcount_1024_array(const char *many, int n, uint32_t *counts_many) 
 /**
  *
  */
-static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold) {
-
+static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
+{
     return 2 * popcnt_a * (1/threshold - 1);
-
 }
 
 extern "C"
@@ -164,7 +163,7 @@ extern "C"
             }
 
             if(current_delta <= max_popcnt_delta){
-                for (int i=0 ; i < KEYWORDS; i++ ) {
+                for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
                     combined[i] = current[i] & comp1[i];
                 }
 
