@@ -27,7 +27,7 @@ def compute_popcount_speed(n):
 
 
 def print_comparison_header():
-    print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
+    print("  Size 1   |   Size 2   |  Comparisons | Compute Time | Million Comparisons per second")
 
 
 def compute_comparison_speed(n1=100, n2=100):
@@ -39,10 +39,10 @@ def compute_comparison_speed(n1=100, n2=100):
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
     start = timer()
-    result3 = calculate_mapping_greedy(filters1, filters2)
+    result3 = calculate_mapping_greedy(filters1, filters2, k=None)
     end = timer()
     elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
+    print("{:10d} | {:10d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
         n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
     return elapsed_time
 

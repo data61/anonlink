@@ -221,11 +221,21 @@ extern "C"
             int index_j;
             double score;
 
-        // Constructor with default
-        Node( int n_index = -1, int m_index = -1, double n_score = -1.0 )
+        Tuple( int n_index, int m_index, double n_score)
             :index_i(n_index), index_j(m_index), score(n_score)
         {
         }
+    };
+
+    struct result_tuple {
+        int i;
+        int j;
+        double score;
+    };
+
+    struct sparse_match {
+        uint64_t count;
+        struct result_tuple* results;
     };
 
     /**
@@ -233,33 +243,71 @@ extern "C"
      *
      * Returns a sparse matrix as a map of scores between f_i and f_j
      * if the similarity was above the passed threshold.
-
-     For now we allocate memory in C++ and return a pointer to Python
-     If not handled correctly this is potentially a memory leak!
+     * For now we allocate memory in C++ and return a pointer to Python
+     * If not handled correctly this is potentially a memory leak!
      */
-    int match_many_against_many_dice_1024(
+    struct sparse_match match_many_against_many_dice_1024(
         const char *filters1,
         const char *filters2,
-        const uint32_t *counts_filters1,
+        //const uint32_t *counts_filters1,
         const uint32_t *counts_filters2,
-        double threshold,
-        //double *scores // TODO return results
+        const int n_filters1,
+        const int n_filters2,
+        double threshold
         ) {
 
-        std::cerr << "Matches above " << threshold << " for " << counts_filters1 << " x " + counts_filters2 + " entities" << "\n";
+        std::cerr << "Matches above " << threshold << " for " << n_filters1 << " * " << n_filters2 << " entities" << "\n";
 
-        const uint64_t *comp1 = (const uint64_t *) f1;
-        const uint64_t *comp2 = (const uint64_t *) f2;
+
+        const uint64_t *comp1 = (const uint64_t *) filters1;
+        //const uint64_t *comp2 = (const uint64_t *) filters2;
 
         //(i, j, score)
         std::vector<Tuple> sparse_scores;
+        double *scores = new double[n_filters2];
+        int *indices = new int[n_filters2];
+        uint32_t k = n_filters2;
+        uint32_t num_matches = 0;
 
-        for (int i = 0; i < counts_filters1; i++) {
-            // Extract the one
+        for (int i = 0; i < n_filters1; i++) {
+            // Extract the current filter
+            const uint64_t *current = comp1 + i * KEYWORDS;
+            const char *singleclk = (char*) current;
 
-            match_one_against_many_dice_1024_c(filters1[i], filters2, counts_filters2, threshold);
+            num_matches = match_one_against_many_dice_1024_k_top(
+                singleclk,
+                filters2,
+                counts_filters2,
+                n_filters2,
+                k,
+                threshold,
+                indices,
+                scores
+                );
 
+            sparse_scores.reserve(num_matches);
+
+            for(unsigned int j = 0; j < num_matches; j++) {
+                sparse_scores.push_back(Tuple(i, indices[j], scores[j]));
+            }
         }
+        num_matches = sparse_scores.size();
+        std::cerr << "Found " << num_matches << " matches." <<std::endl;
+
+        result_tuple* results = new result_tuple[num_matches];
+
+        for (unsigned int i = 0; i < num_matches; i++) {
+            results[i].i = sparse_scores.at(i).index_i;
+            results[i].j = sparse_scores.at(i).index_j;
+            results[i].score = sparse_scores.at(i).score;
+        }
+
+        struct sparse_match returnvalue;
+
+        returnvalue.count = num_matches;
+        returnvalue.results = results;
+
+        return returnvalue;
     }
 
 }

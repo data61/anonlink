@@ -43,20 +43,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     clist1 = [ffi.new("char[128]", bytes(f[0].tobytes()))
               for f in filters1]
 
-    if sys.version_info < (3, 0):
-        # Python 2 version
-        data = []
-        for f in filters2:
-            for b in f[0].tobytes():
-                data.append(b)
-
-        carr2 = ffi.new("char[{}]".format(128 * length_f2), ''.join(data))
-    else:
-        # Works in Python 3+
-        carr2 = ffi.new("char[{}]".format(128 * length_f2),
-                        bytes([b for f in filters2 for b in f[0].tobytes()]))
-
-    c_popcounts = ffi.new("uint32_t[{}]".format(length_f2), [f[2] for f in filters2])
+    c_popcounts, carr2 = create_ffi_bloom_array(filters2, length_f2)
 
     # easier to do all buffer allocations in Python and pass them to C,
     # even for output-only arguments
@@ -83,6 +70,66 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
             result.append((i, c_scores[j], ind))
 
     return result
+
+
+def cffi_filter_similarity(filters1, filters2, threshold):
+    """Accelerated method for determining Bloom Filter similarity.
+
+    We assume the length is 1024 bit = 128 Bytes
+    """
+    length_f1 = len(filters1)
+    length_f2 = len(filters2)
+
+
+    c_popcounts_1, cf1 = create_ffi_bloom_array(filters1, length_f1)
+    c_popcounts_2, cf2 = create_ffi_bloom_array(filters2, length_f2)
+
+    # easier to do all buffer allocations in Python and pass them to C,
+    # even for output-only arguments
+    #c_scores = ffi.new("double[]", k)
+    #c_indices = ffi.new("int[]", k)
+
+    assert len(cf1) % 64 == 0
+    assert len(cf2) % 64 == 0
+
+    matches = lib.match_many_against_many_dice_1024(
+        cf1,
+        cf2,
+        c_popcounts_2,
+        length_f1,
+        length_f2,
+        threshold,
+        #c_indices,
+        #c_scores
+    )
+
+    results = []
+    for i in range(matches.count):
+        match = matches.results[i]
+        assert match.score >= 0.0
+        assert match.score <= 1.0
+        assert match.i < len(filters1)
+        assert match.j < len(filters2)
+
+        results.append((match.i, match.score, match.j))
+    return results
+
+
+def create_ffi_bloom_array(filters2, length_f2):
+    if sys.version_info < (3, 0):
+        # Python 2 version
+        data = []
+        for f in filters2:
+            for b in f[0].tobytes():
+                data.append(b)
+
+        carr2 = ffi.new("char[{}]".format(128 * length_f2), ''.join(data))
+    else:
+        # Works in Python 3+
+        carr2 = ffi.new("char[{}]".format(128 * length_f2),
+                        bytes([b for f in filters2 for b in f[0].tobytes()]))
+    c_popcounts = ffi.new("uint32_t[{}]".format(length_f2), [f[2] for f in filters2])
+    return c_popcounts, carr2
 
 
 def greedy_solver(sparse_similarity_matrix):
@@ -152,6 +199,9 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_pyt
     MIN_LENGTH = 5
     if len(filters1) < MIN_LENGTH or len(filters2) < MIN_LENGTH:
         raise ValueError("Didn't meet minimum number of entities")
+
+    if k is None:
+        return cffi_filter_similarity(filters1, filters2, threshold)
     # use C++ version by default
     if use_python:
         return python_filter_similarity(filters1, filters2)
