@@ -31,7 +31,7 @@ ffibuilder.cdef("""
         struct result_tuple* results;
     };
 
-
+    void popcount(const char* one);
     int match_one_against_many_dice(const char * one, const char * many, int n, double * score);
     int match_one_against_many_dice_1024_k_top(const char *one, const char *many, const uint32_t *counts_many, int n, uint32_t k, double threshold, int *indices, double *scores);
     struct sparse_match match_many_against_many_dice_1024(const char *filters1, const char *filters2, const uint32_t *counts_filters2, int n_filters1, int n_filters2, double threshold);

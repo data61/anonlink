@@ -310,5 +310,11 @@ extern "C"
         return returnvalue;
     }
 
+    void popcount(const char* one){
+        const uint64_t *f1 = (const uint64_t *) one;
+        int count = builtin_popcnt_unrolled_errata_manual(f1);
+        std::cerr << count << std::endl;
+    }
+
 }
 
