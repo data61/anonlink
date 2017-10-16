@@ -35,3 +35,9 @@ def popcount_vector(bitarrays):
     # lib.popcount_1024_array(many, n, c_popcounts)
     #
     # return [c_popcounts[i] for i in range(n)]
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
