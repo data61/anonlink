@@ -10,7 +10,7 @@ requirements = [
 
 setup(
     name="anonlink",
-    version='0.5.0',
+    version='0.6.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.inside.nicta.com.au/magic/AnonymousLinking',
     license='Apache',
