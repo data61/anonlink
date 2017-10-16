@@ -33,6 +33,16 @@ def build(python_version, compiler, label, release=false) {
             checkout scm
 
             def testsError = null
+
+            clkhashPackageName = "clkhash-0.7.3-py3-none-any.whl"
+
+            step ([$class: 'CopyArtifact',
+              projectName: 'clkhash/cleanup-schema',
+              fingerprint: true,
+              flatten: true,
+              filter: 'dist/' + clkhashPackageName
+            ]);
+
             try {
                 sh """#!/usr/bin/env bash
                     set -xe
@@ -44,6 +54,7 @@ def build(python_version, compiler, label, release=false) {
                     rm -fr build
                     ${python_version} -m venv --clear ${VENV}
                     ${VENV}/bin/python ${VENV}/bin/pip install --upgrade pip coverage setuptools wheel
+                    ${VENV}/bin/python ${VENV}/bin/pip install --quiet --upgrade ${clkhashPackageName}
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
 
