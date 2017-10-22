@@ -2,9 +2,7 @@
 
 import unittest
 
-import anonlink.bloomfilter
-from anonlink import randomnames
-
+from clkhash import bloomfilter, randomnames, schema
 from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
@@ -19,8 +17,8 @@ class TestBloomFilterComparison(unittest.TestCase):
         s1, s2 = nl.generate_subsets(200, cls.proportion)
 
         keys = ('test1', 'test2')
-        cls.filters1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
-        cls.filters2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
+        cls.filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
+        cls.filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
     def _check_proportion(self, similarity):
         exact_matches = 0.0
@@ -35,8 +33,8 @@ class TestBloomFilterComparison(unittest.TestCase):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
         keys = ('test1', 'test2')
-        f1 = anonlink.bloomfilter.calculate_bloom_filters(s1, nl.schema, keys)
-        f2 = anonlink.bloomfilter.calculate_bloom_filters(s2, nl.schema, keys)
+        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
+        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
         ps = entitymatch.python_filter_similarity(f1, f2)
         cs = entitymatch.cffi_filter_similarity_k(f1, f2, 1, 0.0)
