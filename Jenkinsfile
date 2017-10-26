@@ -37,7 +37,7 @@ def build(python_version, compiler, label, release=false) {
             clkhashPackageName = "clkhash-0.7.3-py3-none-any.whl"
 
             step ([$class: 'CopyArtifact',
-              projectName: 'clkhash/cleanup-schema',
+              projectName: 'clkhash/master',
               fingerprint: true,
               flatten: true,
               filter: 'dist/' + clkhashPackageName
