@@ -1,6 +1,8 @@
 void setBuildStatus(String message, String state) {
   step([
     $class: "GitHubCommitStatusSetter",
+    reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/n1analytics/anonlink"],
+    contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'jenkins'],
     statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
   ]);
 }
@@ -130,7 +132,6 @@ node {
 parallel builders
 
 node('linux') {
-
     stage('Release') {
         build('python3.5', 'gcc', 'GPU 1', true)
         setBuildStatus("Tests Passed", "SUCCESS");
