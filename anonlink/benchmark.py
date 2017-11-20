@@ -54,7 +54,6 @@ def compute_comparison_speed_parallel(n1=100, n2=100):
     Using the greedy solver in chunks, how fast can hashes be computed.
     """
 
-
     filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 

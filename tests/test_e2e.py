@@ -3,8 +3,6 @@ import unittest
 import random
 from operator import itemgetter
 
-from bitarray import bitarray
-
 from clkhash import bloomfilter, randomnames, schema
 from anonlink import network_flow
 from anonlink import entitymatch
@@ -20,7 +18,7 @@ def generate_data(samples, proportion=0.75):
 
     keys = ('test1', 'test2')
     filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-    filters2 = distributed_processing.bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+    filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
     return (s1, s2, filters1, filters2)
 
