@@ -131,7 +131,7 @@ node {
 
 parallel builders
 
-node('linux') {
+node('GPU 1') {
     stage('Release') {
         build('python3.5', 'gcc', 'GPU 1', true)
         setBuildStatus("Tests Passed", "SUCCESS");
