@@ -25,7 +25,6 @@ def build(python_version, compiler, label, release=false) {
         withEnv(["VENV=${workspace}/env"]) {
         // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
-
             sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
 
             // The stage below is attempting to get the latest version of our application code.
@@ -36,7 +35,7 @@ def build(python_version, compiler, label, release=false) {
 
             def testsError = null
 
-            clkhashPackageName = "clkhash-0.7.3-py3-none-any.whl"
+            clkhashPackageName = "clkhash-*-py3-none-any.whl"
 
             step ([$class: 'CopyArtifact',
               projectName: 'clkhash/master',
@@ -79,12 +78,26 @@ def build(python_version, compiler, label, release=false) {
                 setBuildStatus("Build failed", "FAILURE");
             }
             finally {
-                sh '''
-                ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
-                '''
 
                 if (!release) {
                     junit 'nosetests.xml'
+                } else {
+                    // Code coverage only needs to be done once
+                    sh '''#!/usr/bin/env bash
+                        set -xe
+
+                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+
+                    '''
+
+                    publishHTML (target: [
+                      allowMissing: false,
+                      alwaysLinkToLastBuild: false,
+                      keepAll: true,
+                      reportDir: 'htmlcov',
+                      reportFiles: 'index.html',
+                      reportName: "Code Coverage"
+                    ])
                 }
 
                 if (testsError) {
@@ -110,7 +123,6 @@ for (config in configs) {
 
             def py_version = _py_version
             def compiler = _compiler
-
             def combinedName = "${label}-${py_version}-${compiler}"
 
             builders[combinedName] = {
