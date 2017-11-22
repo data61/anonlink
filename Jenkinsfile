@@ -71,7 +71,6 @@ def build(python_version, compiler, label, release=false) {
                 if(release) {
                     // This will be the official release
                     archiveArtifacts artifacts: "dist/anonlink-*.whl"
-
                 }
             }
             catch(err) {
@@ -81,7 +80,6 @@ def build(python_version, compiler, label, release=false) {
             }
             finally {
 
-
                 if (!release) {
                     junit 'nosetests.xml'
                 } else {
@@ -89,10 +87,18 @@ def build(python_version, compiler, label, release=false) {
                     sh '''#!/usr/bin/env bash
                         set -xe
 
-                        ${VENV}/bin/python ${VENV}/bin/coverage xml --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
 
                     '''
 
+                    publishHTML (target: [
+                      allowMissing: false,
+                      alwaysLinkToLastBuild: false,
+                      keepAll: true,
+                      reportDir: 'htmlcov',
+                      reportFiles: 'index.html',
+                      reportName: "Code Coverage"
+                    ])
                 }
 
                 if (testsError) {
