@@ -2,5 +2,3 @@ bitarray==0.8.1
 networkx==1.11
 cffi>=1.4.1
 nose==1.3.7
-click==6.2
-requests[security]>=2.12.4

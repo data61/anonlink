@@ -1,4 +1,6 @@
 import logging
+from operator import itemgetter
+
 from anonlink._entitymatcher import ffi, lib
 
 import sys
@@ -40,8 +42,8 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     match_one_against_many_dice_1024_k_top = lib.match_one_against_many_dice_1024_k_top
 
     # An array of the *one* filter
-    clist1 = [ffi.new("char[128]",
-                      bytes(f[0].tobytes())) for f in filters1]
+    clist1 = [ffi.new("char[128]", bytes(f[0].tobytes()))
+              for f in filters1]
 
     if sys.version_info < (3, 0):
         # Python 2 version
@@ -85,11 +87,16 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     return result
 
 
+def sort_sparse_similarities(sparse_scores):
+    ordered_by_score = sorted(sparse_scores, key=itemgetter(1), reverse=True)
+    return sorted(ordered_by_score, key=itemgetter(0))
+
+
 def greedy_solver(sparse_similarity_matrix):
     """
     For optimal results consider sorting input by score for each row.
 
-    :param sparse_similarity_matrix:
+    :param sparse_similarity_matrix: Iterable of tuples: (indx_a, similarity_score, indx_b)
     """
     mappings = {}
 

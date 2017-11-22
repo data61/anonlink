@@ -1,11 +1,13 @@
 import random
 from timeit import default_timer as timer
 
-from anonlink.bloomfilter import calculate_bloom_filters
+from clkhash.schema import get_schema_types
+from clkhash.bloomfilter import calculate_bloom_filters
+from clkhash.randomnames import NameList
+
 from anonlink.entitymatch import *
-from anonlink.randomnames import NameList
 from anonlink.util import popcount_vector, generate_clks, generate_bitarray
-import anonlink.concurrent
+from anonlink.distributed_processing import calculate_filter_similarity
 
 
 some_filters = generate_clks(10000)
@@ -52,13 +54,12 @@ def compute_comparison_speed_parallel(n1=100, n2=100):
     Using the greedy solver in chunks, how fast can hashes be computed.
     """
 
-
     filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
 
     start = timer()
-    anonlink.concurrent.calculate_filter_similarity(filters1, filters2)
+    calculate_filter_similarity(filters1, filters2)
 
     end = timer()
     elapsed_time = end - start
@@ -83,8 +84,8 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     sl1, sl2 = nml.generate_subsets(nsubset, frac)
 
     keys = ('test1', 'test2')
-    filters1 = calculate_bloom_filters(sl1, nml.schema, keys)
-    filters2 = calculate_bloom_filters(sl2, nml.schema, keys)
+    filters1 = calculate_bloom_filters(sl1, get_schema_types(nml.schema), keys)
+    filters2 = calculate_bloom_filters(sl2, get_schema_types(nml.schema), keys)
 
     # Pure Python version
     start = timer()
@@ -107,3 +108,33 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     }
 
 
+def benchmark(size, compare):
+
+    if compare:
+        print(compare_python_c(ntotal=1000, nsubset=600))
+
+    compute_popcount_speed(100000)
+
+    print_comparison_header()
+
+    possible_test_sizes = [
+        1000, 2000, 3000, 4000,
+        5000, 6000, 7000, 8000, 9000,
+        10000,
+        20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000,
+        1000000,
+        2000000
+    ]
+
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed_parallel(
+                test_size, test_size
+            )
+
+    print("Single Core:")
+    compute_comparison_speed(5000, 5000)
+
+
+if __name__ == '__main__':
+    benchmark(20000, False)
