@@ -12,7 +12,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
-    [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
+    [label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
 def build(python_version, compiler, label, release=false) {
@@ -86,18 +86,11 @@ def build(python_version, compiler, label, release=false) {
                     sh '''#!/usr/bin/env bash
                         set -xe
 
-                        ${VENV}/bin/python ${VENV}/bin/coverage html --omit="*/cpp_code/*" --omit="*build_matcher.py*"
+                        ${VENV}/bin/python ${VENV}/bin/coverage xml --omit="*/cpp_code/*" --omit="*build_matcher.py*"
 
                     '''
 
-                    publishHTML (target: [
-                      allowMissing: false,
-                      alwaysLinkToLastBuild: false,
-                      keepAll: true,
-                      reportDir: 'htmlcov',
-                      reportFiles: 'index.html',
-                      reportName: "Code Coverage"
-                    ])
+                    step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
                 }
 
                 if (testsError) {
