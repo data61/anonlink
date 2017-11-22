@@ -25,7 +25,6 @@ def build(python_version, compiler, label, release=false) {
         withEnv(["VENV=${workspace}/env"]) {
         // ${workspace} contains an absolute path to job workspace (not available within a stage)
 
-
             sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
 
             // The stage below is attempting to get the latest version of our application code.
@@ -36,7 +35,7 @@ def build(python_version, compiler, label, release=false) {
 
             def testsError = null
 
-            clkhashPackageName = "clkhash-0.7.3-py3-none-any.whl"
+            clkhashPackageName = "clkhash-*-py3-none-any.whl"
 
             step ([$class: 'CopyArtifact',
               projectName: 'clkhash/master',
