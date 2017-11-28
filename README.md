@@ -1,15 +1,21 @@
 # AnonymousLinking
 
-Python and optimised C++ implementation of anonymous linkage using cryptographic linkage keys as 
+Python and optimised C++ implementation of **anonymous linkage** using _cryptographic linkage keys_ as 
 described by Rainer Schnell, Tobias Bachteler, and Jörg Reiher in 
-[A Novel Error-Tolerant Anonymous Linking Code](http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf)
+[A Novel Error-Tolerant Anonymous Linking Code](http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf).
 
+Computes similarity scores between two sets of _cryptographic linkage keys_ entity records.
 
 # Installation
 
+Install directly from PyPi:
+
+    pip install anonlink
+
+Or to install from source:
+
     pip install -r requirements.txt
     pip install -e .
-
 
 ## Alternative - Manually compile the C++ library
 
@@ -69,5 +75,4 @@ To enable slightly larger tests add the following environment variables:
 Limitations
 -----------
 
-- The linkage process is $$n^2$$ - although algorithms exist to significantly speed
-this up. Several possible speedups are described in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
+- The linkage process is n^2 - although algorithms exist to significantly speed this up. Several possible speedups are described in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
