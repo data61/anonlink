@@ -25,7 +25,7 @@ setup(
         '_cffi_build', '_cffi_build/*',
         'tests'
     ]),
-    package_data={'anonlink': ['data/*.csv']},
+    package_data={'anonlink': ['data/*.csv', '_cffi_build']},
 
     ext_package="anonlink",
     classifiers=[
@@ -43,6 +43,7 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Security :: Cryptography",
     ],
+
     # for cffi
     cffi_modules=["_cffi_build/build_matcher.py:ffibuilder"],
     zip_safe=False,
