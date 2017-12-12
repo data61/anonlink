@@ -1,13 +1,13 @@
-AnonymousLinking
-================
-
-Python and optimised C++ implementation of **anonymous linkage** using
+A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
 Code <http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf>`__.
 
 Computes similarity scores, and/or best guess matches between two sets
 of *cryptographic linkage keys* (hashed entity records).
+
+Use `clkhash <https://github.com/n1analytics/clkhash>`__ to create cryptographic linkage keys
+from personally identifiable data.
 
 Installation
 ============
@@ -91,7 +91,8 @@ Limitations
 -  The linkage process is n^2 - although algorithms exist to
    significantly speed this up. Several possible speedups are described
    in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
-
+-  The C++ code makes an assumption of 1024 bit keys (although this would be easy
+   to change).
 
 
 License
