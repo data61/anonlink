@@ -16,7 +16,6 @@ ffibuilder.set_source(
     source,
     source_extension='.cpp',
     extra_compile_args=['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-mssse3', '-mpopcnt'],
-    #libraries=['ssse3', 'popcnt']
 )
 
 ffibuilder.cdef("""
