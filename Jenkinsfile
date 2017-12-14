@@ -59,7 +59,7 @@ def build(python_version, compiler, label, release=false) {
 
                     ${VENV}/bin/python ${VENV}/bin/pip install -r requirements.txt
 
-                    CC=${compiler} ${VENV}/bin/python setup.py bdist_wheel
+                    CC=${compiler} ${VENV}/bin/python setup.py sdist bdist_wheel
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
                     ${VENV}/bin/python ${VENV}/bin/nosetests \
                         --with-xunit --with-coverage --cover-inclusive \
@@ -70,6 +70,7 @@ def build(python_version, compiler, label, release=false) {
                 if(release) {
                     // This will be the official release
                     archiveArtifacts artifacts: "dist/anonlink-*.whl"
+                    archiveArtifacts artifacts: "dist/anonlink-*.tar.gz"
                 }
             }
             catch(err) {
