@@ -35,7 +35,7 @@ def build(python_version, compiler, label, release=false) {
 
             def testsError = null
 
-            clkhashPackageName = "clkhash-*-py3-none-any.whl"
+            clkhashPackageName = "clkhash-*-py2.py3-none-any.whl"
 
             step ([$class: 'CopyArtifact',
               projectName: 'clkhash/master',
