@@ -16,7 +16,6 @@ setup(
     author_email='brian.thorne@data61.csiro.au',
     version='0.6.1',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
-    long_description=open(os.path.join(here, "README.rst")).read(),
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
     setup_requires=['cffi>=1.7'],
