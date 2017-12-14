@@ -3,6 +3,8 @@
 import unittest
 
 from clkhash import bloomfilter, randomnames, schema
+from clkhash.key_derivation import generate_key_lists
+
 from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
@@ -16,7 +18,7 @@ class TestBloomFilterComparison(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(200, cls.proportion)
 
-        keys = ('test1', 'test2')
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
         cls.filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         cls.filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
@@ -32,7 +34,7 @@ class TestBloomFilterComparison(unittest.TestCase):
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
-        keys = ('test1', 'test2')
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
         f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
