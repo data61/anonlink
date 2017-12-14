@@ -2,4 +2,4 @@ bitarray==0.8.1
 networkx==1.11
 cffi>=1.7
 nose==1.3.7
-clkhash
+clkhash==0.8.0

@@ -4,6 +4,8 @@ import random
 from operator import itemgetter
 
 from clkhash import bloomfilter, randomnames, schema
+from clkhash.key_derivation import generate_key_lists
+
 from anonlink import network_flow
 from anonlink import entitymatch
 from anonlink import distributed_processing
@@ -16,7 +18,7 @@ def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
     s1, s2 = nl.generate_subsets(samples, proportion)
 
-    keys = ('test1', 'test2')
+    keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
     filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
     filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
@@ -146,8 +148,9 @@ class TestEntityMatchTopK(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(150, 0.8)
         keys = ('test1', 'test2')
-        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+        key_lists = generate_key_lists(keys, len(nl.schema))
+        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), key_lists)
+        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), key_lists)
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
@@ -160,8 +163,9 @@ class TestEntityMatchTopK(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(150, 0.8)
         keys = ('test1', 'test2')
-        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+        key_lists = generate_key_lists(keys, len(nl.schema))
+        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), key_lists)
+        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), key_lists)
 
         threshold = 0.8
         similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
@@ -205,9 +209,6 @@ class TestGreedy(unittest.TestCase):
         for entityA in all_in_one_mapping:
             assert entityA in partial_mapping
             self.assertEqual(all_in_one_mapping[entityA], partial_mapping[entityA])
-
-
-
 
 if __name__ == '__main__':
     unittest.main()
