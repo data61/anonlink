@@ -29,10 +29,9 @@ def dicecoeff(e1, e2):
 
     :return: real 0-1 similarity measure
     """
-    e1array = ffi.new("char[]", e1.tobytes())
-    e2array = ffi.new("char[]", e2.tobytes())
-
     if len(e1) == 1024 and len(e2) == 1024:
+        e1array = ffi.new("char[]", e1.tobytes())
+        e2array = ffi.new("char[]", e2.tobytes())
         return lib.dice_coeff_1024(e1array, e2array)
     else:
         return dicecoeff_pure_python(e1, e2)
