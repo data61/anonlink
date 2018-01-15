@@ -24,7 +24,7 @@
 // explicitly loading the contents of buf into registers and using
 // these same registers for the intermediate popcnts.
 static inline uint32_t
-builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
+builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int n) {
   uint64_t b0, b1, b2, b3;
   uint64_t c0, c1, c2, c3;
   c0 = c1 = c2 = c3 = 0;
@@ -47,12 +47,46 @@ builtin_popcnt_unrolled_errata_manual(const uint64_t* buf) {
       "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));                \
   } while (0)
 
-  LOOP_BODY(0);
-  LOOP_BODY(4);
-  LOOP_BODY(8);
-  LOOP_BODY(12);
+  // Here we assume that 4|n and n <= 16.  This means that n/4 is
+  // either 4, 3, 2 or 1, and these values correspond to the switch
+  // cases, which in turn determine whether we read and popcnt 16, 12,
+  // 8 or 4 elements from buf.  The __attribute__ ((fallthrough));
+  // thingo is to let the compiler know that we are falling through
+  // the switch case statements deliberately (otherwise this illicits
+  // a warning with -Wextra).
+  switch (n >> 2) { //  n/4
+  case 4:
+      LOOP_BODY(12);
+      __attribute__ ((fallthrough));
+  case 3:
+      LOOP_BODY(8);
+      __attribute__ ((fallthrough));
+  case 2:
+      LOOP_BODY(4);
+      __attribute__ ((fallthrough));
+  case 1:
+      LOOP_BODY(0);
+      __attribute__ ((fallthrough));
+  }
 
   return c0 + c1 + c2 + c3;
+}
+
+/**
+ * Bit population count of the 8n bytes of memory starting at buf (8 =
+ * sizeof(uint64_t)).
+ */
+static uint32_t
+popcount_array(const uint64_t *buf, int n) {
+    assert(n % 4 == 0);
+    uint32_t pc = 0;
+    while (n >= 16) {
+        pc += builtin_popcnt_unrolled_errata_manual(buf, 16);
+        n -= 16;
+    }
+    if (n > 0)
+        pc += builtin_popcnt_unrolled_errata_manual(buf, n);
+    return pc;
 }
 
 /**
@@ -65,8 +99,8 @@ dice_coeff_1024(const char *e1, const char *e2) {
 
     uint32_t count_both = 0;
 
-    count_both += builtin_popcnt_unrolled_errata_manual(comp1);
-    count_both += builtin_popcnt_unrolled_errata_manual(comp2);
+    count_both += popcount_array(comp1, KEYWORDS);
+    count_both += popcount_array(comp2, KEYWORDS);
     if(count_both == 0) {
         return 0.0;
     }
@@ -76,7 +110,7 @@ dice_coeff_1024(const char *e1, const char *e2) {
         combined[i] = comp1[i] & comp2[i];
     }
 
-    uint32_t count_and = builtin_popcnt_unrolled_errata_manual(combined);
+    uint32_t count_and = popcount_array(combined, KEYWORDS);
 
     return 2 * count_and / (double)count_both;
 }
@@ -108,7 +142,7 @@ struct score_cmp{
 static void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
     for (int i = 0; i < n; i++) {
         const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
-        counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
+        counts_many[i] = popcount_array(sig, KEYWORDS);
     }
 }
 
@@ -146,7 +180,7 @@ extern "C"
         // time.
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
-        uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
+        uint32_t count_one = popcount_array(comp1, KEYWORDS);
 
         uint64_t combined[KEYWORDS];
 
@@ -171,7 +205,7 @@ extern "C"
                     combined[i] = current[i] & comp1[i];
                 }
 
-                uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
+                uint32_t count_curr = popcount_array(combined, KEYWORDS);
 
                 // TODO: double precision is overkill for this
                 // problem; just use float.
@@ -210,4 +244,3 @@ extern "C"
         return res;
     }
 }
-
