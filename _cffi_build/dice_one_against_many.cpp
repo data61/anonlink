@@ -157,14 +157,16 @@ static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
 extern "C"
 {
     /**
-     * Calculate up to the top k indices and scores.
-     * Returns the number matched above a threshold.
+     * Calculate up to the top k indices and scores.  Returns the
+     * number matched above a threshold or -1 if keybytes is not a
+     * multiple of 32.
      */
-    int match_one_against_many_dice_1024_k_top(
+    int match_one_against_many_dice_k_top(
         const char *one,
         const char *many,
         const uint32_t *counts_many,
         int n,
+        int keybytes,
         uint32_t k,
         double threshold,
         int *indices,
@@ -173,6 +175,13 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
+        // keybytes must be divisible by 32, because keywords must be
+        // divisible by 4 for the builtin popcount function to work
+        // and keywords = keybytes / 8.
+        if (keybytes % (4 * WORDBYTES) != 0)  // (keybytes & 31)
+            return -1;
+        int keywords = keybytes / WORDBYTES;
+
         // TODO: Given that k is 10 by default, often 5 in practice,
         // and probably never ever more than 20 or so, the use of a
         // priority_queue here is expensive overkill.  Better to just
@@ -180,19 +189,21 @@ extern "C"
         // time.
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
-        uint32_t count_one = popcount_array(comp1, KEYWORDS);
-
-        uint64_t combined[KEYWORDS];
-
-        uint32_t max_popcnt_delta = 1024;
+        uint32_t count_one = popcount_array(comp1, keywords);
+        uint32_t max_popcnt_delta = keywords * WORDBITS; // = bits per key
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
-        uint32_t current_delta;
 
+        // TODO: This allocation could be avoided by writing a special
+        // popcount_array_combined() function that does the AND
+        // itself; this would almost certainly be faster than the
+        // new/delete pair and would require no memory overhead.
+        uint64_t *combined = new uint64_t[keywords];
         for (int j = 0; j < n; j++) {
-            const uint64_t *current = comp2 + j * KEYWORDS;
+            const uint64_t *current = comp2 + j * keywords;
             const uint32_t counts_many_j = counts_many[j];
+            uint32_t current_delta;
 
             if (count_one > counts_many_j) {
                 current_delta = count_one - counts_many_j;
@@ -201,11 +212,11 @@ extern "C"
             }
 
             if (current_delta <= max_popcnt_delta) {
-                for (int i = 0; i < (int)KEYWORDS; i++) {
+                for (int i = 0; i < keywords; i++) {
                     combined[i] = current[i] & comp1[i];
                 }
 
-                uint32_t count_curr = popcount_array(combined, KEYWORDS);
+                uint32_t count_curr = popcount_array(combined, keywords);
 
                 // TODO: double precision is overkill for this
                 // problem; just use float.
@@ -217,6 +228,7 @@ extern "C"
                 }
             } // else skip because popcount difference too large
         }
+        delete[] combined;
 
         int i = 0;
         while (!max_k_scores.empty()) {
@@ -237,8 +249,8 @@ extern "C"
         int idx_unused;
         uint32_t *counts_many = new uint32_t[n];
         popcount_1024_array(many, n, counts_many);
-        int res = match_one_against_many_dice_1024_k_top(
-            one, many, counts_many, n, k, threshold, &idx_unused, score);
+        int res = match_one_against_many_dice_k_top(
+            one, many, counts_many, n, 128, k, threshold, &idx_unused, score);
         delete[] counts_many;
 
         return res;

@@ -38,8 +38,8 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     length_f1 = len(filters1)
     length_f2 = len(filters2)
 
-    # We assume the length is 1024 bit = 128 Bytes
-    match_one_against_many_dice_1024_k_top = lib.match_one_against_many_dice_1024_k_top
+    # We assume the length is a multple of 128 bits.
+    match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
 
     # An array of the *one* filter
     clist1 = [ffi.new("char[128]", bytes(f[0].tobytes()))
@@ -69,16 +69,19 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     for i, f1 in enumerate(filters1):
         assert len(clist1[i]) == 128
         assert len(carr2) % 64 == 0
-        matches = match_one_against_many_dice_1024_k_top(
+        matches = match_one_against_many_dice_k_top(
             clist1[i],
             carr2,
             c_popcounts,
             length_f2,
+            128,
             k,
             threshold,
             c_indices,
             c_scores)
 
+        if matches < 0:
+            raise Exception('Internel error: Bad key length')
         for j in range(matches):
             ind = c_indices[j]
             assert ind < len(filters2)
