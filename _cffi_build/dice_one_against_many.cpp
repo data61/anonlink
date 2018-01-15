@@ -139,13 +139,16 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
+        // TODO: Given that k is 10 by default, often 5 in practice,
+        // and probably never ever more than 20 or so, the use of a
+        // priority_queue here is expensive overkill.  Better to just
+        // store the scores in an array and do a linear search every
+        // time.
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
 
         uint64_t combined[KEYWORDS];
-
-        double *all_scores = new double[n];
 
         uint32_t max_popcnt_delta = 1024;
         if(threshold > 0) {
@@ -155,38 +158,31 @@ extern "C"
 
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * KEYWORDS;
+            const uint32_t counts_many_j = counts_many[j];
 
-            if(count_one > counts_many[j]){
-                current_delta = count_one - counts_many[j];
+            if (count_one > counts_many_j) {
+                current_delta = count_one - counts_many_j;
             } else {
-                current_delta = counts_many[j] - count_one;
+                current_delta = counts_many_j - count_one;
             }
 
-            if(current_delta <= max_popcnt_delta){
-                for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
+            if (current_delta <= max_popcnt_delta) {
+                for (int i = 0; i < (int)KEYWORDS; i++) {
                     combined[i] = current[i] & comp1[i];
                 }
 
                 uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
 
-                double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-                all_scores[j] = score;
-            } else {
-                // Skipping because popcount difference too large
-                all_scores[j] = -1;
-            }
+                // TODO: double precision is overkill for this
+                // problem; just use float.
+                double score = 2 * count_curr / (double) (count_one + counts_many_j);
+                if (score >= threshold) {
+                    max_k_scores.push(Node(j, score));
+                    if (max_k_scores.size() > k)
+                        max_k_scores.pop();
+                }
+            } // else skip because popcount difference too large
         }
-
-        for (int j = 0; j < n; j++) {
-
-            if(all_scores[j] >= threshold) {
-                max_k_scores.push(Node(j, all_scores[j]));
-            }
-
-            if(max_k_scores.size() > k) max_k_scores.pop();
-        }
-
-        delete[] all_scores;
 
         int i = 0;
         while (!max_k_scores.empty()) {
