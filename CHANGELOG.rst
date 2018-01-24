@@ -1,3 +1,8 @@
+0.6.3
+-----
+
+Small fix to logging setup.
+
 0.6.2 - Changelog init
 ---------------------
 
