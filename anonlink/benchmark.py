@@ -8,7 +8,6 @@ from clkhash.randomnames import NameList
 
 from anonlink.entitymatch import *
 from anonlink.util import popcount_vector, generate_clks, generate_bitarray
-from anonlink.distributed_processing import calculate_filter_similarity
 
 
 some_filters = generate_clks(10000)
@@ -25,15 +24,16 @@ def compute_popcount_speed(n):
     elapsed_time = end - start
     print("{:6d} x 1024 bit popcounts in {:.6f} seconds".format(n, elapsed_time))
     speed_in_MiB = n / (1024 * 8 * elapsed_time)
-    print("Popcount speed: {:.2f} MiB/s".format(speed_in_MiB))
+    print("Popcount speed: {:.2f} MiB/s (bitarray.count())".format(speed_in_MiB))
     return speed_in_MiB
 
 
-def print_comparison_header():
-    print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
+def print_comparison_header(threshold):
+    print("Threshold = ", threshold)
+    print("Size 1 | Size 2 | Comparisons  | Total Time (simat/solv) | Million Comparisons per second")
 
 
-def compute_comparison_speed(n1=100, n2=100):
+def compute_comparison_speed(n1=100, n2=100, threshold=0.75):
     """
     Using the greedy solver, how fast can hashes be computed using one core.
     """
@@ -42,30 +42,20 @@ def compute_comparison_speed(n1=100, n2=100):
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
     start = timer()
-    result3 = calculate_mapping_greedy(filters1, filters2)
+    sparse_matrix = calculate_filter_similarity(filters1, filters2, k=len(filters2), threshold=threshold)
+    t1 = timer()
+    res = greedy_solver(sparse_matrix)
     end = timer()
+
+    #print("mat size = ", len(sparse_matrix))
+    similarity_time = t1 - start
+    solver_time = end - t1
     elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
-    return elapsed_time
-
-
-def compute_comparison_speed_parallel(n1=100, n2=100):
-    """
-    Using the greedy solver in chunks, how fast can hashes be computed.
-    """
-
-    filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
-    filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
-
-
-    start = timer()
-    calculate_filter_similarity(filters1, filters2)
-
-    end = timer()
-    elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
+    print("{:6d} | {:6d} | {:12d} | {:7.3f}s ({:3.1f}% / {:3.1f}%) |  {:12.3f}  -- {:8d} = {:2.1f}%".format(
+        n1, n2, n1*n2, elapsed_time,
+        100.0*similarity_time/elapsed_time,
+        100.0*solver_time/elapsed_time,
+        (n1*n2)/(1e6*similarity_time), len(sparse_matrix), 100.0*len(sparse_matrix)/(n1*n2)))
     return elapsed_time
 
 
@@ -116,8 +106,6 @@ def benchmark(size, compare):
 
     compute_popcount_speed(100000)
 
-    print_comparison_header()
-
     possible_test_sizes = [
         1000, 2000, 3000, 4000,
         5000, 6000, 7000, 8000, 9000,
@@ -127,15 +115,14 @@ def benchmark(size, compare):
         2000000
     ]
 
-    for test_size in possible_test_sizes:
-        if test_size <= size:
-            compute_comparison_speed_parallel(
-                test_size, test_size
-            )
-
-    print("Single Core:")
-    compute_comparison_speed(5000, 5000)
-
+    #for thld in [0.95, 0.85, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5]:
+    for thld in [0.22, 0.25, 0.27, 0.48, 0.49, 0.5, 0.51, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64]:
+        #print_comparison_header(thld)
+        print("threshold = ", thld)
+        for test_size in possible_test_sizes:
+            if test_size <= size:
+                compute_comparison_speed(test_size, test_size, thld)
 
 if __name__ == '__main__':
-    benchmark(20000, False)
+    benchmark(1000, False)
+    #benchmark(20000, False)
