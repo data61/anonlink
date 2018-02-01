@@ -3,6 +3,7 @@
 #include <queue>
 #include <cstdint>
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 
 
@@ -103,16 +104,6 @@ struct score_cmp{
 
 
 /**
- * Count lots of bits.
- */
-static void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
-    for (int i = 0; i < n; i++) {
-        const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
-        counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
-    }
-}
-
-/**
  *
  */
 static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
@@ -131,8 +122,35 @@ dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_pop
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
+static inline double to_millis(clock_t t)
+{
+    static constexpr double CPS = (double)CLOCKS_PER_SEC;
+    return t * 1.0E3 / CPS;
+}
+
 extern "C"
 {
+    /**
+     * Calculate population counts of an array of inputs; return how
+     * long it took in milliseconds.
+     *
+     * 'many' must point to n*KEYWORDS*sizeof(uint64_t) (== 128*n) bytes
+     * 'counts_many' must point to n*sizeof(uint32_t) bytes.
+     * For i = 0 to n - 1, the population count of the 1024 bits
+     *
+     *   many[i * KEYWORDS] ... many[(i + 1) * KEYWORDS - 1]
+     *
+     * is put in counts_many[i].
+     */
+    double popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
+        clock_t t = clock();
+        for (int i = 0; i < n; i++) {
+            const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
+            counts_many[i] = builtin_popcnt_unrolled_errata_manual(sig);
+        }
+        return to_millis(clock() - t);
+    }
+
     /**
      * Calculate up to the top k indices and scores.
      * Returns the number matched above a threshold.

@@ -2,8 +2,10 @@
 
 import os
 import random
+import time
 from bitarray import bitarray
 
+from anonlink._entitymatcher import ffi, lib
 
 def generate_bitarray(length):
     a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
@@ -19,22 +21,29 @@ def generate_clks(n):
     return res
 
 
-def popcount_vector(bitarrays):
-    """
-    Note, due to the overhead of converting bitarrays into
-    bytes, it is more expensive to call our C implementation
+def popcount_vector(bitarrays, use_native=False):
+    """Return an array containing the popcounts of the elements of
+    bitarrays. If use_native is True, use the native code
+    implementation and return the time spent (in milliseconds) in the
+    native code as a second return value.
+
+    Note, due to the overhead of converting bitarrays into bytes,
+    it is currently more expensive to call our C implementation
     than just calling bitarray.count()
 
     """
-    return [clk.count() for clk in bitarrays]
+    # Use Python
+    if not use_native:
+        return [clk.count() for clk in bitarrays]
 
-    # n = len(clks)
-    # c_popcounts = ffi.new("uint32_t[{}]".format(n))
-    # many = ffi.new("char[{}]".format(128 * n),
-    #                 bytes([b for f in clks for b in f.tobytes()]))
-    # lib.popcount_1024_array(many, n, c_popcounts)
-    #
-    # return [c_popcounts[i] for i in range(n)]
+    # Use native code
+    n = len(bitarrays)
+    c_popcounts = ffi.new("uint32_t[{}]".format(n))
+    many = ffi.new("char[{}]".format(128 * n),
+                    bytes([b for f in bitarrays for b in f.tobytes()]))
+    ms = lib.popcount_1024_array(many, n, c_popcounts)
+
+    return [c_popcounts[i] for i in range(n)], ms
 
 
 def chunks(l, n):
