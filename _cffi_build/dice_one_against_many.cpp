@@ -120,6 +120,17 @@ static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
     return 2 * popcnt_a * (1/threshold - 1);
 }
 
+static double
+dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc)
+{
+    uint64_t uv[KEYWORDS];
+    for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
+        uv[i] = u[i] & v[i];
+    }
+    uint32_t uv_popc = builtin_popcnt_unrolled_errata_manual(uv);
+    return (2 * uv_popc) / (double) (u_popc + v_popc);
+}
+
 extern "C"
 {
     /**
@@ -143,8 +154,6 @@ extern "C"
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
 
-        uint64_t combined[KEYWORDS];
-
         double *all_scores = new double[n];
 
         uint32_t max_popcnt_delta = 1024;
@@ -163,14 +172,7 @@ extern "C"
             }
 
             if(current_delta <= max_popcnt_delta){
-                for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
-                    combined[i] = current[i] & comp1[i];
-                }
-
-                uint32_t count_curr = builtin_popcnt_unrolled_errata_manual(combined);
-
-                double score = 2 * count_curr / (double) (count_one + counts_many[j]);
-                all_scores[j] = score;
+                all_scores[j] = dice_coeff(comp1, count_one, current, counts_many[j]);
             } else {
                 // Skipping because popcount difference too large
                 all_scores[j] = -1;
