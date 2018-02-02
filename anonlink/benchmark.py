@@ -51,11 +51,11 @@ def compute_popcount_speed(n):
 
 
 def print_comparison_header(threshold):
-    print("Threshold = ", threshold)
-    print("Size 1 | Size 2 | Comparisons  | Total Time (simat/solv) | Million Comparisons per second")
+    print("\nThreshold:", threshold)
+    print("Size 1 | Size 2 | Comparisons (match %) | Total Time (simat/solv) | Throughput (1e6 cmp/s)")
 
 
-def compute_comparison_speed(n1=100, n2=100, threshold=0.75):
+def compute_comparison_speed(n1, n2, threshold):
     """
     Using the greedy solver, how fast can hashes be computed using one core.
     """
@@ -69,15 +69,16 @@ def compute_comparison_speed(n1=100, n2=100, threshold=0.75):
     res = greedy_solver(sparse_matrix)
     end = timer()
 
-    #print("mat size = ", len(sparse_matrix))
     similarity_time = t1 - start
     solver_time = end - t1
     elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:7.3f}s ({:3.1f}% / {:3.1f}%) |  {:12.3f}  -- {:8d} = {:2.1f}%".format(
-        n1, n2, n1*n2, elapsed_time,
+    print("{:6d} | {:6d} |  {:6d}e6  ({:5.2f}%)   | {:6.3f}s ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
+        n1, n2, n1*n2 // 1000000,
+        100.0*len(sparse_matrix)/(n1*n2),
+        elapsed_time,
         100.0*similarity_time/elapsed_time,
         100.0*solver_time/elapsed_time,
-        (n1*n2)/(1e6*similarity_time), len(sparse_matrix), 100.0*len(sparse_matrix)/(n1*n2)))
+        (n1*n2)/(1e6*similarity_time)))
     return elapsed_time
 
 
@@ -137,14 +138,23 @@ def benchmark(size, compare):
         2000000
     ]
 
-    #for thld in [0.95, 0.85, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5]:
-    for thld in [0.22, 0.25, 0.27, 0.48, 0.49, 0.5, 0.51, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64]:
-        #print_comparison_header(thld)
-        print("threshold = ", thld)
-        for test_size in possible_test_sizes:
-            if test_size <= size:
-                compute_comparison_speed(test_size, test_size, thld)
+    # Testing two things:
+    # - the Dice coefficient calculation
+    # - picking the top k candidates
+
+    thld = 0.5
+    print_comparison_header(thld)
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed(test_size, test_size, thld)
+
+    thld = 0.7
+    print_comparison_header(thld)
+    size *= 5
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed(test_size, test_size, thld)
 
 if __name__ == '__main__':
-    benchmark(1000, False)
+    benchmark(4000, False)
     #benchmark(20000, False)
