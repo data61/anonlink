@@ -122,6 +122,12 @@ dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_pop
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
+/**
+ * Convert clock measurement t to milliseconds.
+ *
+ * t should have been obtained as the difference of calls to clock()
+ * for this to make sense.
+ */
 static inline double to_millis(clock_t t)
 {
     static constexpr double CPS = (double)CLOCKS_PER_SEC;
