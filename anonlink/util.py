@@ -2,7 +2,6 @@
 
 import os
 import random
-import time
 from bitarray import bitarray
 
 from anonlink._entitymatcher import ffi, lib
