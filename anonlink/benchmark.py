@@ -25,6 +25,8 @@ def compute_popcount_speed(n):
 
     print("{:6d} x {:d} bit popcounts".format(n, clk_bits))
     print("Implementation              | Time (ms) | Bandwidth (MiB/s)")
+
+    # Python
     start = timer()
     popcounts = popcount_vector(clks, use_native=False)
     end = timer()
@@ -124,6 +126,8 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
 def benchmark(size, compare):
 
+    print("Anonlink benchmark -- see README for explanation")
+    print("------------------------------------------------")
     if compare:
         print(compare_python_c(ntotal=1000, nsubset=600))
 
@@ -137,10 +141,6 @@ def benchmark(size, compare):
         1000000,
         2000000
     ]
-
-    # Testing two things:
-    # - the Dice coefficient calculation
-    # - picking the top k candidates
 
     thld = 0.5
     print_comparison_header(thld)
