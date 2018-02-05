@@ -43,28 +43,68 @@ For linux with:
 Benchmark
 ---------
 
+You can run the benchmark with:
+
 ::
 
     $ python -m anonlink.benchmark
-    100000 x 1024 bit popcounts in 0.016376 seconds
-    Popcount speed: 745.42 MiB/s
-    Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second
-      1000 |   1000 |      1000000 |    0.060s    |        16.632
-      2000 |   2000 |      4000000 |    0.159s    |        25.232
-      3000 |   3000 |      9000000 |    0.316s    |        28.524
-      4000 |   4000 |     16000000 |    0.486s    |        32.943
-      5000 |   5000 |     25000000 |    0.584s    |        42.825
-      6000 |   6000 |     36000000 |    0.600s    |        60.027
-      7000 |   7000 |     49000000 |    0.621s    |        78.875
-      8000 |   8000 |     64000000 |    0.758s    |        84.404
-      9000 |   9000 |     81000000 |    0.892s    |        90.827
-     10000 |  10000 |    100000000 |    1.228s    |        81.411
-     20000 |  20000 |    400000000 |    3.980s    |       100.504
-     30000 |  30000 |    900000000 |    9.280s    |        96.986
-     40000 |  40000 |   1600000000 |   17.318s    |        92.391
+    Anonlink benchmark -- see README for explanation
+    ------------------------------------------------
+    100000 x 1024 bit popcounts
+    Implementation              | Time (ms) | Bandwidth (MiB/s)
+    Python (bitarray.count()):  |    20.83  |     586.12
+    Native code (no copy):      |     0.91  |   13443.87
+    Native code (w/ copy):      |   381.83  |      31.97   (99.8% copying)
 
-C++ version uses cpu instruction ``POPCNT`` for bitcount in a 64bit
-word. http://wm.ite.pl/articles/sse-popcount.html
+    Threshold: 0.5
+    Size 1 | Size 2 | Comparisons (match %) | Total Time (simat/solv) | Throughput (1e6 cmp/s)
+      1000 |   1000 |       1e6  (49.59%)   |  0.293s (89.7% / 10.3%) |     3.812
+      2000 |   2000 |       4e6  (50.33%)   |  1.151s (89.2% / 10.8%) |     3.899
+      3000 |   3000 |       9e6  (50.94%)   |  2.611s (88.7% / 11.3%) |     3.886
+      4000 |   4000 |      16e6  (50.54%)   |  4.635s (88.3% / 11.7%) |     3.910
+
+    Threshold: 0.7
+    Size 1 | Size 2 | Comparisons (match %) | Total Time (simat/solv) | Throughput (1e6 cmp/s)
+      1000 |   1000 |       1e6  ( 0.01%)   |  0.018s (99.8% /  0.2%) |    54.846
+      2000 |   2000 |       4e6  ( 0.01%)   |  0.067s (99.9% /  0.1%) |    59.983
+      3000 |   3000 |       9e6  ( 0.01%)   |  0.131s (99.8% /  0.2%) |    68.958
+      4000 |   4000 |      16e6  ( 0.01%)   |  0.219s (99.9% /  0.1%) |    73.092
+      5000 |   5000 |      25e6  ( 0.01%)   |  0.333s (99.9% /  0.1%) |    75.280
+      6000 |   6000 |      36e6  ( 0.01%)   |  0.472s (99.9% /  0.1%) |    76.373
+      7000 |   7000 |      49e6  ( 0.01%)   |  0.629s (99.9% /  0.1%) |    78.030
+      8000 |   8000 |      64e6  ( 0.01%)   |  0.809s (99.9% /  0.1%) |    79.255
+      9000 |   9000 |      81e6  ( 0.01%)   |  1.024s (99.9% /  0.1%) |    79.212
+     10000 |  10000 |     100e6  ( 0.01%)   |  1.386s (99.9% /  0.1%) |    72.233
+     20000 |  20000 |     400e6  ( 0.01%)   |  4.932s (99.9% /  0.1%) |    81.185
+
+The tables are interpreted as follows. The first section compares the
+bandwidth doing popcounts through (i) the Python bitarray library and
+(ii) a native code implementation in assembler.  The latter
+implementation is measured in two ways: the first measures just the
+time taken to compute the popcounts, while the second includes the
+time taken to copy the data out of the running Python instance as well
+as copying the result back into Python. The "% copying" measure is the
+proportion of time spent doing this copying.
+
+The second section includes two tables that measure the throughput of
+the Dice coefficient comparison function. The two tables correspond to
+two different choices of "matching threshold", 0.5 and 0.7, which were
+chosen to characterise two different performance scenarios. Since the
+data used for comparisons is randomly generated, the first threshold
+value will cause about 50% of the candidates to "match", while the
+second threshold value will cause <0.01% of the candidates to match
+(these values are reported in the "match %" column). In the first
+case, the large number of matches means that much of the time is spent
+keeping the candidates in order so that the top `k` matches can be
+returned. In the latter case, the tiny number of candidate matches
+means that the throughput is determined primarily by the comparison
+code itself.
+
+Finally, the Total Time column includes indications as to the
+proportion of time spent calculating the (sparse) similarity matrix
+(`simat`) and the proportion of time spent in the greedy solver
+(`solv`). This latter is determined by the size of the similarity
+matrix, which will be approximately `#comparisons * match% / 100`.
 
 Tests
 =====
