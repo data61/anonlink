@@ -31,9 +31,9 @@ def compute_popcount_speed(n):
     popcounts = popcount_vector(clks, use_native=False)
     end = timer()
     elapsed_time = end - start
-    speed_in_MiB = clks_MiB / elapsed_time
+    python_speed_in_MiB = clks_MiB / elapsed_time
     print("Python (bitarray.count()):  |  {:7.2f}  |  {:9.2f} "
-          .format(elapsed_time * 1e3, speed_in_MiB))
+          .format(elapsed_time * 1e3, python_speed_in_MiB))
 
     # Native
     start = timer()
@@ -42,14 +42,14 @@ def compute_popcount_speed(n):
     elapsed_time = end - start
     elapsed_nocopy = ms / 1e3
     copy_percent = 100*(elapsed_time - elapsed_nocopy) / elapsed_time
-    speed_in_MiB = clks_MiB / elapsed_time
-    speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
+    native_speed_in_MiB = clks_MiB / elapsed_time
+    native_speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
     print("Native code (no copy):      |  {:7.2f}  |  {:9.2f} "
-          .format(ms, speed_in_MiB_nocopy))
+          .format(ms, native_speed_in_MiB_nocopy))
     print("Native code (w/ copy):      |  {:7.2f}  |  {:9.2f}   ({:.1f}% copying)"
-          .format(elapsed_time * 1e3, speed_in_MiB, copy_percent))
+          .format(elapsed_time * 1e3, native_speed_in_MiB, copy_percent))
 
-    return speed_in_MiB
+    return python_speed_in_MiB
 
 
 def print_comparison_header(threshold):
