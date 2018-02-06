@@ -8,16 +8,17 @@
 
 
 template<int n>
-uint32_t popcount(const uint64_t *buf) {
-    return popcount<4>(buf) + popcount<n - 4>(buf + 4);
+void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
+    popcount<4>(c0, c1, c2, c3, buf);
+    popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 }
 
 template<>
-uint32_t popcount<4>(const uint64_t* buf) {
-    uint64_t b0, b1, b2, b3;
-    uint64_t c0, c1, c2, c3;
-    c0 = c1 = c2 = c3 = 0;
+void popcount<4>(
+    uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+    const uint64_t* buf) {
 
+    uint64_t b0, b1, b2, b3;
     b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
     __asm__(
         "popcnt %4, %4  \n\t"
@@ -30,8 +31,6 @@ uint32_t popcount<4>(const uint64_t* buf) {
         "add %7, %3     \n\t"
         : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
-
-    return c0 + c1 + c2 + c3;
 }
 
 static uint32_t
@@ -40,10 +39,11 @@ popcount_array(const uint64_t *buf, int n) {
     // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
     static constexpr int WORDS_PER_POPCOUNT = 16;
     assert(n % WORDS_PER_POPCOUNT == 0);
-    uint32_t pc = 0;
+    uint64_t c0, c1, c2, c3;
+    c0 = c1 = c2 = c3 = 0;
     for (int i = 0; i < n; i += WORDS_PER_POPCOUNT)
-        pc += popcount<WORDS_PER_POPCOUNT>(buf + i);
-    return pc;
+        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, buf + i);
+    return c0 + c1 + c2 + c3;
 }
 
 static uint32_t
@@ -52,14 +52,15 @@ popcount_combined_array(const uint64_t *__restrict__ buf1, const uint64_t *__res
     // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
     static constexpr int WORDS_PER_POPCOUNT = 16;
     assert(n % WORDS_PER_POPCOUNT == 0);
-    uint32_t pc = 0;
     uint64_t combined[WORDS_PER_POPCOUNT];
+    uint64_t c0, c1, c2, c3;
+    c0 = c1 = c2 = c3 = 0;
     for (int i = 0; i < n; i += WORDS_PER_POPCOUNT) {
         for (int j = 0; j < WORDS_PER_POPCOUNT; ++j)
             combined[j] = buf1[i + j] & buf2[i + j];
-        pc += popcount<WORDS_PER_POPCOUNT>(combined);
+        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, combined);
     }
-    return pc;
+    return c0 + c1 + c2 + c3;
 }
 
 /**
