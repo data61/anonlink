@@ -3,89 +3,62 @@
 #include <queue>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
+#include <ctime>
+#include <cassert>
 
 
-#define WORDBYTES (sizeof(uint64_t))
-#define WORDBITS (WORDBYTES * 8)
-#define KEYBITS 1024
-#define KEYBYTES (KEYBITS / 8)
-// KEYWORDS must be divisible by 4. It is currently equal to 16.
-#define KEYWORDS (KEYBYTES / WORDBYTES)
-
-// Source: http://danluu.com/assembly-intrinsics/
-// https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
-//
-// NB: Dan Luu's original assembly is incorrect because it
-// clobbers registers marked as "input only" (see warning at
-// https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
-// -- this mistake does not materialise with GCC (4.9), but it
-// does with Clang (3.6 and 3.8)).  We fix the mistake by
-// explicitly loading the contents of buf into registers and using
-// these same registers for the intermediate popcnts.
-static inline uint32_t
-builtin_popcnt_unrolled_errata_manual(const uint64_t* buf, int n) {
-  uint64_t b0, b1, b2, b3;
-  uint64_t c0, c1, c2, c3;
-  c0 = c1 = c2 = c3 = 0;
-
-  // We unroll this manually because some versions of GCC don't do so
-  // of their own volition.  Speedup from this in such cases is >20%.
-#undef LOOP_BODY
-#define LOOP_BODY(i) do {                                         \
-  b0 = buf[i]; b1 = buf[i + 1]; b2 = buf[i + 2]; b3 = buf[i + 3]; \
-  __asm__(                                                        \
-    "popcnt %4, %4  \n\t"                                         \
-    "add %4, %0     \n\t"                                         \
-    "popcnt %5, %5  \n\t"                                         \
-    "add %5, %1     \n\t"                                         \
-    "popcnt %6, %6  \n\t"                                         \
-    "add %6, %2     \n\t"                                         \
-    "popcnt %7, %7  \n\t"                                         \
-    "add %7, %3     \n\t"                                         \
-    : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),                 \
-      "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));                \
-  } while (0)
-
-  // Here we assume that 4|n and n <= 16.  This means that n/4 is
-  // either 4, 3, 2 or 1, and these values correspond to the switch
-  // cases, which in turn determine whether we read and popcnt 16, 12,
-  // 8 or 4 elements from buf.  The __attribute__ ((fallthrough));
-  // thingo is to let the compiler know that we are falling through
-  // the switch case statements deliberately (otherwise this illicits
-  // a warning with -Wextra).
-  switch (n >> 2) { //  n/4
-  case 4:
-      LOOP_BODY(12);
-      __attribute__ ((fallthrough));
-  case 3:
-      LOOP_BODY(8);
-      __attribute__ ((fallthrough));
-  case 2:
-      LOOP_BODY(4);
-      __attribute__ ((fallthrough));
-  case 1:
-      LOOP_BODY(0);
-      __attribute__ ((fallthrough));
-  }
-
-  return c0 + c1 + c2 + c3;
+template<int n>
+uint32_t popcount(const uint64_t *buf) {
+    return popcount<4>(buf) + popcount<n - 4>(buf + 4);
 }
 
-/**
- * Bit population count of the 8n bytes of memory starting at buf (8 =
- * sizeof(uint64_t)).
- */
+template<>
+uint32_t popcount<4>(const uint64_t* buf) {
+    uint64_t b0, b1, b2, b3;
+    uint64_t c0, c1, c2, c3;
+    c0 = c1 = c2 = c3 = 0;
+
+    b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
+    __asm__(
+        "popcnt %4, %4  \n\t"
+        "add %4, %0     \n\t"
+        "popcnt %5, %5  \n\t"
+        "add %5, %1     \n\t"
+        "popcnt %6, %6  \n\t"
+        "add %6, %2     \n\t"
+        "popcnt %7, %7  \n\t"
+        "add %7, %3     \n\t"
+        : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
+          "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
+
+    return c0 + c1 + c2 + c3;
+}
+
 static uint32_t
 popcount_array(const uint64_t *buf, int n) {
-    assert(n % 4 == 0);
+    // WORDS_PER_POPCOUNT is how many elements of buf we process each
+    // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
+    static constexpr int WORDS_PER_POPCOUNT = 16;
+    assert(n % WORDS_PER_POPCOUNT == 0);
     uint32_t pc = 0;
-    while (n >= 16) {
-        pc += builtin_popcnt_unrolled_errata_manual(buf, 16);
-        n -= 16;
+    for (int i = 0; i < n; i += WORDS_PER_POPCOUNT)
+        pc += popcount<WORDS_PER_POPCOUNT>(buf + i);
+    return pc;
+}
+
+static uint32_t
+popcount_combined_array(const uint64_t *__restrict__ buf1, const uint64_t *__restrict__ buf2, int n) {
+    // WORDS_PER_POPCOUNT is how many elements of buf we process each
+    // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
+    static constexpr int WORDS_PER_POPCOUNT = 16;
+    assert(n % WORDS_PER_POPCOUNT == 0);
+    uint32_t pc = 0;
+    uint64_t combined[WORDS_PER_POPCOUNT];
+    for (int i = 0; i < n; i += WORDS_PER_POPCOUNT) {
+        for (int j = 0; j < WORDS_PER_POPCOUNT; ++j)
+            combined[j] = buf1[i + j] & buf2[i + j];
+        pc += popcount<WORDS_PER_POPCOUNT>(combined);
     }
-    if (n > 0)
-        pc += builtin_popcnt_unrolled_errata_manual(buf, n);
     return pc;
 }
 
@@ -97,6 +70,7 @@ dice_coeff_1024(const char *e1, const char *e2) {
     const uint64_t *comp1 = (const uint64_t *) e1;
     const uint64_t *comp2 = (const uint64_t *) e2;
 
+    static constexpr int KEYWORDS = 16;
     uint32_t count_both = 0;
 
     count_both += popcount_array(comp1, KEYWORDS);
@@ -104,13 +78,7 @@ dice_coeff_1024(const char *e1, const char *e2) {
     if(count_both == 0) {
         return 0.0;
     }
-
-    uint64_t combined[KEYWORDS];
-    for (unsigned int i = 0 ; i < KEYWORDS; i++ ) {
-        combined[i] = comp1[i] & comp2[i];
-    }
-
-    uint32_t count_and = popcount_array(combined, KEYWORDS);
+    uint32_t count_and = popcount_combined_array(comp1, comp2, KEYWORDS);
 
     return 2 * count_and / (double)count_both;
 }
@@ -137,16 +105,6 @@ struct score_cmp{
 
 
 /**
- * Count lots of bits.
- */
-static void popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
-    for (int i = 0; i < n; i++) {
-        const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
-        counts_many[i] = popcount_array(sig, KEYWORDS);
-    }
-}
-
-/**
  *
  */
 static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
@@ -154,8 +112,49 @@ static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
     return 2 * popcnt_a * (1/threshold - 1);
 }
 
+static double
+dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc, int n)
+{
+    uint32_t uv_popc = popcount_combined_array(u, v, n);
+    return (2 * uv_popc) / (double) (u_popc + v_popc);
+}
+
+/**
+ * Convert clock measurement t to milliseconds.
+ *
+ * t should have been obtained as the difference of calls to clock()
+ * for this to make sense.
+ */
+static inline double to_millis(clock_t t)
+{
+    static constexpr double CPS = (double)CLOCKS_PER_SEC;
+    return t * 1.0E3 / CPS;
+}
+
 extern "C"
 {
+    /**
+     * Calculate population counts of an array of inputs; return how
+     * long it took in milliseconds.
+     *
+     * 'many' must point to n*KEYWORDS*sizeof(uint64_t) (== 128*n) bytes
+     * 'counts_many' must point to n*sizeof(uint32_t) bytes.
+     * For i = 0 to n - 1, the population count of the 1024 bits
+     *
+     *   many[i * KEYWORDS] ... many[(i + 1) * KEYWORDS - 1]
+     *
+     * is put in counts_many[i].
+     */
+    double popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
+        static constexpr int KEYWORDS = 16;
+        clock_t t = clock();
+        for (int i = 0; i < n; i++) {
+            const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
+            counts_many[i] = popcount_array(sig, KEYWORDS);
+        }
+        return to_millis(clock() - t);
+    }
+
     /**
      * Calculate up to the top k indices and scores.  Returns the
      * number matched above a threshold or -1 if keybytes is not a
@@ -175,31 +174,23 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
+        // FIXME: This comment needs to be updated
         // keybytes must be divisible by 32, because keywords must be
         // divisible by 4 for the builtin popcount function to work
         // and keywords = keybytes / 8.
-        if (keybytes % (4 * WORDBYTES) != 0)  // (keybytes & 31)
-            return -1;
+        static constexpr int WORDBYTES = sizeof(uint64_t);
         int keywords = keybytes / WORDBYTES;
+        if (keywords % 16 != 0)
+            return -1;
 
-        // TODO: Given that k is 10 by default, often 5 in practice,
-        // and probably never ever more than 20 or so, the use of a
-        // priority_queue here is expensive overkill.  Better to just
-        // store the scores in an array and do a linear search every
-        // time.
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
         uint32_t count_one = popcount_array(comp1, keywords);
-        uint32_t max_popcnt_delta = keywords * WORDBITS; // = bits per key
+        uint32_t max_popcnt_delta = keywords * WORDBYTES * 8; // = bits per key
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
-        // TODO: This allocation could be avoided by writing a special
-        // popcount_array_combined() function that does the AND
-        // itself; this would almost certainly be faster than the
-        // new/delete pair and would require no memory overhead.
-        uint64_t *combined = new uint64_t[keywords];
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * keywords;
             const uint32_t counts_many_j = counts_many[j];
@@ -212,32 +203,21 @@ extern "C"
             }
 
             if (current_delta <= max_popcnt_delta) {
-                for (int i = 0; i < keywords; i++) {
-                    combined[i] = current[i] & comp1[i];
-                }
-
-                uint32_t count_curr = popcount_array(combined, keywords);
-
-                // TODO: double precision is overkill for this
-                // problem; just use float.
-                double score = 2 * count_curr / (double) (count_one + counts_many_j);
+                double score = dice_coeff(comp1, count_one, current, counts_many_j, keywords);
                 if (score >= threshold) {
                     max_k_scores.push(Node(j, score));
                     if (max_k_scores.size() > k)
                         max_k_scores.pop();
                 }
-            } // else skip because popcount difference too large
+            }
         }
-        delete[] combined;
 
         int i = 0;
-        while (!max_k_scores.empty()) {
-
+        while ( ! max_k_scores.empty()) {
            scores[i] = max_k_scores.top().score;
            indices[i] = max_k_scores.top().index;
-
            max_k_scores.pop();
-           i+=1;
+           i += 1;
         }
         return i;
     }
