@@ -3,6 +3,7 @@
 import os
 import random
 from bitarray import bitarray
+from timeit import default_timer as timer
 
 from anonlink._entitymatcher import ffi, lib
 
@@ -20,20 +21,23 @@ def generate_clks(n):
     return res
 
 
-def popcount_vector(bitarrays, use_native=False):
-    """Return an array containing the popcounts of the elements of
-    bitarrays. If use_native is True, use the native code
-    implementation and return the time spent (in milliseconds) in the
-    native code as a second return value.
+def popcount_vector(bitarrays, use_python=True):
+    """Return a list containing the popcounts of the elements of
+    bitarrays, and the time (in seconds) it took. If use_python is
+    False, use the native code implementation instead of Python; in
+    this case the returned time is the time spent in the native code,
+    NOT including copying to and from the Python runtime.
 
     Note, due to the overhead of converting bitarrays into bytes,
     it is currently more expensive to call our C implementation
     than just calling bitarray.count()
-
     """
     # Use Python
-    if not use_native:
-        return [clk.count() for clk in bitarrays]
+    if use_python:
+        start = timer()
+        counts = [clk.count() for clk in bitarrays]
+        elapsed = timer() - start
+        return counts, elapsed
 
     # Use native code
     n = len(bitarrays)
@@ -42,7 +46,7 @@ def popcount_vector(bitarrays, use_native=False):
                     bytes([b for f in bitarrays for b in f.tobytes()]))
     ms = lib.popcount_1024_array(many, n, c_popcounts)
 
-    return [c_popcounts[i] for i in range(n)], ms
+    return [c_popcounts[i] for i in range(n)], ms * 1e-3
 
 
 def chunks(l, n):

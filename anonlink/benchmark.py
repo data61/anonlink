@@ -27,25 +27,21 @@ def compute_popcount_speed(n):
     print("Implementation              | Time (ms) | Bandwidth (MiB/s)")
 
     # Python
-    start = timer()
-    popcounts = popcount_vector(clks, use_native=False)
-    end = timer()
-    elapsed_time = end - start
+    popcounts, elapsed_time = popcount_vector(clks, use_python=True)
     python_speed_in_MiB = clks_MiB / elapsed_time
     print("Python (bitarray.count()):  |  {:7.2f}  |  {:9.2f} "
           .format(elapsed_time * 1e3, python_speed_in_MiB))
 
     # Native
     start = timer()
-    popcounts, ms = popcount_vector(clks, use_native=True)
+    popcounts, elapsed_nocopy = popcount_vector(clks, use_python=False)
     end = timer()
     elapsed_time = end - start
-    elapsed_nocopy = ms / 1e3
     copy_percent = 100*(elapsed_time - elapsed_nocopy) / elapsed_time
     native_speed_in_MiB = clks_MiB / elapsed_time
     native_speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
     print("Native code (no copy):      |  {:7.2f}  |  {:9.2f} "
-          .format(ms, native_speed_in_MiB_nocopy))
+          .format(elapsed_nocopy * 1e3, native_speed_in_MiB_nocopy))
     print("Native code (w/ copy):      |  {:7.2f}  |  {:9.2f}   ({:.1f}% copying)"
           .format(elapsed_time * 1e3, native_speed_in_MiB, copy_percent))
 
@@ -54,7 +50,9 @@ def compute_popcount_speed(n):
 
 def print_comparison_header(threshold):
     print("\nThreshold:", threshold)
-    print("Size 1 | Size 2 | Comparisons (match %) | Total Time (simat/solv) | Throughput (1e6 cmp/s)")
+    print("Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput")
+    print("       |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)")
+    print("-------+--------+------------------+-------------------------+-------------")
 
 
 def compute_comparison_speed(n1, n2, threshold):
@@ -74,7 +72,7 @@ def compute_comparison_speed(n1, n2, threshold):
     similarity_time = t1 - start
     solver_time = end - t1
     elapsed_time = end - start
-    print("{:6d} | {:6d} |  {:6d}e6  ({:5.2f}%)   | {:6.3f}s ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
+    print("{:6d} | {:6d} | {:4d}e6  ({:5.2f}%) | {:6.3f}  ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
         n1, n2, n1*n2 // 1000000,
         100.0*len(sparse_matrix)/(n1*n2),
         elapsed_time,
