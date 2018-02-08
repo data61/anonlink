@@ -24,13 +24,15 @@ def compute_popcount_speed(n):
     clks = [generate_bitarray(clk_bits) for _ in range(n)]
 
     print("{:6d} x {:d} bit popcounts".format(n, clk_bits))
-    print("Implementation              | Time (ms) | Bandwidth (MiB/s)")
+    print("Implementation              | Time (ms) | Bandwidth (MiB/s) | Throughput (1e6 popc/s)")
 
     # Python
     popcounts, elapsed_time = popcount_vector(clks, use_python=True)
     python_speed_in_MiB = clks_MiB / elapsed_time
-    print("Python (bitarray.count()):  |  {:7.2f}  |  {:9.2f} "
-          .format(elapsed_time * 1e3, python_speed_in_MiB))
+    python_Mops = n / (1e6 * elapsed_time)
+    elapsed_time_ms = elapsed_time * 1e3
+    print("Python (bitarray.count()):  |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
+          .format(elapsed_time_ms, python_speed_in_MiB, python_Mops))
 
     # Native
     start = timer()
@@ -38,12 +40,16 @@ def compute_popcount_speed(n):
     end = timer()
     elapsed_time = end - start
     copy_percent = 100*(elapsed_time - elapsed_nocopy) / elapsed_time
+    elapsed_time_ms = elapsed_time * 1e3
+    elapsed_nocopy_ms = elapsed_nocopy * 1e3
     native_speed_in_MiB = clks_MiB / elapsed_time
     native_speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
-    print("Native code (no copy):      |  {:7.2f}  |  {:9.2f} "
-          .format(elapsed_nocopy * 1e3, native_speed_in_MiB_nocopy))
-    print("Native code (w/ copy):      |  {:7.2f}  |  {:9.2f}   ({:.1f}% copying)"
-          .format(elapsed_time * 1e3, native_speed_in_MiB, copy_percent))
+    native_Mops = n / (1e6 * elapsed_time)
+    native_Mops_nocopy = n / (1e6 * elapsed_nocopy)
+    print("Native code (no copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
+          .format(elapsed_nocopy_ms, native_speed_in_MiB_nocopy, native_Mops_nocopy))
+    print("Native code (w/ copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f} ({:.1f}% copying)"
+          .format(elapsed_time_ms, native_speed_in_MiB, native_Mops, copy_percent))
 
     return python_speed_in_MiB
 
