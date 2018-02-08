@@ -21,8 +21,13 @@ class TestUtilDataGeneration(unittest.TestCase):
 
     def test_popcount_vector(self):
         bas = [util.generate_bitarray(1024) for i in range(100)]
-        popcounts = util.popcount_vector(bas)
 
+        popcounts, _ = util.popcount_vector(bas, use_python=True)
+        self.assertEquals(len(popcounts), 100)
+        for i, cnt in enumerate(popcounts):
+            self.assertEquals(cnt, bas[i].count())
+
+        popcounts, _ = util.popcount_vector(bas, use_python=False)
         self.assertEquals(len(popcounts), 100)
         for i, cnt in enumerate(popcounts):
             self.assertEquals(cnt, bas[i].count())
