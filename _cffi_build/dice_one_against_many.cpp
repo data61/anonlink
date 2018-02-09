@@ -177,9 +177,6 @@ extern "C"
         std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
 
         uint32_t count_one = builtin_popcnt_unrolled_errata_manual(comp1);
-
-        double *all_scores = new double[n];
-
         uint32_t max_popcnt_delta = 1024;
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
@@ -188,31 +185,23 @@ extern "C"
 
         for (int j = 0; j < n; j++) {
             const uint64_t *current = comp2 + j * KEYWORDS;
+            const uint32_t counts_many_j = counts_many[j];
 
-            if(count_one > counts_many[j]){
-                current_delta = count_one - counts_many[j];
+            if (count_one > counts_many_j) {
+                current_delta = count_one - counts_many_j;
             } else {
-                current_delta = counts_many[j] - count_one;
+                current_delta = counts_many_j - count_one;
             }
 
             if(current_delta <= max_popcnt_delta){
-                all_scores[j] = dice_coeff(comp1, count_one, current, counts_many[j]);
-            } else {
-                // Skipping because popcount difference too large
-                all_scores[j] = -1;
+                double score = dice_coeff(comp1, count_one, current, counts_many_j);
+                if (score >= threshold) {
+                    max_k_scores.push(Node(j, score));
+                    if (max_k_scores.size() > k)
+                        max_k_scores.pop();
+                }
             }
         }
-
-        for (int j = 0; j < n; j++) {
-
-            if(all_scores[j] >= threshold) {
-                max_k_scores.push(Node(j, all_scores[j]));
-            }
-
-            if(max_k_scores.size() > k) max_k_scores.pop();
-        }
-
-        delete[] all_scores;
 
         int i = 0;
         while (!max_k_scores.empty()) {
