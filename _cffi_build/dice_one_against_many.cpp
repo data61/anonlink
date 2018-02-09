@@ -167,8 +167,8 @@ extern "C"
 
     /**
      * Calculate up to the top k indices and scores.  Returns the
-     * number matched above a threshold or -1 if keybytes is not a
-     * multiple of 32.
+     * number matched above the given threshold or -1 if keybytes is
+     * not a multiple of 8.
      */
     int match_one_against_many_dice_k_top(
         const char *one,
@@ -184,35 +184,28 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
-        // FIXME: This comment needs to be updated
-        // keybytes must be divisible by 32, because keywords must be
-        // divisible by 4 for the builtin popcount function to work
-        // and keywords = keybytes / 8.
         static constexpr int WORDBYTES = sizeof(uint64_t);
-        int keywords = keybytes / WORDBYTES;
-        if (keywords % 16 != 0)
+        if (keybytes % WORDBYTES != 0)
             return -1;
+        int keywords = keybytes / WORDBYTES;
 
-        std::priority_queue<Node, std::vector<Node>, score_cmp> max_k_scores;
+        typedef std::vector<Node> node_vector;
+        typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
+        node_vector vec;
+        vec.reserve(k + 1);
+        node_queue max_k_scores(score_cmp(), std::move(vec));
 
         uint32_t count_one = popcount_array(comp1, keywords);
-        uint32_t max_popcnt_delta = keywords * WORDBYTES * 8; // = bits per key
+        uint32_t max_popcnt_delta = keybytes * 8; // = bits per key
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
-        for (int j = 0; j < n; j++) {
-            const uint64_t *current = comp2 + j * keywords;
+        const uint64_t *current = comp2;
+        for (int j = 0; j < n; j++, current += keywords) {
             const uint32_t counts_many_j = counts_many[j];
-            uint32_t current_delta;
 
-            if (count_one > counts_many_j) {
-                current_delta = count_one - counts_many_j;
-            } else {
-                current_delta = counts_many_j - count_one;
-            }
-
-            if (current_delta <= max_popcnt_delta) {
+            if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
                 double score = dice_coeff(comp1, count_one, current, counts_many_j, keywords);
                 if (score >= threshold) {
                     max_k_scores.push(Node(j, score));
