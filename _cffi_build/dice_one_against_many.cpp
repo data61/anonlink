@@ -13,6 +13,16 @@ void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 }
 
+// Source: http://danluu.com/assembly-intrinsics/
+// https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
+//
+// NB: Dan Luu's original assembly is incorrect because it
+// clobbers registers marked as "input only" (see warning at
+// https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
+// -- this mistake does not materialise with GCC (4.9), but it
+// does with Clang (3.6 and 3.8)).  We fix the mistake by
+// explicitly loading the contents of buf into registers and using
+// these same registers for the intermediate popcnts.
 template<>
 void popcount<4>(
     uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
