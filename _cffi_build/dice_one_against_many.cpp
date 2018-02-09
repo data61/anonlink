@@ -108,12 +108,13 @@ struct score_cmp{
 /**
  *
  */
-static uint32_t calculate_max_difference(uint32_t popcnt_a, double threshold)
+static inline uint32_t
+calculate_max_difference(uint32_t popcnt_a, double threshold)
 {
     return 2 * popcnt_a * (1/threshold - 1);
 }
 
-static double
+static inline double
 dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc, int n)
 {
     uint32_t uv_popc = popcount_combined_array(u, v, n);
@@ -126,10 +127,18 @@ dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_pop
  * t should have been obtained as the difference of calls to clock()
  * for this to make sense.
  */
-static inline double to_millis(clock_t t)
+static inline double
+to_millis(clock_t t)
 {
     static constexpr double CPS = (double)CLOCKS_PER_SEC;
     return t * 1.0E3 / CPS;
+}
+
+static inline uint32_t
+abs_diff(uint32_t a, uint32_t b) {
+    if (a > b)
+        return a - b;
+    return b - a;
 }
 
 extern "C"
