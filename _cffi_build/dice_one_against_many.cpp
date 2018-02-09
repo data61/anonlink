@@ -194,7 +194,7 @@ extern "C"
             }
 
             if(current_delta <= max_popcnt_delta){
-                double score = dice_coeff(comp1, count_one, current, counts_many[j]);
+                double score = dice_coeff(comp1, count_one, current, counts_many_j);
                 if (score >= threshold) {
                     max_k_scores.push(Node(j, score));
                     if (max_k_scores.size() > k)

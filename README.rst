@@ -50,10 +50,10 @@ You can run the benchmark with:
     Anonlink benchmark -- see README for explanation
     ------------------------------------------------
     100000 x 1024 bit popcounts
-    Implementation              | Time (ms) | Bandwidth (MiB/s)
-    Python (bitarray.count()):  |    18.40  |     663.30
-    Native code (no copy):      |     0.97  |   12558.67
-    Native code (w/ copy):      |   347.66  |      35.11   (99.7% copying)
+    Implementation              | Time (ms) | Bandwidth (MiB/s) | Throughput (1e6 popc/s)
+    Python (bitarray.count()):  |    17.78  |      686.54       |    5.62
+    Native code (no copy):      |     1.00  |    12243.76       |  100.30
+    Native code (w/ copy):      |   344.17  |       35.47       |    0.29 (99.7% copying)
 
     Threshold: 0.5
     Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput
