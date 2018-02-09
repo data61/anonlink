@@ -43,11 +43,11 @@ void popcount<4>(
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
 }
 
-static inline uint32_t
+// WORDS_PER_POPCOUNT is how many elements of buf we process each
+// iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
+template< int WORDS_PER_POPCOUNT = 16 >
+uint32_t
 popcount_array(const uint64_t *buf, int n) {
-    // WORDS_PER_POPCOUNT is how many elements of buf we process each
-    // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
-    static constexpr int WORDS_PER_POPCOUNT = 16;
     assert(n % WORDS_PER_POPCOUNT == 0);
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
@@ -56,11 +56,11 @@ popcount_array(const uint64_t *buf, int n) {
     return c0 + c1 + c2 + c3;
 }
 
-static uint32_t
+// WORDS_PER_POPCOUNT is how many elements of buf we process each
+// iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
+template< int WORDS_PER_POPCOUNT = 16 >
+uint32_t
 popcount_combined_array(const uint64_t *__restrict__ buf1, const uint64_t *__restrict__ buf2, int n) {
-    // WORDS_PER_POPCOUNT is how many elements of buf we process each
-    // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
-    static constexpr int WORDS_PER_POPCOUNT = 16;
     assert(n % WORDS_PER_POPCOUNT == 0);
     uint64_t combined[WORDS_PER_POPCOUNT];
     uint64_t c0, c1, c2, c3;
