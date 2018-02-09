@@ -33,7 +33,7 @@ void popcount<4>(
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
 }
 
-static uint32_t
+static inline uint32_t
 popcount_array(const uint64_t *buf, int n) {
     // WORDS_PER_POPCOUNT is how many elements of buf we process each
     // iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
@@ -93,13 +93,11 @@ public:
 
     // Constructor with default
     Node( int n_index = -1, double n_score = -1.0 )
-        :index(n_index), score( n_score )
-        {
-        }
+        :index(n_index), score( n_score ) { }
 };
 
 struct score_cmp{
-    bool operator()(const Node& a, const Node& b) const{
+    bool operator()(const Node& a, const Node& b) const {
         return a.score > b.score;
     }
 };
@@ -109,14 +107,12 @@ struct score_cmp{
  *
  */
 static inline uint32_t
-calculate_max_difference(uint32_t popcnt_a, double threshold)
-{
+calculate_max_difference(uint32_t popcnt_a, double threshold) {
     return 2 * popcnt_a * (1/threshold - 1);
 }
 
 static inline double
-dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc, int n)
-{
+dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc, int n) {
     uint32_t uv_popc = popcount_combined_array(u, v, n);
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
@@ -128,8 +124,7 @@ dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_pop
  * for this to make sense.
  */
 static inline double
-to_millis(clock_t t)
-{
+to_millis(clock_t t) {
     static constexpr double CPS = (double)CLOCKS_PER_SEC;
     return t * 1.0E3 / CPS;
 }
