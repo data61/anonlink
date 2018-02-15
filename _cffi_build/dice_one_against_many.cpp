@@ -5,7 +5,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <climits>
 
+// WORDS_PER_POPCOUNT determines how much we unroll the popcounting in
+// each iteration of a loop. Currently 16, which corresponds to 16*64
+// = 1024 bits per loop.
+static constexpr int WORDS_PER_POPCOUNT = 16;
+static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 template<int n>
 void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
@@ -16,13 +22,14 @@ void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint
 // Source: http://danluu.com/assembly-intrinsics/
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
 //
-// NB: Dan Luu's original assembly is incorrect because it
-// clobbers registers marked as "input only" (see warning at
+// NB: Dan Luu's original assembly (and the SO answer it was based on)
+// is incorrect because it clobbers registers marked as "input only"
+// (see warning at
 // https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
-// -- this mistake does not materialise with GCC (4.9), but it
-// does with Clang (3.6 and 3.8)).  We fix the mistake by
-// explicitly loading the contents of buf into registers and using
-// these same registers for the intermediate popcnts.
+// -- this mistake does not materialise with GCC (4.9), but it does
+// with Clang (3.6 and 3.8)).  We fix the mistake by explicitly
+// loading the contents of buf into registers and using these same
+// registers for the intermediate popcnts.
 template<>
 void popcount<4>(
     uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
@@ -43,60 +50,46 @@ void popcount<4>(
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
 }
 
-// WORDS_PER_POPCOUNT is how many elements of buf we process each
-// iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
-template< int WORDS_PER_POPCOUNT = 16 >
-uint32_t
-popcount_array(const uint64_t *buf, int n) {
-    assert(n % WORDS_PER_POPCOUNT == 0);
+// "Assumes" WORDS_PER_POPCOUNT divides nwords
+static uint32_t
+_popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-    for (int i = 0; i < n; i += WORDS_PER_POPCOUNT)
-        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, buf + i);
+    for (int i = 0; i < nwords; i += WORDS_PER_POPCOUNT)
+        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, array + i);
     return c0 + c1 + c2 + c3;
 }
 
-// WORDS_PER_POPCOUNT is how many elements of buf we process each
-// iteration. Currently 16, which corresponds to 16*64 = 1024 bits.
-template< int WORDS_PER_POPCOUNT = 16 >
-uint32_t
-popcount_combined_array(const uint64_t *__restrict__ buf1, const uint64_t *__restrict__ buf2, int n) {
-    assert(n % WORDS_PER_POPCOUNT == 0);
+// "Assumes" WORDS_PER_POPCOUNT divides nwords
+static uint32_t
+_popcount_combined_array(
+        const uint64_t *array1,
+        const uint64_t *array2,
+        int nwords) {
     uint64_t combined[WORDS_PER_POPCOUNT];
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-    for (int i = 0; i < n; i += WORDS_PER_POPCOUNT) {
+    for (int i = 0; i < nwords; i += WORDS_PER_POPCOUNT) {
         for (int j = 0; j < WORDS_PER_POPCOUNT; ++j)
-            combined[j] = buf1[i + j] & buf2[i + j];
+            combined[j] = array1[i + j] & array2[i + j];
         popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, combined);
     }
     return c0 + c1 + c2 + c3;
 }
 
-/**
- * Compute the Dice coefficient similarity measure of two bit patterns.
- */
-static double
-dice_coeff_1024(const char *e1, const char *e2) {
-    const uint64_t *comp1 = (const uint64_t *) e1;
-    const uint64_t *comp2 = (const uint64_t *) e2;
-
-    static constexpr int KEYWORDS = 16;
-    uint32_t count_both = 0;
-
-    count_both += popcount_array(comp1, KEYWORDS);
-    count_both += popcount_array(comp2, KEYWORDS);
-    if(count_both == 0) {
-        return 0.0;
-    }
-    uint32_t count_and = popcount_combined_array(comp1, comp2, KEYWORDS);
-
-    return 2 * count_and / (double)count_both;
+// "Assumes" WORDS_PER_POPCOUNT divides nwords
+// assumes u_popc or v_popc is nonzero.
+static inline double
+_dice_coeff(
+        const uint64_t *u, uint32_t u_popc,
+        const uint64_t *v, uint32_t v_popc,
+        int nwords) {
+    uint32_t uv_popc = _popcount_combined_array(u, v, nwords);
+    return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
 
 class Node {
-
 public:
     int index;
     double score;
@@ -106,7 +99,7 @@ public:
         :index(n_index), score( n_score ) { }
 };
 
-struct score_cmp{
+struct score_cmp {
     bool operator()(const Node& a, const Node& b) const {
         return a.score > b.score;
     }
@@ -119,12 +112,6 @@ struct score_cmp{
 static inline uint32_t
 calculate_max_difference(uint32_t popcnt_a, double threshold) {
     return 2 * popcnt_a * (1/threshold - 1);
-}
-
-static inline double
-dice_coeff(const uint64_t *u, uint32_t u_popc, const uint64_t *v, uint32_t v_popc, int n) {
-    uint32_t uv_popc = popcount_combined_array(u, v, n);
-    return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
 /**
@@ -146,6 +133,7 @@ abs_diff(uint32_t a, uint32_t b) {
     return b - a;
 }
 
+
 extern "C"
 {
     /**
@@ -160,14 +148,50 @@ extern "C"
      *
      * is put in counts_many[i].
      */
-    double popcount_1024_array(const char *many, int n, uint32_t *counts_many) {
-        static constexpr int KEYWORDS = 16;
+    double
+    popcount_arrays(
+            uint32_t *counts,
+            const char *arrays, int narrays, int array_bytes) {
+        // assumes WORD_BYTES divides array_bytes
+        int nwords = array_bytes / WORD_BYTES;
+        const uint64_t *u = reinterpret_cast<const uint64_t *>(arrays);
+
+        // assumes WORD_PER_POPCOUNT divides nwords
         clock_t t = clock();
-        for (int i = 0; i < n; i++) {
-            const uint64_t *sig = (const uint64_t *) many + i * KEYWORDS;
-            counts_many[i] = popcount_array(sig, KEYWORDS);
-        }
+        for (int i = 0; i < narrays; ++i, u += nwords)
+            counts[i] = _popcount_array(u, nwords);
         return to_millis(clock() - t);
+    }
+
+    /**
+     * Compute the Dice coefficient similarity measure of two arrays.
+     */
+    double
+    dice_coeff(
+            const char *array1,
+            const char *array2,
+            int array_bytes) {
+        const uint64_t *u, *v;
+        uint32_t u_popc, v_popc;
+        // assumes WORD_BYTES divides array_bytes
+        int nwords = array_bytes / WORD_BYTES;
+
+        u = reinterpret_cast<const uint64_t *>(array1);
+        v = reinterpret_cast<const uint64_t *>(array2);
+
+        // assumes WORD_PER_POPCOUNT divides array_words
+
+        // If the popcount of one of the arrays is zero, then the
+        // popcount of the "intersection" (logical AND) will be zero,
+        // hence the whole Dice coefficient will be zero.
+        u_popc = _popcount_array(u, nwords);
+        if (u_popc == 0)
+            return 0.0;
+        v_popc = _popcount_array(v, nwords);
+        if (v_popc == 0)
+            return 0.0;
+
+        return _dice_coeff(u, u_popc, v, v_popc, nwords);
     }
 
     /**
@@ -176,23 +200,22 @@ extern "C"
      * not a multiple of 8.
      */
     int match_one_against_many_dice_k_top(
-        const char *one,
-        const char *many,
-        const uint32_t *counts_many,
-        int n,
-        int keybytes,
-        uint32_t k,
-        double threshold,
-        int *indices,
-        double *scores) {
+            const char *one,
+            const char *many,
+            const uint32_t *counts_many,
+            int n,
+            int keybytes,
+            uint32_t k,
+            double threshold,
+            int *indices,
+            double *scores) {
 
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
-        static constexpr int WORDBYTES = sizeof(uint64_t);
-        if (keybytes % WORDBYTES != 0)
+        if (keybytes % WORD_BYTES != 0)
             return -1;
-        int keywords = keybytes / WORDBYTES;
+        int keywords = keybytes / WORD_BYTES;
 
         // Here we create max_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
@@ -203,10 +226,10 @@ extern "C"
         typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
         node_vector vec;
         vec.reserve(k + 1);
-        node_queue max_k_scores(score_cmp(), std::move(vec));
+        node_queue top_k_scores(score_cmp(), std::move(vec));
 
-        uint32_t count_one = popcount_array(comp1, keywords);
-        uint32_t max_popcnt_delta = keybytes * 8; // = bits per key
+        uint32_t count_one = _popcount_array(comp1, keywords);
+        uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
@@ -216,20 +239,23 @@ extern "C"
             const uint32_t counts_many_j = counts_many[j];
 
             if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
-                double score = dice_coeff(comp1, count_one, current, counts_many_j, keywords);
+                double score = _dice_coeff(comp1, count_one, current, counts_many_j, keywords);
                 if (score >= threshold) {
-                    max_k_scores.push(Node(j, score));
-                    if (max_k_scores.size() > k)
-                        max_k_scores.pop();
+                    top_k_scores.push(Node(j, score));
+                    if (top_k_scores.size() > k) {
+                        // Popping the top element is O(log(k))!
+                        top_k_scores.pop();
+                    }
                 }
             }
         }
 
         int i = 0;
-        while ( ! max_k_scores.empty()) {
-           scores[i] = max_k_scores.top().score;
-           indices[i] = max_k_scores.top().index;
-           max_k_scores.pop();
+        while ( ! top_k_scores.empty()) {
+           scores[i] = top_k_scores.top().score;
+           indices[i] = top_k_scores.top().index;
+           // Popping the top element is O(log(k))!
+           top_k_scores.pop();
            i += 1;
         }
         return i;
@@ -237,13 +263,14 @@ extern "C"
 
     int match_one_against_many_dice(const char *one, const char *many, int n, double *score) {
 
+        static const int array_bytes = 128;
         static const double threshold = 0.0;
         static const int k = 1;
         int idx_unused;
         uint32_t *counts_many = new uint32_t[n];
-        popcount_1024_array(many, n, counts_many);
+        popcount_arrays(counts_many, many, n, array_bytes);
         int res = match_one_against_many_dice_k_top(
-            one, many, counts_many, n, 128, k, threshold, &idx_unused, score);
+            one, many, counts_many, n, array_bytes, k, threshold, &idx_unused, score);
         delete[] counts_many;
 
         return res;
