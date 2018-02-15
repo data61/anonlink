@@ -194,6 +194,11 @@ extern "C"
             return -1;
         int keywords = keybytes / WORDBYTES;
 
+        // Here we create max_k_scores on the stack by providing it
+        // with a vector in which to put its elements. We do this so
+        // that we can reserve the amount of space needed for the
+        // scores in advance and avoid potential memory reallocation
+        // and copying.
         typedef std::vector<Node> node_vector;
         typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
         node_vector vec;
