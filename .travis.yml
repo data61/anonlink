@@ -8,6 +8,9 @@ python:
   - 'nightly'
   - 'pypy3'
 
+env:
+  - INCLUDE_10K=
+
 matrix:
   allow_failures:
     - python: 'nightly'
@@ -20,4 +23,4 @@ install:
   - travis_retry pip install -e .
 
 script:
-  - INCLUDE_CLI= pytest --cov=anonlink
+  - pytest --cov=anonlink
