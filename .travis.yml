@@ -1,0 +1,23 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
+language: python
+sudo: false
+
+python:
+  - '3.6'
+  - 'nightly'
+  - 'pypy3'
+
+matrix:
+  allow_failures:
+    - python: 'nightly'
+    - python: 'pypy3'
+
+install:
+  - travis_retry pip install pytest pytest-cov
+  - travis_retry pip install -r requirements.txt
+  - travis_retry python setup.py sdist bdist_wheel
+  - travis_retry pip install -e .
+
+script:
+  - INCLUDE_CLI= pytest --cov=anonlink
