@@ -15,7 +15,7 @@ ffibuilder.set_source(
     "_entitymatcher",
     source,
     source_extension='.cpp',
-    extra_compile_args=['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-mssse3', '-mpopcnt', '-fvisibility=hidden'
+    extra_compile_args=['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-march=native', '-mssse3', '-mpopcnt', '-fvisibility=hidden'
     ],
 )
 
