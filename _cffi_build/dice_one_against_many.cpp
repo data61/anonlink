@@ -14,11 +14,15 @@ static constexpr int WORDS_PER_POPCOUNT = 16;
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 template<int n>
-void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
+void popcount(
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        const uint64_t *buf) {
     popcount<4>(c0, c1, c2, c3, buf);
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 }
 
+// Fast Path
+//
 // Source: http://danluu.com/assembly-intrinsics/
 // https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
 //
@@ -32,9 +36,8 @@ void popcount(uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint
 // registers for the intermediate popcnts.
 template<>
 void popcount<4>(
-    uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-    const uint64_t* buf) {
-
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        const uint64_t* buf) {
     uint64_t b0, b1, b2, b3;
     b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
     __asm__(
@@ -50,17 +53,61 @@ void popcount<4>(
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
 }
 
-// "Assumes" WORDS_PER_POPCOUNT divides nwords
+// Slow paths
+// TODO: Assumes sizeof(long) == 8
+template<>
+void popcount<3>(
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
+        const uint64_t* buf) {
+    c0 = __builtin_popcountl(buf[0]);
+    c1 = __builtin_popcountl(buf[1]);
+    c2 = __builtin_popcountl(buf[2]);
+}
+template<>
+void popcount<2>(
+        uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
+        const uint64_t* buf) {
+    c0 = __builtin_popcountl(buf[0]);
+    c1 = __builtin_popcountl(buf[1]);
+}
+template<>
+void popcount<1>(
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
+        const uint64_t* buf) {
+    c0 = __builtin_popcountl(buf[0]);
+}
+
+
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-    for (int i = 0; i < nwords; i += WORDS_PER_POPCOUNT)
-        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, array + i);
+
+    while (nwords >= 16) {
+        popcount<16>(c0, c1, c2, c3, array += 16);
+        nwords -= 16;
+    }
+    // nwords < 16
+    if (nwords >= 8) {
+        popcount<8>(c0, c1, c2, c3, array += 8);
+        nwords -= 8;
+    }
+    // nwords < 8
+    if (nwords >= 4) {
+        popcount<4>(c0, c1, c2, c3, array += 4);
+        nwords -= 4;
+    }
+    // nwords < 4
+    if (nwords >= 2) {
+        popcount<2>(c0, c1, c2, c3, array += 2);
+        nwords -= 2;
+    }
+    // nwords < 2
+    if (nwords == 1)
+        popcount<1>(c0, c1, c2, c3, array + 1);
     return c0 + c1 + c2 + c3;
 }
 
-// "Assumes" WORDS_PER_POPCOUNT divides nwords
 static uint32_t
 _popcount_combined_array(
         const uint64_t *array1,
@@ -77,7 +124,6 @@ _popcount_combined_array(
     return c0 + c1 + c2 + c3;
 }
 
-// "Assumes" WORDS_PER_POPCOUNT divides nwords
 // assumes u_popc or v_popc is nonzero.
 static inline double
 _dice_coeff(
@@ -210,12 +256,11 @@ extern "C"
             int *indices,
             double *scores) {
 
-        const uint64_t *comp1 = (const uint64_t *) one;
-        const uint64_t *comp2 = (const uint64_t *) many;
-
         if (keybytes % WORD_BYTES != 0)
             return -1;
         int keywords = keybytes / WORD_BYTES;
+        const uint64_t *comp1 = (const uint64_t *) one;
+        const uint64_t *comp2 = (const uint64_t *) many;
 
         // Here we create max_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
