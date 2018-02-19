@@ -117,7 +117,7 @@ logand_array(uint64_t *out, const uint64_t *arr1, const uint64_t *arr2, int n) {
 }
 
 static uint32_t
-_popcount_combined_array(
+_popcount_logand_array(
         const uint64_t *array1,
         const uint64_t *array2,
         int nwords) {
@@ -148,7 +148,7 @@ _dice_coeff(
         const uint64_t *u, uint32_t u_popc,
         const uint64_t *v, uint32_t v_popc,
         int nwords) {
-    uint32_t uv_popc = _popcount_combined_array(u, v, nwords);
+    uint32_t uv_popc = _popcount_logand_array(u, v, nwords);
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
