@@ -1,5 +1,4 @@
 import logging
-from operator import itemgetter
 
 from anonlink._entitymatcher import ffi, lib
 
@@ -8,7 +7,7 @@ import sys
 from . import bloommatcher as bm
 from . import util
 
-logging.basicConfig(level=logging.WARNING)
+log = logging.getLogger('anonlink.entitymatch')
 
 
 def python_filter_similarity(filters1, filters2):
@@ -122,7 +121,7 @@ def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
     :returns A mapping dictionary of index in filters1 to index in filters2.
     """
 
-    logging.info('Solving with greedy solver')
+    log.info('Solving with greedy solver')
 
     sparse_matrix = calculate_filter_similarity(filters1, filters2, k, threshold)
     return greedy_solver(sparse_matrix)

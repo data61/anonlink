@@ -21,7 +21,6 @@ class TestUtilDataGeneration(unittest.TestCase):
             self.assertEqual(len(clk[0]), 1024)
             self.assertEqual(clk[0].count(), clk[2])
 
-
 def concat_bitarrays(products):
     for p in products:
         yield sum(p, bitarray())

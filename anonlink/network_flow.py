@@ -8,7 +8,7 @@ import logging
 import networkx as nx
 from networkx.algorithms import bipartite
 
-logging.basicConfig(level=logging.WARNING)
+log = logging.getLogger('anonlink.networkflow')
 
 
 def calculate_network(similarity, cutoff):
@@ -62,17 +62,17 @@ def calculate_entity_mapping(G, method=None):
     """
 
     if method == 'bipartite':
-        logging.info('Solving entity matches with bipartite maximum matching solver')
+        log.info('Solving entity matches with bipartite maximum matching solver')
         network = bipartite.maximum_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
 
     elif method == 'weighted':
-        logging.info('Solving entity matches with networkx maximum weight matching solver')
+        log.info('Solving entity matches with networkx maximum weight matching solver')
         network = nx.max_weight_matching(G)
         entity_map = _to_int_map(network, lambda network, node: network[node])
 
     elif method == 'flow' or method is None:
-        logging.info('Solving entity matches with networkx maximum flow solver')
+        log.info('Solving entity matches with networkx maximum flow solver')
         # The maximum flow solver requires a SOURCE and SINK
         num_rows, num_cols = 0, 0
         for i, node in enumerate(G.nodes()):
@@ -87,9 +87,9 @@ def calculate_entity_mapping(G, method=None):
         # This method produces a quality metric `flow`, however
         # it needs to be compared to the number of entities
         if flow_value < num_rows:
-            logging.info('Matching not perfect - {:.3f}'.format(flow_value))
+            log.info('Matching not perfect - {:.3f}'.format(flow_value))
         else:
-            logging.info('Matching complete. (perfect matching)')
+            log.info('Matching complete. (perfect matching)')
 
         def find_pair(network, node):
             # Make sure to deal with unconnected nodes
