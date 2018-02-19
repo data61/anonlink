@@ -192,13 +192,15 @@ extern "C"
      * Calculate population counts of an array of inputs; return how
      * long it took in milliseconds.
      *
-     * 'many' must point to n*KEYWORDS*sizeof(uint64_t) (== 128*n) bytes
-     * 'counts_many' must point to n*sizeof(uint32_t) bytes.
-     * For i = 0 to n - 1, the population count of the 1024 bits
+     * 'arrays' must point to narrays*array_bytes bytes
+     * 'counts' must point to narrays*sizeof(uint32_t) bytes.
+     * For i = 0 to n - 1, the population count of the array_bytes*8 bits
      *
-     *   many[i * KEYWORDS] ... many[(i + 1) * KEYWORDS - 1]
+     *   arrays[i * array_bytes] ... arrays[(i + 1) * array_bytes - 1]
      *
-     * is put in counts_many[i].
+     * is put in counts[i].
+     *
+     * ASSUMES: array_bytes is divisible by 8.
      */
     double
     popcount_arrays(
@@ -216,7 +218,10 @@ extern "C"
     }
 
     /**
-     * Compute the Dice coefficient similarity measure of two arrays.
+     * Compute the Dice coefficient similarity measure of two arrays
+     * of length array_bytes.
+     *
+     * ASSUMES: array_bytes is divisible by 8.
      */
     double
     dice_coeff(
@@ -230,8 +235,6 @@ extern "C"
 
         u = reinterpret_cast<const uint64_t *>(array1);
         v = reinterpret_cast<const uint64_t *>(array2);
-
-        // assumes WORD_PER_POPCOUNT divides array_words
 
         // If the popcount of one of the arrays is zero, then the
         // popcount of the "intersection" (logical AND) will be zero,
