@@ -59,22 +59,24 @@ template<>
 void popcount<3>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
         const uint64_t* buf) {
-    c0 = __builtin_popcountl(buf[0]);
-    c1 = __builtin_popcountl(buf[1]);
-    c2 = __builtin_popcountl(buf[2]);
+    c0 += __builtin_popcountl(buf[0]);
+    c1 += __builtin_popcountl(buf[1]);
+    c2 += __builtin_popcountl(buf[2]);
 }
+
 template<>
 void popcount<2>(
         uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
         const uint64_t* buf) {
-    c0 = __builtin_popcountl(buf[0]);
-    c1 = __builtin_popcountl(buf[1]);
+    c0 += __builtin_popcountl(buf[0]);
+    c1 += __builtin_popcountl(buf[1]);
 }
+
 template<>
 void popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t* buf) {
-    c0 = __builtin_popcountl(buf[0]);
+    c0 += __builtin_popcountl(buf[0]);
 }
 
 
@@ -84,27 +86,31 @@ _popcount_array(const uint64_t *array, int nwords) {
     c0 = c1 = c2 = c3 = 0;
 
     while (nwords >= 16) {
-        popcount<16>(c0, c1, c2, c3, array += 16);
+        popcount<16>(c0, c1, c2, c3, array);
+        array += 16;
         nwords -= 16;
     }
     // nwords < 16
     if (nwords >= 8) {
-        popcount<8>(c0, c1, c2, c3, array += 8);
+        popcount<8>(c0, c1, c2, c3, array);
+        array += 8;
         nwords -= 8;
     }
     // nwords < 8
     if (nwords >= 4) {
-        popcount<4>(c0, c1, c2, c3, array += 4);
+        popcount<4>(c0, c1, c2, c3, array);
+        array += 4;
         nwords -= 4;
     }
     // nwords < 4
     if (nwords >= 2) {
-        popcount<2>(c0, c1, c2, c3, array += 2);
+        popcount<2>(c0, c1, c2, c3, array);
+        array += 2;
         nwords -= 2;
     }
     // nwords < 2
     if (nwords == 1)
-        popcount<1>(c0, c1, c2, c3, array + 1);
+        popcount<1>(c0, c1, c2, c3, array);
     return c0 + c1 + c2 + c3;
 }
 
