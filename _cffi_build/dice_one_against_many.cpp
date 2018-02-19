@@ -7,10 +7,6 @@
 #include <cassert>
 #include <climits>
 
-// WORDS_PER_POPCOUNT determines how much we unroll the popcounting in
-// each iteration of a loop. Currently 16, which corresponds to 16*64
-// = 1024 bits per loop.
-static constexpr int WORDS_PER_POPCOUNT = 16;
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 template<int n>
@@ -114,20 +110,36 @@ _popcount_array(const uint64_t *array, int nwords) {
     return c0 + c1 + c2 + c3;
 }
 
+static inline void
+logand_array(uint64_t *out, const uint64_t *arr1, const uint64_t *arr2, int n) {
+    for (int j = 0; j < n; ++j)
+        out[j] = arr1[j] & arr2[j];
+}
+
 static uint32_t
 _popcount_combined_array(
         const uint64_t *array1,
         const uint64_t *array2,
         int nwords) {
-    uint64_t combined[WORDS_PER_POPCOUNT];
-    uint64_t c0, c1, c2, c3;
+    const uint64_t *arr1 = array1, *arr2 = array2;
+    int n = nwords;
+    static constexpr int BUF_WORDS = 16;
+    uint64_t combined[BUF_WORDS];
+    uint64_t c0, c1, c2, c3, rest;
+
     c0 = c1 = c2 = c3 = 0;
-    for (int i = 0; i < nwords; i += WORDS_PER_POPCOUNT) {
-        for (int j = 0; j < WORDS_PER_POPCOUNT; ++j)
-            combined[j] = array1[i + j] & array2[i + j];
-        popcount<WORDS_PER_POPCOUNT>(c0, c1, c2, c3, combined);
+
+    while (n >= BUF_WORDS) {
+        logand_array(combined, arr1, arr2, BUF_WORDS);
+        popcount<BUF_WORDS>(c0, c1, c2, c3, combined);
+        arr1 += BUF_WORDS;
+        arr2 += BUF_WORDS;
+        n -= BUF_WORDS;
     }
-    return c0 + c1 + c2 + c3;
+    logand_array(combined, arr1, arr2, n);
+    rest = _popcount_array(combined, n);
+
+    return c0 + c1 + c2 + c3 + rest;
 }
 
 // assumes u_popc or v_popc is nonzero.
