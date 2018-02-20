@@ -328,19 +328,4 @@ extern "C"
         }
         return i;
     }
-
-    int match_one_against_many_dice(const char *one, const char *many, int n, double *score) {
-
-        static const int array_bytes = 128;
-        static const double threshold = 0.0;
-        static const int k = 1;
-        int idx_unused;
-        uint32_t *counts_many = new uint32_t[n];
-        popcount_arrays(counts_many, many, n, array_bytes);
-        int res = match_one_against_many_dice_k_top(
-            one, many, counts_many, n, array_bytes, k, threshold, &idx_unused, score);
-        delete[] counts_many;
-
-        return res;
-    }
 }
