@@ -125,7 +125,7 @@ _popcount_logand_array(
     int n = nwords;
     static constexpr int BUF_WORDS = 16;
     uint64_t combined[BUF_WORDS];
-    uint64_t c0, c1, c2, c3, rest;
+    uint64_t c0, c1, c2, c3;
 
     c0 = c1 = c2 = c3 = 0;
 
@@ -136,10 +136,12 @@ _popcount_logand_array(
         arr2 += BUF_WORDS;
         n -= BUF_WORDS;
     }
-    logand_array(combined, arr1, arr2, n);
-    rest = _popcount_array(combined, n);
+    if (n > 0) {
+        logand_array(combined, arr1, arr2, n);
+        c0 += _popcount_array(combined, n);
+    }
 
-    return c0 + c1 + c2 + c3 + rest;
+    return c0 + c1 + c2 + c3;
 }
 
 // assumes u_popc or v_popc is nonzero.
