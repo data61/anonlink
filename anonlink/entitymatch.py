@@ -33,15 +33,26 @@ def python_filter_similarity(filters1, filters2):
 
 def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     """Accelerated method for determining Bloom Filter similarity.
+
+    Assumes all filters are the same length, being a multiple of 64
+    bits.
+
     """
     length_f1 = len(filters1)
     length_f2 = len(filters2)
 
-    # We assume the length is a multple of 128 bits.
+    if length_f1 == 0:
+        return []
+
+    # Length must be a multple of 64 bits.
+    assert(len(filters1[0][0]) % 8 == 0)
+    filter_bytes = len(filters1[0][0]) // 8
+    assert(filter_bytes % 8 == 0)
+
     match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
 
     # An array of the *one* filter
-    clist1 = [ffi.new("char[128]", bytes(f[0].tobytes()))
+    clist1 = [ffi.new("char[{}]".format(filter_bytes), bytes(f[0].tobytes()))
               for f in filters1]
 
     if sys.version_info < (3, 0):
@@ -51,10 +62,10 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
             for b in f[0].tobytes():
                 data.append(b)
 
-        carr2 = ffi.new("char[{}]".format(128 * length_f2), ''.join(data))
+        carr2 = ffi.new("char[{}]".format(filter_bytes * length_f2), ''.join(data))
     else:
         # Works in Python 3+
-        carr2 = ffi.new("char[{}]".format(128 * length_f2),
+        carr2 = ffi.new("char[{}]".format(filter_bytes * length_f2),
                         bytes([b for f in filters2 for b in f[0].tobytes()]))
 
     c_popcounts = ffi.new("uint32_t[{}]".format(length_f2), [f[2] for f in filters2])
@@ -66,14 +77,13 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
 
     result = []
     for i, f1 in enumerate(filters1):
-        assert len(clist1[i]) == 128
-        assert len(carr2) % 64 == 0
+        assert len(clist1[i]) == filter_bytes
         matches = match_one_against_many_dice_k_top(
             clist1[i],
             carr2,
             c_popcounts,
             length_f2,
-            128,
+            filter_bytes,
             k,
             threshold,
             c_indices,
