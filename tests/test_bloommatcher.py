@@ -1,8 +1,11 @@
 import unittest
 import random
+import os
+from collections import deque
 from bitarray import bitarray
 
 from anonlink import bloommatcher as bm
+from tests import bitarray_utils
 
 __author__ = 'shardy'
 
@@ -70,6 +73,28 @@ class TestBloomMatcher(unittest.TestCase):
 
         self.assertEqual(result, 0.0)
 
+# Generate bit arrays that are combinations of words 0, 1, 2^63, 2^64 - 1
+# of various lengths between 1 and 65 words.
+def test_dicecoeff():
+    for L in bitarray_utils.key_lengths:
+        yield check_dicecoeff, bitarray_utils.bitarrays_of_length(L)
+
+def check_dicecoeff(bas):
+    # Test the Dice coefficient of bitarrays in bas with other
+    # bitarrays of bas.  rotations is the number of times we rotate
+    # bas to generate pairs to test the Dice coefficient; 10 takes
+    # around 10s, 100 around 60s.
+    rotations = 100 if "INCLUDE_10K" in os.environ else 10;
+
+    # We check that the native code and Python versions of dicecoeff
+    # don't ever differ by more than 10^{-6}.
+    eps = 0.000001
+    d = deque(bas)
+    for _ in range(min(rotations, len(bas))):
+        for a, b in zip(bas, d):
+            diff = bm.dicecoeff_pure_python(a, b) - bm.dicecoeff_native(a, b)
+            assert(abs(diff) < eps)
+        d.rotate(1)
 
 if __name__ == '__main__':
     unittest.main()
