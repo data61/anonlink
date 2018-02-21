@@ -51,6 +51,10 @@ void popcount<4>(
 
 // Slow paths
 // TODO: Assumes sizeof(long) == 8
+//
+// NB: The specialisation to n=3 is not currently used but included
+// for completeness (i.e. so that popcount<n> is defined for all
+// non-negative n) and in anticipation of its use in the near future.
 template<>
 void popcount<3>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
@@ -285,7 +289,7 @@ extern "C"
         const uint64_t *comp1 = (const uint64_t *) one;
         const uint64_t *comp2 = (const uint64_t *) many;
 
-        // Here we create max_k_scores on the stack by providing it
+        // Here we create top_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
         // that we can reserve the amount of space needed for the
         // scores in advance and avoid potential memory reallocation

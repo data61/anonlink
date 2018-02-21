@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import random
 import os
 from collections import deque
@@ -73,18 +74,16 @@ class TestBloomMatcher(unittest.TestCase):
 
         self.assertEqual(result, 0.0)
 
-# Generate bit arrays that are combinations of words 0, 1, 2^63, 2^64 - 1
-# of various lengths between 1 and 65 words.
-def test_dicecoeff():
-    for L in bitarray_utils.key_lengths:
-        yield check_dicecoeff, bitarray_utils.bitarrays_of_length(L)
-
-def check_dicecoeff(bas):
-    # Test the Dice coefficient of bitarrays in bas with other
-    # bitarrays of bas.  rotations is the number of times we rotate
-    # bas to generate pairs to test the Dice coefficient; 10 takes
-    # around 10s, 100 around 60s.
+@pytest.mark.parametrize("L", bitarray_utils.key_lengths)
+def test_dicecoeff(L):
+    """
+    Test the Dice coefficient of bitarrays in bas with other
+    bitarrays of bas.  rotations is the number of times we rotate
+    bas to generate pairs to test the Dice coefficient; 10 takes
+    around 10s, 100 around 60s.
+    """
     rotations = 100 if "INCLUDE_10K" in os.environ else 10;
+    bas = bitarray_utils.bitarrays_of_length(L)
 
     # We check that the native code and Python versions of dicecoeff
     # don't ever differ by more than 10^{-6}.

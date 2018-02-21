@@ -44,10 +44,9 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     if length_f1 == 0:
         return []
 
-    # Length must be a multple of 64 bits.
-    assert(len(filters1[0][0]) % 8 == 0)
-    filter_bytes = len(filters1[0][0]) // 8
-    assert(filter_bytes % 8 == 0)
+    filter_bits = len(filters1[0][0])
+    assert(filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.')
+    filter_bytes = filter_bits // 8
 
     match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
 
@@ -90,7 +89,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
             c_scores)
 
         if matches < 0:
-            raise Exception('Internel error: Bad key length')
+            raise ValueError('Internel error: Bad key length')
         for j in range(matches):
             ind = c_indices[j]
             assert ind < len(filters2)
