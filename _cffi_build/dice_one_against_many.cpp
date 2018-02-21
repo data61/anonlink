@@ -301,6 +301,9 @@ extern "C"
         node_queue top_k_scores(score_cmp(), std::move(vec));
 
         uint32_t count_one = _popcount_array(comp1, keywords);
+        if (count_one == 0)
+            return 0;
+
         uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
         if(threshold > 0) {
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
