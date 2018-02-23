@@ -80,6 +80,16 @@ void popcount<1>(
 }
 
 
+template<int nwords>
+void _my_popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
+    uint64_t c0, c1, c2, c3;
+    for (int i = 0; i < narrays; ++i, arrays += nwords) {
+        c0 = c1 = c2 = c3 = 0;
+        popcount<nwords>(c0, c1, c2, c3, arrays);
+        counts[i] = c0 + c1 + c2 + c3;
+    }
+}
+
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
@@ -230,8 +240,14 @@ extern "C"
 
         // assumes WORD_PER_POPCOUNT divides nwords
         clock_t t = clock();
-        for (int i = 0; i < narrays; ++i, u += nwords)
-            counts[i] = _popcount_array(u, nwords);
+        switch (nwords) {
+        case 32: _my_popcount_arrays<32>(counts, u, narrays); break;
+        case 16: _my_popcount_arrays<16>(counts, u, narrays); break;
+        case  8: _my_popcount_arrays< 8>(counts, u, narrays); break;
+        default:
+            for (int i = 0; i < narrays; ++i, u += nwords)
+                counts[i] = _popcount_array(u, nwords);
+        }
         return to_millis(clock() - t);
     }
 
