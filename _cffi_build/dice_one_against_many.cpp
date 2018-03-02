@@ -32,7 +32,7 @@ popcount(
 // loading the contents of buf into registers and using these same
 // registers for the intermediate popcnts.
 template<>
-static inline void
+inline void
 popcount<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t* buf) {
@@ -58,7 +58,7 @@ popcount<4>(
 // for completeness (i.e. so that popcount<n> is defined for all
 // non-negative n) and in anticipation of its use in the near future.
 template<>
-static inline void
+inline void
 popcount<3>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
         const uint64_t* buf) {
@@ -68,7 +68,7 @@ popcount<3>(
 }
 
 template<>
-static inline void
+inline void
 popcount<2>(
         uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
         const uint64_t* buf) {
@@ -77,7 +77,7 @@ popcount<2>(
 }
 
 template<>
-static inline void
+inline void
 popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t* buf) {
@@ -140,7 +140,7 @@ popcount_logand(
 }
 
 template<>
-static inline void
+inline void
 popcount_logand<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t* buf1, const uint64_t *buf2) {
