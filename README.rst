@@ -46,6 +46,7 @@ Benchmark
 You can run the benchmark with:
 
 ::
+
     $ python3 -m anonlink.benchmark
     Anonlink benchmark -- see README for explanation
     ------------------------------------------------
