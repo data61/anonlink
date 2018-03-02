@@ -2,4 +2,5 @@ bitarray==0.8.1
 networkx==1.11
 cffi>=1.7
 pytest>=3.4
+pytest-cov>=2.5
 clkhash==0.8.0

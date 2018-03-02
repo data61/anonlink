@@ -61,10 +61,8 @@ def build(python_version, compiler, label, release=false) {
 
                     CC=${compiler} ${VENV}/bin/python setup.py sdist bdist_wheel
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
-                    ${VENV}/bin/python ${VENV}/bin/pytest
+                    ${VENV}/bin/python ${VENV}/bin/pytest --cov=anonlink
                    """
-                   //     --with-xunit --with-coverage --cover-inclusive \
-                   //     --cover-package=anonlink
 
                 if(release) {
                     // This will be the official release
