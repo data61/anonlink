@@ -10,7 +10,8 @@
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 template<int n>
-void popcount(
+static inline void
+popcount(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf) {
     popcount<4>(c0, c1, c2, c3, buf);
@@ -31,7 +32,8 @@ void popcount(
 // loading the contents of buf into registers and using these same
 // registers for the intermediate popcnts.
 template<>
-void popcount<4>(
+static inline void
+popcount<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t* buf) {
     uint64_t b0, b1, b2, b3;
@@ -56,7 +58,8 @@ void popcount<4>(
 // for completeness (i.e. so that popcount<n> is defined for all
 // non-negative n) and in anticipation of its use in the near future.
 template<>
-void popcount<3>(
+static inline void
+popcount<3>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
         const uint64_t* buf) {
     c0 += __builtin_popcountl(buf[0]);
@@ -65,7 +68,8 @@ void popcount<3>(
 }
 
 template<>
-void popcount<2>(
+static inline void
+popcount<2>(
         uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
         const uint64_t* buf) {
     c0 += __builtin_popcountl(buf[0]);
@@ -73,7 +77,8 @@ void popcount<2>(
 }
 
 template<>
-void popcount<1>(
+static inline void
+popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t* buf) {
     c0 += __builtin_popcountl(buf[0]);
@@ -81,7 +86,8 @@ void popcount<1>(
 
 
 template<int nwords>
-void _my_popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
+static void
+_popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     uint64_t c0, c1, c2, c3;
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
         c0 = c1 = c2 = c3 = 0;
@@ -124,43 +130,57 @@ _popcount_array(const uint64_t *array, int nwords) {
     return c0 + c1 + c2 + c3;
 }
 
+template<int n>
 static inline void
-logand_array(uint64_t *out, const uint64_t *arr1, const uint64_t *arr2, int n) {
-    for (int j = 0; j < n; ++j)
-        out[j] = arr1[j] & arr2[j];
+popcount_logand(
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        const uint64_t *buf1, const uint64_t *buf2) {
+    popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
+    popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
+}
+
+template<>
+static inline void
+popcount_logand<4>(
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        const uint64_t* buf1, const uint64_t *buf2) {
+    uint64_t b[4];
+    b[0] = buf1[0] & buf2[0];
+    b[1] = buf1[1] & buf2[1];
+    b[2] = buf1[2] & buf2[2];
+    b[3] = buf1[3] & buf2[3];
+    popcount<4>(c0, c1, c2, c3, b);
 }
 
 static uint32_t
-_popcount_logand_array(
-        const uint64_t *array1,
-        const uint64_t *array2,
-        int nwords) {
-    const uint64_t *arr1 = array1, *arr2 = array2;
-    int n = nwords;
-    static constexpr int BUF_WORDS = 16;
-    uint64_t combined[BUF_WORDS];
+_popcount_logand_array(const uint64_t* u, const uint64_t* v, int len) {
+    // NB: The switch statement at the end of this function must have
+    // cases for all i = 1, ..., LOOP_LEN - 1.
+    static constexpr int LOOP_LEN = 4;
     uint64_t c0, c1, c2, c3;
-
     c0 = c1 = c2 = c3 = 0;
 
-    while (n >= BUF_WORDS) {
-        logand_array(combined, arr1, arr2, BUF_WORDS);
-        popcount<BUF_WORDS>(c0, c1, c2, c3, combined);
-        arr1 += BUF_WORDS;
-        arr2 += BUF_WORDS;
-        n -= BUF_WORDS;
+    int i = 0;
+    for ( ; i + LOOP_LEN <= len; i += LOOP_LEN) {
+        popcount_logand<LOOP_LEN>(c0, c1, c2, c3, u, v);
+        u += LOOP_LEN;
+        v += LOOP_LEN;
     }
-    if (n > 0) {
-        logand_array(combined, arr1, arr2, n);
-        c0 += _popcount_array(combined, n);
+
+    // NB: The "fall through" comments are necessary to tell GCC and
+    // Clang not to complain about the fact that the case clauses
+    // don't have break statements in them.
+    switch (len - i) {
+    case 3: c2 += __builtin_popcountl(u[2] & v[2]);  /* fall through */
+    case 2: c1 += __builtin_popcountl(u[1] & v[1]);  /* fall through */
+    case 1: c0 += __builtin_popcountl(u[0] & v[0]);  /* fall through */
     }
 
     return c0 + c1 + c2 + c3;
 }
 
-// assumes u_popc or v_popc is nonzero.
 static inline double
-_dice_coeff(
+_dice_coeff_generic(
         const uint64_t *u, uint32_t u_popc,
         const uint64_t *v, uint32_t v_popc,
         int nwords) {
@@ -168,6 +188,17 @@ _dice_coeff(
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
+template<int nwords>
+static inline double
+_dice_coeff(
+        const uint64_t *u, uint32_t u_popc,
+        const uint64_t *v, uint32_t v_popc) {
+    uint64_t c0, c1, c2, c3;
+    c0 = c1 = c2 = c3 = 0;
+    popcount_logand<nwords>(c0, c1, c2, c3, u, v);
+    uint32_t uv_popc = c0 + c1 + c2 + c3;
+    return (2 * uv_popc) / (double) (u_popc + v_popc);
+}
 
 class Node {
 public:
@@ -241,9 +272,9 @@ extern "C"
         // assumes WORD_PER_POPCOUNT divides nwords
         clock_t t = clock();
         switch (nwords) {
-        case 32: _my_popcount_arrays<32>(counts, u, narrays); break;
-        case 16: _my_popcount_arrays<16>(counts, u, narrays); break;
-        case  8: _my_popcount_arrays< 8>(counts, u, narrays); break;
+        case 32: _popcount_arrays<32>(counts, u, narrays); break;
+        case 16: _popcount_arrays<16>(counts, u, narrays); break;
+        case  8: _popcount_arrays< 8>(counts, u, narrays); break;
         default:
             for (int i = 0; i < narrays; ++i, u += nwords)
                 counts[i] = _popcount_array(u, nwords);
@@ -280,7 +311,7 @@ extern "C"
         if (v_popc == 0)
             return 0.0;
 
-        return _dice_coeff(u, u_popc, v, v_popc, nwords);
+        return _dice_coeff_generic(u, u_popc, v, v_popc, nwords);
     }
 
     /**
@@ -302,8 +333,8 @@ extern "C"
         if (keybytes % WORD_BYTES != 0)
             return -1;
         int keywords = keybytes / WORD_BYTES;
-        const uint64_t *comp1 = (const uint64_t *) one;
-        const uint64_t *comp2 = (const uint64_t *) many;
+        const uint64_t *comp1 = reinterpret_cast<const uint64_t *>(one);
+        const uint64_t *comp2 = reinterpret_cast<const uint64_t *>(many);
 
         // Here we create top_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
@@ -325,18 +356,31 @@ extern "C"
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
-        const uint64_t *current = comp2;
-        for (int j = 0; j < n; j++, current += keywords) {
-            const uint32_t counts_many_j = counts_many[j];
+        auto push_score = [&](double score, int idx) {
+            if (score >= threshold) {
+                top_k_scores.push(Node(idx, score));
+                if (top_k_scores.size() > k) {
+                    // Popping the top element is O(log(k))!
+                    top_k_scores.pop();
+                }
+            }
+        };
 
-            if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
-                double score = _dice_coeff(comp1, count_one, current, counts_many_j, keywords);
-                if (score >= threshold) {
-                    top_k_scores.push(Node(j, score));
-                    if (top_k_scores.size() > k) {
-                        // Popping the top element is O(log(k))!
-                        top_k_scores.pop();
-                    }
+        const uint64_t *current = comp2;
+        if (keywords == 16) {
+            for (int j = 0; j < n; j++, current += 16) {
+                const uint32_t counts_many_j = counts_many[j];
+                if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
+                    double score = _dice_coeff<16>(comp1, count_one, current, counts_many_j);
+                    push_score(score, j);
+                }
+            }
+        } else {
+            for (int j = 0; j < n; j++, current += keywords) {
+                const uint32_t counts_many_j = counts_many[j];
+                if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
+                    double score = _dice_coeff_generic(comp1, count_one, current, counts_many_j, keywords);
+                    push_score(score, j);
                 }
             }
         }
@@ -349,6 +393,7 @@ extern "C"
            top_k_scores.pop();
            i += 1;
         }
+
         return i;
     }
 }
