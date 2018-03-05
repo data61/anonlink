@@ -61,7 +61,7 @@ def build(python_version, compiler, label, release=false) {
 
                     CC=${compiler} ${VENV}/bin/python setup.py sdist bdist_wheel
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
-                    ${VENV}/bin/python ${VENV}/bin/pytest --cov=anonlink
+                    ${VENV}/bin/python ${VENV}/bin/pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml
                    """
 
                 if(release) {
@@ -78,7 +78,7 @@ def build(python_version, compiler, label, release=false) {
             finally {
 
                 if (!release) {
-                    junit 'nosetests.xml'
+                    junit 'testoutput.xml'
                 } else {
                     // Code coverage only needs to be done once
                     sh '''#!/usr/bin/env bash
