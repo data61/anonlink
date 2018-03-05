@@ -21,7 +21,7 @@ def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clk
     venv.create();
     venv.runPipCommand("install --upgrade pip coverage setuptools wheel")
     venv.runPipCommand("install --quiet --upgrade ${clkhashPackageName}");
-    venv.runPipCommand("install -r dev-requirements.txt");
+    venv.runPipCommand("install -r requirements.txt");
     venv.runCommand("setup.py sdist bdist_wheel --universal");
     venv.runPipCommand("install -e .");
     return venv;
