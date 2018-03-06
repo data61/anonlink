@@ -29,6 +29,7 @@ def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clk
 
 def build(python_version, compiler, label, release = false) {
   GitCommit commit2 = GitUtils.checkoutFromSCM(this)
+  Exception testsError = null;
   try {
     clkhashPackageName = "clkhash-*-py2.py3-none-any.whl"
     step([$class     : 'CopyArtifact',
