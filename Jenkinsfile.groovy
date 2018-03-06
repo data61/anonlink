@@ -51,7 +51,14 @@ def build(python_version, compiler, label, release = false) {
       testsError = err
     } finally {
       if (!release) {
-        junit 'nosetests.xml'
+        try {
+          junit 'nosetests.xml'
+        } catch (Exception e) {
+          if (testsError != null) {
+            testsError = e;
+          }
+          echo "Problem to publish the test results: \n" + e.toString();
+        }
       } else {
         venv.runChosenCommand("coverage xml --omit=\"*/cpp_code/*\" --omit=\"*build_matcher.py*\"")
         cobertura coberturaReportFile: 'coverage.xml'
