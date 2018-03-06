@@ -47,9 +47,8 @@ def build(python_version, compiler, label, release = false) {
         archiveArtifacts artifacts: "dist/anonlink-*.tar.gz"
       }
     } catch (Exception err) {
+      echo err
       testsError = err
-      currentBuild.result = 'FAILURE'
-      setBuildStatus("Build failed", "FAILURE");
     } finally {
       if (!release) {
         junit 'nosetests.xml'
