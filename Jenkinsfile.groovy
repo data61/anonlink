@@ -28,7 +28,7 @@ def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clk
 }
 
 def build(python_version, compiler, label, release = false) {
-  GitUtils.checkoutFromSCM(this)
+  GitCommit commit = GitUtils.checkoutFromSCM(this)
   try {
     clkhashPackageName = "clkhash-*-py2.py3-none-any.whl"
     step([$class     : 'CopyArtifact',
@@ -65,6 +65,7 @@ def build(python_version, compiler, label, release = false) {
       }
       if (testsError) {
         echo "Fail during the test: \n" + testsError.toString()
+        commit.setFailStatus("Fail during the tests", GIT_CONTEXT)
         throw testsError
       }
     }
@@ -105,14 +106,7 @@ node() {
   commit.setInProgressStatus(GIT_CONTEXT);
 }
 
-try {
-  parallel builders
-} catch (Exception e) {
-  node() {
-    commit.setFailStatus("Build failed", GIT_CONTEXT);
-  }
-  throw e
-}
+parallel builders
 
 node('GPU 1') {
   stage('Release') {
