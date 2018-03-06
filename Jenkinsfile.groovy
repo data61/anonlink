@@ -47,7 +47,7 @@ def build(python_version, compiler, label, release = false) {
         archiveArtifacts artifacts: "dist/anonlink-*.tar.gz"
       }
     } catch (Exception err) {
-      echo err
+      echo err.toString()
       testsError = err
     } finally {
       if (!release) {
