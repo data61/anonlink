@@ -28,16 +28,16 @@ def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clk
 }
 
 def build(python_version, compiler, label, release = false) {
-  GitCommit commit2 = GitUtils.checkoutFromSCM(this)
+  GitUtils.checkoutFromSCM(this)
   Exception testsError = null;
   try {
     clkhashPackageName = "clkhash-*-py2.py3-none-any.whl"
-    step([$class     : 'CopyArtifact',
-          projectName: 'clkhash/master',
-          fingerprint: true,
-          flatten    : true,
-          filter     : 'dist/' + clkhashPackageName
-    ]);
+    copyArtifacts(
+        projectName: 'clkhash/master',
+        fingerprint: true,
+        flatten    : true,
+        filter     : 'dist/' + clkhashPackageName
+    )
 
     PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName)
     try {
@@ -57,7 +57,6 @@ def build(python_version, compiler, label, release = false) {
         cobertura coberturaReportFile: 'coverage.xml'
       }
       if (testsError != null) {
-        commit2.setFailStatus("Fail during the tests", GIT_CONTEXT)
         throw testsError
       }
     }
