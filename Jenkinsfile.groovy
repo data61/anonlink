@@ -110,7 +110,19 @@ node() {
   commit.setInProgressStatus(GIT_CONTEXT);
 }
 
-parallel builders
+Exception exc = null;
+try {
+  parallel builders
+} catch (Exception err) {
+  node() {
+    commit.setFailStatus("Build failed", GIT_CONTEXT);
+  }
+  exc = err
+}
+
+if (exc != null) {
+  throw exc
+}
 
 node('GPU 1') {
   stage('Release') {
