@@ -112,7 +112,7 @@ try {
   node() {
     commit.setFailStatus("Build failed", GIT_CONTEXT);
   }
-  throw err
+  throw e
 }
 
 node('GPU 1') {
