@@ -64,14 +64,13 @@ def build(python_version, compiler, label, release = false) {
         cobertura coberturaReportFile: 'coverage.xml'
       }
       if (testsError) {
+        echo "Fail during the test: \n" + testsError.toString()
         throw testsError
       }
     }
 
   } finally {
-    echo "Cleanning the workspace"
     deleteDir()
-    echo "Workspace clean"
   }
 }
 
