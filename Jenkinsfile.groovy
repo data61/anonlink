@@ -48,24 +48,15 @@ def build(python_version, compiler, label, release = false) {
         archiveArtifacts artifacts: "dist/anonlink-*.tar.gz"
       }
     } catch (Exception err) {
-      echo err.toString()
       testsError = err
     } finally {
       if (!release) {
-        try {
-          junit 'nosetests.xml'
-        } catch (Exception e) {
-          if (testsError != null) {
-            testsError = e;
-          }
-          echo "Problem to publish the test results: \n" + e.toString();
-        }
+        junit 'nosetests.xml'
       } else {
         venv.runChosenCommand("coverage xml --omit=\"*/cpp_code/*\" --omit=\"*build_matcher.py*\"")
         cobertura coberturaReportFile: 'coverage.xml'
       }
       if (testsError != null) {
-        echo "Fail during the test: \n" + testsError.toString()
         commit2.setFailStatus("Fail during the tests", GIT_CONTEXT)
         throw testsError
       }
@@ -75,7 +66,7 @@ def build(python_version, compiler, label, release = false) {
     try {
       deleteDir()
     } catch (Exception e) {
-      echo "failed during `deleteDir`"
+      echo "Error during 'deleteDir':\n" + e.toString()
     }
   }
 }
@@ -111,18 +102,13 @@ node() {
   commit.setInProgressStatus(GIT_CONTEXT);
 }
 
-Exception exc = null;
 try {
   parallel builders
 } catch (Exception err) {
   node() {
     commit.setFailStatus("Build failed", GIT_CONTEXT);
   }
-  exc = err
-}
-
-if (exc != null) {
-  throw exc
+  throw err
 }
 
 node('GPU 1') {
