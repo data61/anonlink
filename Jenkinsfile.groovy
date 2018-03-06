@@ -63,7 +63,7 @@ def build(python_version, compiler, label, release = false) {
         venv.runChosenCommand("coverage xml --omit=\"*/cpp_code/*\" --omit=\"*build_matcher.py*\"")
         cobertura coberturaReportFile: 'coverage.xml'
       }
-      if (testsError) {
+      if (testsError != null) {
         echo "Fail during the test: \n" + testsError.toString()
         commit.setFailStatus("Fail during the tests", GIT_CONTEXT)
         throw testsError
@@ -71,7 +71,11 @@ def build(python_version, compiler, label, release = false) {
     }
 
   } finally {
-    deleteDir()
+    try {
+      deleteDir()
+    } catch (Exception e) {
+      echo "failed during `deleteDir`"
+    }
   }
 }
 
