@@ -13,7 +13,7 @@ GIT_CONTEXT = "jenkins"
 
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
-    //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
+    [label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, venv_directory = VENV_DIRECTORY) {
