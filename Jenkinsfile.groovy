@@ -45,7 +45,7 @@ def build(python_version, compiler, label, release = false) {
 
     PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
     try {
-      venv.runChosenCommand("nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink")
+      venv.runChosenCommand("pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml")
       if (release) {
         // This will be the official release
         archiveArtifacts artifacts: "dist/anonlink-*.whl"
@@ -55,7 +55,7 @@ def build(python_version, compiler, label, release = false) {
       testsError = err
     } finally {
       if (!release) {
-        junit 'nosetests.xml'
+        junit 'testoutput.xml'
       } else {
         venv.runChosenCommand("coverage xml --omit=\"*/cpp_code/*\" --omit=\"*build_matcher.py*\"")
         cobertura coberturaReportFile: 'coverage.xml'
