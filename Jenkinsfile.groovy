@@ -16,13 +16,16 @@ def configs = [
     [label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
 ]
 
-def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, venv_directory = VENV_DIRECTORY) {
+def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
   PythonVirtualEnvironment venv = new PythonVirtualEnvironment(this, venv_directory, pythonVersion);
   venv.create();
   venv.runPipCommand("install --upgrade pip coverage setuptools wheel")
   venv.runPipCommand("install --quiet --upgrade ${clkhashPackageName}");
   venv.runPipCommand("install -r requirements.txt");
-  venv.runCommand("setup.py sdist bdist_wheel --universal");
+  String cc = "CC=" + compiler;
+  withEnv([cc]) {
+    venv.runCommand("setup.py sdist bdist_wheel --universal");
+  }
   venv.runPipCommand("install -e .");
   return venv;
 }
@@ -39,7 +42,7 @@ def build(python_version, compiler, label, release = false) {
         filter     : 'dist/' + clkhashPackageName
     )
 
-    PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName)
+    PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
     try {
       venv.runChosenCommand("nosetests --with-xunit --with-coverage --cover-inclusive --cover-package=anonlink")
       if (release) {
