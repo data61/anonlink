@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <vector>
 #include <queue>
-#include <cstdint>
+#include <stdint.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
