@@ -17,6 +17,12 @@ def configs = [
 
 def build(python_version, compiler, label, release=false) {
     try {
+        // The stage below is attempting to get the latest version of our application code.
+        // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
+        // pipeline project then you can replace this with the regular 'git url:' pipeline command.
+        // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
+        checkout scm
+
         def workspace = pwd();
         echo "${label}"
         echo "workspace directory is ${workspace}"
@@ -24,14 +30,6 @@ def build(python_version, compiler, label, release=false) {
 
         withEnv(["VENV=${workspace}/env"]) {
         // ${workspace} contains an absolute path to job workspace (not available within a stage)
-
-            sh "test -d ${workspace}/env && rm -rf ${workspace}/env || echo 'no env, skipping cleanup'"
-
-            // The stage below is attempting to get the latest version of our application code.
-            // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard
-            // pipeline project then you can replace this with the regular 'git url:' pipeline command.
-            // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-            checkout scm
 
             def testsError = null
 
@@ -61,10 +59,7 @@ def build(python_version, compiler, label, release=false) {
 
                     CC=${compiler} ${VENV}/bin/python setup.py sdist bdist_wheel
                     ${VENV}/bin/python ${VENV}/bin/pip install -e .
-                    ${VENV}/bin/python ${VENV}/bin/nosetests \
-                        --with-xunit --with-coverage --cover-inclusive \
-                        --cover-package=anonlink
-
+                    ${VENV}/bin/python ${VENV}/bin/pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml
                    """
 
                 if(release) {
@@ -81,7 +76,7 @@ def build(python_version, compiler, label, release=false) {
             finally {
 
                 if (!release) {
-                    junit 'nosetests.xml'
+                    junit 'testoutput.xml'
                 } else {
                     // Code coverage only needs to be done once
                     sh '''#!/usr/bin/env bash

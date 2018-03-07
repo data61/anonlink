@@ -46,6 +46,7 @@ Benchmark
 You can run the benchmark with:
 
 ::
+
     $ python3 -m anonlink.benchmark
     Anonlink benchmark -- see README for explanation
     ------------------------------------------------
@@ -113,16 +114,24 @@ matrix, which will be approximately `#comparisons * match% / 100`.
 Tests
 =====
 
-Run unit tests with nose
+Run unit tests with `pytest`:
 
 ::
 
-    $ python -m nose
-    ......................SS..............................
-    ----------------------------------------------------------------------
-    Ran 54 tests in 6.615s
+    $ pytest
+    ====================================== test session starts ======================================
+    platform linux -- Python 3.6.4, pytest-3.2.5, py-1.4.34, pluggy-0.4.0
+    rootdir: /home/hlaw/src/n1-anonlink, inifile:
+    collected 71 items
 
-    OK (SKIP=2)
+    tests/test_benchmark.py ...
+    tests/test_bloommatcher.py ..............
+    tests/test_e2e.py .............ss....
+    tests/test_matcher.py ..x.....x......x....x..
+    tests/test_similarity.py .........
+    tests/test_util.py ...
+
+    ======================== 65 passed, 2 skipped, 4 xfailed in 4.01 seconds ========================
 
 To enable slightly larger tests add the following environment variables:
 
