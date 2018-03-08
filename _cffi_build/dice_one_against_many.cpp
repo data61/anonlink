@@ -57,6 +57,7 @@ popcount<4>(
 // NB: The specialisation to n=3 is not currently used but included
 // for completeness (i.e. so that popcount<n> is defined for all
 // non-negative n) and in anticipation of its use in the near future.
+#if 0
 template<>
 inline void
 popcount<3>(
@@ -66,6 +67,7 @@ popcount<3>(
     c1 += __builtin_popcountl(buf[1]);
     c2 += __builtin_popcountl(buf[2]);
 }
+#endif
 
 template<>
 inline void
