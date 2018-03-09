@@ -9,6 +9,9 @@
 
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
+/**
+ * The popcount of n elements of buf is the sum of c0, c1, c2, c3.
+ */
 template<int n>
 static inline void
 popcount(
@@ -31,6 +34,9 @@ popcount(
 // with Clang (3.6 and 3.8)).  We fix the mistake by explicitly
 // loading the contents of buf into registers and using these same
 // registers for the intermediate popcnts.
+/**
+ * The popcount of 4 elements of buf is the sum of c0, c1, c2, c3.
+ */
 template<>
 inline void
 popcount<4>(
@@ -69,6 +75,9 @@ popcount<3>(
 }
 #endif
 
+/**
+ * The popcount of 2 elements of buf is the sum of c0, c1.
+ */
 template<>
 inline void
 popcount<2>(
@@ -78,6 +87,9 @@ popcount<2>(
     c1 += __builtin_popcountl(buf[1]);
 }
 
+/**
+ * The popcount *buf is in c0.
+ */
 template<>
 inline void
 popcount<1>(
@@ -87,6 +99,17 @@ popcount<1>(
 }
 
 
+/**
+ * Calculate population counts of an array of inputs of nwords elements.
+ *
+ * 'arrays' must point to narrays*nwords*WORD_BYTES bytes
+ * 'counts' must point to narrays*sizeof(uint32_t) bytes.
+ * For i = 0 to narrays - 1, the population count of the nwords elements
+ *
+ *   arrays[i * nwords] ... arrays[(i + 1) * nwords - 1]
+ *
+ * is put in counts[i].
+ */
 template<int nwords>
 static void
 _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
@@ -98,6 +121,9 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     }
 }
 
+/**
+ * Return the popcount of the nwords elements starting at array.
+ */
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
@@ -132,6 +158,10 @@ _popcount_array(const uint64_t *array, int nwords) {
     return c0 + c1 + c2 + c3;
 }
 
+/**
+ * The popcount of the logical AND of n corresponding elements of buf1
+ * and buf2 is the sum of c0, c1, c2, c3.
+ */
 template<int n>
 static inline void
 popcount_logand(
@@ -141,6 +171,10 @@ popcount_logand(
     popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
 }
 
+/**
+ * The popcount of the logical AND of 4 corresponding elements of buf1
+ * and buf2 is the sum of c0, c1, c2, c3.
+ */
 template<>
 inline void
 popcount_logand<4>(
@@ -154,6 +188,10 @@ popcount_logand<4>(
     popcount<4>(c0, c1, c2, c3, b);
 }
 
+/**
+ * Return the popcount of the logical AND of len corresponding
+ * elements of u and v.
+ */
 static uint32_t
 _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     // NB: The switch statement at the end of this function must have
@@ -181,6 +219,10 @@ _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     return c0 + c1 + c2 + c3;
 }
 
+/**
+ * Return the Sorensen-Dice coefficient of nwords length arrays u and
+ * v, whose popcounts are given in u_popc and v_popc respectively.
+ */
 static inline double
 _dice_coeff_generic(
         const uint64_t *u, uint32_t u_popc,
@@ -190,6 +232,10 @@ _dice_coeff_generic(
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
+/**
+ * Return the Sorensen-Dice coefficient of nwords length arrays u and
+ * v, whose popcounts are given in u_popc and v_popc respectively.
+ */
 template<int nwords>
 static inline double
 _dice_coeff(
@@ -369,6 +415,10 @@ extern "C"
         };
 
         const uint64_t *current = comp2;
+
+        // NB: For any key length that must run at maximum speed, we
+        // need to specialise a block in the following 'if' statement
+        // (which is an example of specialising to keywords == 16).
         if (keywords == 16) {
             for (int j = 0; j < n; j++, current += 16) {
                 const uint32_t counts_many_j = counts_many[j];
