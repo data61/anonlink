@@ -35,7 +35,7 @@ template<>
 inline void
 popcount<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t* buf) {
+        const uint64_t *buf) {
     uint64_t b0, b1, b2, b3;
     b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
     __asm__(
@@ -62,7 +62,7 @@ template<>
 inline void
 popcount<3>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
-        const uint64_t* buf) {
+        const uint64_t *buf) {
     c0 += __builtin_popcountl(buf[0]);
     c1 += __builtin_popcountl(buf[1]);
     c2 += __builtin_popcountl(buf[2]);
@@ -73,7 +73,7 @@ template<>
 inline void
 popcount<2>(
         uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
-        const uint64_t* buf) {
+        const uint64_t *buf) {
     c0 += __builtin_popcountl(buf[0]);
     c1 += __builtin_popcountl(buf[1]);
 }
@@ -82,7 +82,7 @@ template<>
 inline void
 popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
-        const uint64_t* buf) {
+        const uint64_t *buf) {
     c0 += __builtin_popcountl(buf[0]);
 }
 
@@ -145,7 +145,7 @@ template<>
 inline void
 popcount_logand<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t* buf1, const uint64_t *buf2) {
+        const uint64_t *buf1, const uint64_t *buf2) {
     uint64_t b[4];
     b[0] = buf1[0] & buf2[0];
     b[1] = buf1[1] & buf2[1];
@@ -155,7 +155,7 @@ popcount_logand<4>(
 }
 
 static uint32_t
-_popcount_logand_array(const uint64_t* u, const uint64_t* v, int len) {
+_popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     // NB: The switch statement at the end of this function must have
     // cases for all i = 1, ..., LOOP_LEN - 1.
     static constexpr int LOOP_LEN = 4;
