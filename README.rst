@@ -144,8 +144,6 @@ Limitations
 -  The linkage process has order n^2 time complexity - although algorithms exist to
    significantly speed this up. Several possible speedups are described
    in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
--  The C++ code makes an assumption of 1024 bit keys (although this would be easy
-   to change).
 
 
 License

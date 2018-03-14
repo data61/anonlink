@@ -41,10 +41,11 @@ def popcount_vector(bitarrays, use_python=True):
 
     # Use native code
     n = len(bitarrays)
+    arr_bytes = bitarrays[0].length() // 8
     c_popcounts = ffi.new("uint32_t[{}]".format(n))
-    many = ffi.new("char[{}]".format(128 * n),
+    many = ffi.new("char[{}]".format(arr_bytes * n),
                     bytes([b for f in bitarrays for b in f.tobytes()]))
-    ms = lib.popcount_1024_array(many, n, c_popcounts)
+    ms = lib.popcount_arrays(c_popcounts, many, n, arr_bytes)
 
     return [c_popcounts[i] for i in range(n)], ms * 1e-3
 
