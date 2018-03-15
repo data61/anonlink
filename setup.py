@@ -12,9 +12,7 @@ requirements = [
 
 setup(
     name="anonlink",
-    author='Brian Thorne',
-    author_email='brian.thorne@data61.csiro.au',
-    version='0.6.3',
+    version='0.7.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
