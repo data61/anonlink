@@ -13,7 +13,7 @@ requirements = [
 
 setup(
     name="anonlink",
-    version='0.7.0.rc1',
+    version='0.7.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
