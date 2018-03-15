@@ -8,11 +8,12 @@ requirements = [
         "bitarray==0.8.1",
         "networkx==1.11",
         "cffi>=1.7",
+        "clkhash>=0.10"
     ]
 
 setup(
     name="anonlink",
-    version='0.7.0',
+    version='0.7.0.rc1',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
