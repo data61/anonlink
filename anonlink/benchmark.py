@@ -8,7 +8,6 @@ from clkhash.randomnames import NameList
 
 from anonlink.entitymatch import *
 from anonlink.util import popcount_vector, generate_clks, generate_bitarray
-from anonlink.distributed_processing import calculate_filter_similarity
 
 
 some_filters = generate_clks(10000)
@@ -18,22 +17,51 @@ def compute_popcount_speed(n):
     """
     Just do as much counting of bits.
     """
-    clks = [generate_bitarray(1024) for _ in range(n)]
+    clk_bits = 1024
+    clk_bytes = clk_bits / 8
+    clks_MiB = n * clk_bytes * 1.0 / (1 << 20)
+
+    clks = [generate_bitarray(clk_bits) for _ in range(n)]
+
+    print("{:6d} x {:d} bit popcounts".format(n, clk_bits))
+    print("Implementation              | Time (ms) | Bandwidth (MiB/s) | Throughput (1e6 popc/s)")
+
+    # Python
+    popcounts, elapsed_time = popcount_vector(clks, use_python=True)
+    python_speed_in_MiB = clks_MiB / elapsed_time
+    python_Mops = n / (1e6 * elapsed_time)
+    elapsed_time_ms = elapsed_time * 1e3
+    print("Python (bitarray.count()):  |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
+          .format(elapsed_time_ms, python_speed_in_MiB, python_Mops))
+
+    # Native
     start = timer()
-    popcounts = popcount_vector(clks)
+    popcounts, elapsed_nocopy = popcount_vector(clks, use_python=False)
     end = timer()
     elapsed_time = end - start
-    print("{:6d} x 1024 bit popcounts in {:.6f} seconds".format(n, elapsed_time))
-    speed_in_MiB = n / (1024 * 8 * elapsed_time)
-    print("Popcount speed: {:.2f} MiB/s".format(speed_in_MiB))
-    return speed_in_MiB
+    copy_percent = 100*(elapsed_time - elapsed_nocopy) / elapsed_time
+    elapsed_time_ms = elapsed_time * 1e3
+    elapsed_nocopy_ms = elapsed_nocopy * 1e3
+    native_speed_in_MiB = clks_MiB / elapsed_time
+    native_speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
+    native_Mops = n / (1e6 * elapsed_time)
+    native_Mops_nocopy = n / (1e6 * elapsed_nocopy)
+    print("Native code (no copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
+          .format(elapsed_nocopy_ms, native_speed_in_MiB_nocopy, native_Mops_nocopy))
+    print("Native code (w/ copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f} ({:.1f}% copying)"
+          .format(elapsed_time_ms, native_speed_in_MiB, native_Mops, copy_percent))
+
+    return python_speed_in_MiB
 
 
-def print_comparison_header():
-    print("Size 1 | Size 2 | Comparisons  | Compute Time | Million Comparisons per second")
+def print_comparison_header(threshold):
+    print("\nThreshold:", threshold)
+    print("Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput")
+    print("       |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)")
+    print("-------+--------+------------------+-------------------------+-------------")
 
 
-def compute_comparison_speed(n1=100, n2=100):
+def compute_comparison_speed(n1, n2, threshold):
     """
     Using the greedy solver, how fast can hashes be computed using one core.
     """
@@ -42,30 +70,21 @@ def compute_comparison_speed(n1=100, n2=100):
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
     start = timer()
-    result3 = calculate_mapping_greedy(filters1, filters2)
+    sparse_matrix = calculate_filter_similarity(filters1, filters2, k=len(filters2), threshold=threshold)
+    t1 = timer()
+    res = greedy_solver(sparse_matrix)
     end = timer()
+
+    similarity_time = t1 - start
+    solver_time = end - t1
     elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
-    return elapsed_time
-
-
-def compute_comparison_speed_parallel(n1=100, n2=100):
-    """
-    Using the greedy solver in chunks, how fast can hashes be computed.
-    """
-
-    filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
-    filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
-
-
-    start = timer()
-    calculate_filter_similarity(filters1, filters2)
-
-    end = timer()
-    elapsed_time = end - start
-    print("{:6d} | {:6d} | {:12d} | {:8.3f}s    |  {:12.3f}".format(
-        n1, n2, n1*n2, elapsed_time, (n1*n2)/(1e6*elapsed_time)))
+    print("{:6d} | {:6d} | {:4d}e6  ({:5.2f}%) | {:6.3f}  ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
+        n1, n2, n1*n2 // 1000000,
+        100.0*len(sparse_matrix)/(n1*n2),
+        elapsed_time,
+        100.0*similarity_time/elapsed_time,
+        100.0*solver_time/elapsed_time,
+        (n1*n2)/(1e6*similarity_time)))
     return elapsed_time
 
 
@@ -111,12 +130,12 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
 def benchmark(size, compare):
 
+    print("Anonlink benchmark -- see README for explanation")
+    print("------------------------------------------------")
     if compare:
         print(compare_python_c(ntotal=1000, nsubset=600))
 
     compute_popcount_speed(100000)
-
-    print_comparison_header()
 
     possible_test_sizes = [
         1000, 2000, 3000, 4000,
@@ -127,15 +146,19 @@ def benchmark(size, compare):
         2000000
     ]
 
+    thld = 0.5
+    print_comparison_header(thld)
     for test_size in possible_test_sizes:
         if test_size <= size:
-            compute_comparison_speed_parallel(
-                test_size, test_size
-            )
+            compute_comparison_speed(test_size, test_size, thld)
 
-    print("Single Core:")
-    compute_comparison_speed(5000, 5000)
-
+    thld = 0.7
+    print_comparison_header(thld)
+    size *= 5
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed(test_size, test_size, thld)
 
 if __name__ == '__main__':
-    benchmark(20000, False)
+    benchmark(4000, False)
+    #benchmark(20000, False)

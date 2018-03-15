@@ -11,10 +11,7 @@ class TestBenchmark(unittest.TestCase):
         self.assertGreater(speed, 50, "Popcounting at less than 50MiB/s")
 
     def test_comparison_speed_benchmark(self):
-        benchmark.compute_comparison_speed()
-
-    def test_parallel_comparison_speed_benchmark(self):
-        benchmark.compute_comparison_speed_parallel()
+        benchmark.compute_comparison_speed(100, 100, 0.7)
 
     def test_comparing_python_c_bench(self):
         benchmark.compare_python_c(500, 30, frac=0.8)

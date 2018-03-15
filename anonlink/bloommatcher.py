@@ -10,7 +10,9 @@ def dicecoeff_pure_python(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
 
-    :param e1,e2: bitset arrays of same length
+    Implemented exclusively in Python.
+
+    :param e1, e2: bitarrays of same length
     :return: real 0-1 similarity measure
     """
     count1 = e1.count()
@@ -22,6 +24,18 @@ def dicecoeff_pure_python(e1, e2):
     else:
         return 2.0 * overlap_count / combined_count
 
+def dicecoeff_native(e1, e2):
+    """
+    Dice coefficient measures the similarity of two bit patterns.
+
+    Implemented via an external library.
+
+    :param e1, e2: bitarrays of same length
+    :return: real 0-1 similarity measure
+    """
+    e1array = ffi.new("char[]", e1.tobytes())
+    e2array = ffi.new("char[]", e2.tobytes())
+    return lib.dice_coeff(e1array, e2array, len(e1array))
 
 def dicecoeff(e1, e2):
     """
@@ -29,11 +43,8 @@ def dicecoeff(e1, e2):
 
     :return: real 0-1 similarity measure
     """
-    e1array = ffi.new("char[]", e1.tobytes())
-    e2array = ffi.new("char[]", e2.tobytes())
-
-    if len(e1) == 1024 and len(e2) == 1024:
-        return lib.dice_coeff_1024(e1array, e2array)
+    if e1.length() == e2.length() and (e1.length()/8) % 8 == 0:
+        return dicecoeff_native(e1, e2)
     else:
         return dicecoeff_pure_python(e1, e2)
 
