@@ -1,3 +1,5 @@
+#include <memory>
+#include <functional>
 #include <algorithm>
 #include <vector>
 #include <queue>
@@ -293,6 +295,66 @@ abs_diff(uint32_t a, uint32_t b) {
 }
 
 
+typedef const uint64_t word_tp;
+typedef std::function<void (word_tp *)> deleter_fn;
+typedef std::unique_ptr<word_tp, deleter_fn> word_ptr;
+
+/**
+ * Given a char pointer ptr pointing to nbytes bytes, return a
+ * std::unique_ptr to uint64_t containing those same byte values
+ * (using the host's byte order, i.e. no byte reordering is done).
+ *
+ * The main purpose of this function is to fix pointer alignment
+ * issues when converting from a char pointer to a uint64 pointer; the
+ * issue being that a uint64 pointer has stricter alignment
+ * requirements than a char pointer.
+ *
+ * We assume that releasing the memory associated with ptr is someone
+ * else's problem. So, if ptr is already correctly aligned, we just
+ * cast it to uint64 and return a unique_ptr whose deleter is
+ * empty. If ptr is misaligned, then we copy the nbytes at ptr to a
+ * location that is correctly aligned and then return a unique_ptr
+ * whose deleter will delete that allocated space when the unique_ptr
+ * goes out of scope.
+ *
+ * NB: ASSUMES nbytes is divisible by WORD_BYTES.
+ *
+ * TODO: On some architectures it might be advantageous to have
+ * 16-byte aligned memory, even when the words used are only 8 bytes
+ * (this is to do with cache line size). This function could be easily
+ * modified to allow experimentation with different alignments.
+ */
+static word_ptr
+adjust_ptr_alignment(const char *ptr, size_t nbytes) {
+    static constexpr size_t wordbytes = sizeof(word_tp);
+    size_t nwords = nbytes / wordbytes;
+    uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+    // ptr is correctly aligned if addr is divisible by wordbytes
+    if (addr % wordbytes != 0) {
+        // ptr is NOT correctly aligned
+
+        // copy_words has correct alignment
+        uint64_t *copy_words = new uint64_t[nwords];
+        // alias copy_words with a byte pointer; the cast safe because
+        // uint8_t alignment is less restrictive than uint64_t
+        uint8_t *copy_bytes = reinterpret_cast<uint8_t *>(copy_words);
+        // copy everything across
+        std::copy(ptr, ptr + nbytes, copy_bytes);
+        // return a unique_ptr with array delete to delete copy_words
+        auto array_delete = [] (word_tp *p) { delete[] p; };
+        return word_ptr(copy_words, array_delete);
+    } else {
+        // ptr IS correctly aligned
+
+        // safe cast because the address of ptr is wordbyte-aligned.
+        word_tp *same = reinterpret_cast<word_tp *>(ptr);
+        // don't delete backing array since we don't own it
+        auto empty_delete = [] (word_tp *) { };
+        return word_ptr(same, empty_delete);
+    }
+}
+
+
 extern "C"
 {
     /**
@@ -315,9 +377,11 @@ extern "C"
             const char *arrays, int narrays, int array_bytes) {
         // assumes WORD_BYTES divides array_bytes
         int nwords = array_bytes / WORD_BYTES;
-        const uint64_t *u = reinterpret_cast<const uint64_t *>(arrays);
+        // The static_cast is to avoid int overflow in the multiplication
+        size_t total_bytes = static_cast<size_t>(narrays) * array_bytes;
+        auto ptr = adjust_ptr_alignment(arrays, total_bytes);
+        auto u = ptr.get();
 
-        // assumes WORD_PER_POPCOUNT divides nwords
         clock_t t = clock();
         switch (nwords) {
         case 32: _popcount_arrays<32>(counts, u, narrays); break;
@@ -341,13 +405,14 @@ extern "C"
             const char *array1,
             const char *array2,
             int array_bytes) {
-        const uint64_t *u, *v;
         uint32_t u_popc, v_popc;
         // assumes WORD_BYTES divides array_bytes
         int nwords = array_bytes / WORD_BYTES;
 
-        u = reinterpret_cast<const uint64_t *>(array1);
-        v = reinterpret_cast<const uint64_t *>(array2);
+        auto ptr_u = adjust_ptr_alignment(array1, array_bytes);
+        auto ptr_v = adjust_ptr_alignment(array2, array_bytes);
+        auto u = ptr_u.get();
+        auto v = ptr_v.get();
 
         // If the popcount of one of the arrays is zero, then the
         // popcount of the "intersection" (logical AND) will be zero,
@@ -381,8 +446,12 @@ extern "C"
         if (keybytes % WORD_BYTES != 0)
             return -1;
         int keywords = keybytes / WORD_BYTES;
-        const uint64_t *comp1 = reinterpret_cast<const uint64_t *>(one);
-        const uint64_t *comp2 = reinterpret_cast<const uint64_t *>(many);
+        // The static_cast is to avoid int overflow in the multiplication
+        size_t total_bytes = static_cast<size_t>(n) * keybytes;
+        auto ptr_comp1 = adjust_ptr_alignment(one, total_bytes);
+        auto ptr_comp2 = adjust_ptr_alignment(many, total_bytes);
+        auto comp1 = ptr_comp1.get();
+        auto comp2 = ptr_comp2.get();
 
         // Here we create top_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
