@@ -384,16 +384,8 @@ extern "C"
         const uint64_t *comp1 = reinterpret_cast<const uint64_t *>(one);
         const uint64_t *comp2 = reinterpret_cast<const uint64_t *>(many);
 
-        // Here we create top_k_scores on the stack by providing it
-        // with a vector in which to put its elements. We do this so
-        // that we can reserve the amount of space needed for the
-        // scores in advance and avoid potential memory reallocation
-        // and copying.
-        typedef std::vector<Node> node_vector;
-        typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
-        node_vector vec;
-        vec.reserve(k + 1);
-        node_queue top_k_scores(score_cmp(), std::move(vec));
+        std::vector<Node> top_k_scores;
+        top_k_scores.reserve(k);
 
         uint32_t count_one = _popcount_array(comp1, keywords);
         if (count_one == 0)
@@ -404,12 +396,24 @@ extern "C"
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
+        // This function adds a new (score, index) pair to the
+        // vector. If we've got too many, we sort them and throw away
+        // the leftovers.
         auto push_score = [&](double score, int idx) {
             if (score >= threshold) {
-                top_k_scores.push(Node(idx, score));
-                if (top_k_scores.size() > k) {
-                    // Popping the top element is O(log(k))!
-                    top_k_scores.pop();
+                // MEMORY_LEEWAY is a factor that determines how much
+                // more memory we are willing to use when collecting
+                // scores than we strictly need. In general it could
+                // be a float, or we could modify this to be additive
+                // instead of multiplicative.
+                static constexpr int MEMORY_LEEWAY = 2;
+                top_k_scores.emplace_back(idx, score);
+                // If we have more than k*LEEWAY scores, sort the lot
+                // and dump the second half.
+                if (top_k_scores.size() > k * MEMORY_LEEWAY) {
+                    std::stable_sort(top_k_scores.begin(), top_k_scores.end(), score_cmp());
+                    // Throw away all but the top k results.
+                    top_k_scores.resize(k);
                 }
             }
         };
@@ -437,15 +441,13 @@ extern "C"
             }
         }
 
-        int i = 0;
-        while ( ! top_k_scores.empty()) {
-           scores[i] = top_k_scores.top().score;
-           indices[i] = top_k_scores.top().index;
-           // Popping the top element is O(log(k))!
-           top_k_scores.pop();
-           i += 1;
+        std::stable_sort(top_k_scores.begin(), top_k_scores.end(), score_cmp());
+        size_t i = 0;
+        for ( ; i < top_k_scores.size() && i < k; ++i) {
+            const Node &n = top_k_scores[i];
+            scores[i] = n.score;
+            indices[i] = n.index;
         }
-
         return i;
     }
 }
