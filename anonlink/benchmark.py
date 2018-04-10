@@ -119,7 +119,17 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     end = timer()
     cffi_time = end - start
 
-    assert result == result3, "Results are different between C++ cffi and Python"
+    if result != result3:
+        diff = [elt for elt in enumerate(zip(result, result3)) if elt[1][0] != elt[1][1]]
+        print("*** Differences:", diff)
+        print([(filters2[elt[1][0][2]], filters2[elt[1][1][2]]) for elt in diff])
+        print("\n")
+        clk = diff[0][1][0][1]
+        print([r for r in result if r[1] == clk])
+        print("\n")
+        print([r for r in result3 if r[1] == clk])
+        # Always trigger failure:
+        assert len(diff) == 0, "Results are different between C++ cffi and Python"
 
     # Results are the same
     return {

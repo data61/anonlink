@@ -385,7 +385,7 @@ extern "C"
         const uint64_t *comp2 = reinterpret_cast<const uint64_t *>(many);
 
         std::vector<Node> top_k_scores;
-        top_k_scores.reserve(k);
+//        top_k_scores.reserve(k);
 
         uint32_t count_one = _popcount_array(comp1, keywords);
         if (count_one == 0)
@@ -396,21 +396,23 @@ extern "C"
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
+        // MEMORY_LEEWAY is a factor that determines how much
+        // more memory we are willing to use when collecting
+        // scores than we strictly need. In general it could
+        // be a float, or we could modify this to be additive
+        // instead of multiplicative.
+        static constexpr auto MEMORY_LEEWAY = 1.0f;
+        auto k_space = k * MEMORY_LEEWAY;
+
         // This function adds a new (score, index) pair to the
         // vector. If we've got too many, we sort them and throw away
         // the leftovers.
         auto push_score = [&](double score, int idx) {
             if (score >= threshold) {
-                // MEMORY_LEEWAY is a factor that determines how much
-                // more memory we are willing to use when collecting
-                // scores than we strictly need. In general it could
-                // be a float, or we could modify this to be additive
-                // instead of multiplicative.
-                static constexpr int MEMORY_LEEWAY = 2;
                 top_k_scores.emplace_back(idx, score);
                 // If we have more than k*LEEWAY scores, sort the lot
                 // and dump the second half.
-                if (top_k_scores.size() > k * MEMORY_LEEWAY) {
+                if (top_k_scores.size() > k_space) {
                     std::stable_sort(top_k_scores.begin(), top_k_scores.end(), score_cmp());
                     // Throw away all but the top k results.
                     top_k_scores.resize(k);
