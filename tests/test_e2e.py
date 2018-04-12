@@ -70,7 +70,7 @@ class EntityHelperTestMixin(EntityHelperMixin):
 
     def test_greedy(self):
         mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_threshold, self.default_greedy_k)
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -136,7 +136,7 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
 
     def test_greedy(self):
         mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_threshold, self.default_greedy_k)
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -152,7 +152,7 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
 
     def test_greedy(self):
         mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_threshold, self.default_greedy_k)
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -198,14 +198,14 @@ class TestGreedy(unittest.TestCase):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
         result = entitymatch.calculate_mapping_greedy(
-            filters1, filters2, self.default_greedy_threshold, self.default_greedy_k)
+            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
 
     def test_greedy_chunked_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
 
         all_in_one_mapping = entitymatch.calculate_mapping_greedy(
-            filters1, filters2, self.default_greedy_threshold, self.default_greedy_k)
+            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
 
         filters1_chunk1, filters1_chunk2 = filters1[:500],  filters1[500:]
         assert len(filters1_chunk1) == 500
