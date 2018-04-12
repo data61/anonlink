@@ -27,6 +27,11 @@ def generate_data(samples, proportion=0.75):
 
 class EntityHelperMixin(object):
 
+    default_similarity_k = 10
+    default_similarity_threshold = 0.5
+    default_greedy_k = 5
+    default_greedy_threshold = 0.95
+
     def check_accuracy(self, mapping):
         # Assert that there are no false matches
         for indx1 in mapping:
@@ -44,10 +49,6 @@ class EntityHelperMixin(object):
 
 
 class EntityHelperTestMixin(EntityHelperMixin):
-    default_similarity_k = 10
-    default_similarity_threshold = 0.5
-    default_greedy_k = 5
-    default_greedy_threshold = 0.95
 
     def test_default(self):
         similarity = entitymatch.calculate_filter_similarity(
