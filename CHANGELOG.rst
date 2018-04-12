@@ -1,3 +1,13 @@
+0.7.1
+-----
+Removed the default values for the threshold and "top k results" parameters
+throughout as these parameters should always be determined by the requirements
+at the call site. This modifies the API of the functions
+`entitymatch.{*filter_similarity*,calculate_mapping_greedy}`,
+`distributed_processing.calculate_filter_similarity` and
+`network_flow.map_entities` by requiring the values of `k` and `threshold` to
+be specified in every case.
+
 0.7.0
 -----
 
