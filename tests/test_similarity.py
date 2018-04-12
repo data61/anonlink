@@ -38,7 +38,7 @@ class TestBloomFilterComparison(unittest.TestCase):
         f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
-        ps = entitymatch.python_filter_similarity(f1, f2)
+        ps = entitymatch.python_filter_similarity(f1, f2, 1, 0.0)
         cs = entitymatch.cffi_filter_similarity_k(f1, f2, 1, 0.0)
 
         python_scores = [p[1] for p in ps]
@@ -51,7 +51,7 @@ class TestBloomFilterComparison(unittest.TestCase):
         self._check_proportion(similarity)
 
     def test_python(self):
-        similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2, 1, 0.0)
         self._check_proportion(similarity)
 
     def test_default(self):
@@ -60,7 +60,7 @@ class TestBloomFilterComparison(unittest.TestCase):
 
     def test_same_score(self):
         cffi_score = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1, 0.0)
-        python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2)
+        python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2, 1, 0.0)
         for i in range(len(cffi_score)):
             self.assertEqual(cffi_score[i][1], python_score[i][1])
 
