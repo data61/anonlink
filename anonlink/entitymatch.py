@@ -3,6 +3,7 @@ import logging
 from anonlink._entitymatcher import ffi, lib
 
 import sys
+from operator import itemgetter
 
 from . import bloommatcher as bm
 from . import util
@@ -10,7 +11,7 @@ from . import util
 log = logging.getLogger('anonlink.entitymatch')
 
 
-def python_filter_similarity(filters1, filters2):
+def python_filter_similarity(filters1, filters2, k, threshold):
     """Pure python method for determining Bloom Filter similarity
 
     Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
@@ -23,11 +24,13 @@ def python_filter_similarity(filters1, filters2):
     """
     result = []
     for i, f1 in enumerate(filters1):
-        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
-        # argmax
-        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
-        assert coeffs[best] <= 1.0
-        result.append((i, coeffs[best], best))
+        def dicecoeff(x):
+            return bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2]))
+
+        coeffs = filter(lambda c: c[1] >= threshold,
+                        enumerate(map(dicecoeff, filters2)))
+        top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
+        result.extend([(i, coeff[j], j) for j, coeff in top_k])
     return result
 
 
