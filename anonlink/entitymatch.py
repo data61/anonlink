@@ -30,7 +30,7 @@ def python_filter_similarity(filters1, filters2, k, threshold):
         coeffs = filter(lambda c: c[1] >= threshold,
                         enumerate(map(dicecoeff, filters2)))
         top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
-        result.extend([(i, coeff[j], j) for j, coeff in top_k])
+        result.extend([(i, coeff, j) for j, coeff in top_k])
     return result
 
 
