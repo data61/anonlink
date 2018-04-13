@@ -41,8 +41,8 @@ class TestBloomFilterComparison(unittest.TestCase):
         f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
-        ps = entitymatch.python_filter_similarity(f1, f2, 1, 0.0)
-        cs = entitymatch.cffi_filter_similarity_k(f1, f2, 1, 0.0)
+        ps = entitymatch.python_filter_similarity(f1, f2, self.default_k, self.default_threshold)
+        cs = entitymatch.cffi_filter_similarity_k(f1, f2, self.default_k, self.default_threshold)
 
         python_scores = [p[1] for p in ps]
         c_scores = [c[1] for c in cs]
@@ -50,11 +50,13 @@ class TestBloomFilterComparison(unittest.TestCase):
         self.assertAlmostEqual(python_scores, c_scores)
 
     def test_cffi(self):
-        similarity = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1, 0.0)
+        similarity = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_python(self):
-        similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2, 1, 0.0)
+        similarity = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_default(self):
@@ -63,8 +65,10 @@ class TestBloomFilterComparison(unittest.TestCase):
         self._check_proportion(similarity)
 
     def test_same_score(self):
-        cffi_score = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1, 0.0)
-        python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2, 1, 0.0)
+        cffi_score = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
+        python_score = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         for i in range(len(cffi_score)):
             self.assertEqual(cffi_score[i][1], python_score[i][1])
 
