@@ -3,6 +3,7 @@ import logging
 from anonlink._entitymatcher import ffi, lib
 
 import sys
+from operator import itemgetter
 
 from . import bloommatcher as bm
 from . import util
@@ -10,24 +11,31 @@ from . import util
 log = logging.getLogger('anonlink.entitymatch')
 
 
-def python_filter_similarity(filters1, filters2):
+def python_filter_similarity(filters1, filters2, k, threshold):
     """Pure python method for determining Bloom Filter similarity
 
     Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
 
-    :return: A list of tuples *one* for each entity in filters1.
+    :return: A list of tuples *k* for each entity in filters1.
     The tuple comprises:
         - the index in filters1
-        - the similarity score between 0 and 1 of the best match
+        - the similarity score between 0 and 1 of the k matches above threshold
         - The index in filters2 of the best match
     """
     result = []
     for i, f1 in enumerate(filters1):
-        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
-        # argmax
-        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
-        assert coeffs[best] <= 1.0
-        result.append((i, coeffs[best], best))
+        def dicecoeff(x):
+            return bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2]))
+
+        coeffs = filter(lambda c: c[1] >= threshold,
+                        enumerate(map(dicecoeff, filters2)))
+        top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
+
+        # NB: The 'reversed' call here is a "hack" to get the ordering
+        # of the Python similarity matrix to match the C++ similarity
+        # matrix. Ideally these structural details would be abstracted
+        # away.
+        result.extend([(i, coeff, j) for j, coeff in reversed(top_k)])
     return result
 
 
@@ -167,7 +175,7 @@ def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=Fal
         raise ValueError("Didn't meet minimum number of entities")
     # use C++ version by default
     if use_python:
-        return python_filter_similarity(filters1, filters2)
+        return python_filter_similarity(filters1, filters2, k, threshold)
     else:
         return cffi_filter_similarity_k(filters1, filters2, k, threshold)
 

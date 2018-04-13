@@ -34,6 +34,16 @@ class TestBloomFilterComparison(unittest.TestCase):
         self.assertAlmostEqual(exact_matches/len(self.filters1), self.proportion)
         self.assertAlmostEqual(exact_matches/len(self.filters2), self.proportion)
 
+    def assert_similarity_matrices_equal(self, M, N):
+        self.assertEqual(len(M), len(N))
+        for m, n in zip(M, N):
+            self.assertEqual(m[0], n[0])
+            self.assertAlmostEqual(m[1], n[1])
+            ## FIXME: This line frequently triggers issue #78 at the
+            ## call sites below; it should be reenabled when that
+            ## issue is resolved.
+            #self.assertEqual(m[2], n[2])
+
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
@@ -41,20 +51,20 @@ class TestBloomFilterComparison(unittest.TestCase):
         f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
-        ps = entitymatch.python_filter_similarity(f1, f2)
-        cs = entitymatch.cffi_filter_similarity_k(f1, f2, 1, 0.0)
-
-        python_scores = [p[1] for p in ps]
-        c_scores = [c[1] for c in cs]
-
-        self.assertAlmostEqual(python_scores, c_scores)
+        py_similarity = entitymatch.python_filter_similarity(
+            f1, f2, self.default_k, self.default_threshold)
+        c_similarity = entitymatch.cffi_filter_similarity_k(
+            f1, f2, self.default_k, self.default_threshold)
+        self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
     def test_cffi(self):
-        similarity = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1, 0.0)
+        similarity = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_python(self):
-        similarity = entitymatch.python_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_default(self):
@@ -63,8 +73,10 @@ class TestBloomFilterComparison(unittest.TestCase):
         self._check_proportion(similarity)
 
     def test_same_score(self):
-        cffi_score = entitymatch.cffi_filter_similarity_k(self.filters1, self.filters2, 1, 0.0)
-        python_score = entitymatch.python_filter_similarity(self.filters1, self.filters2)
+        cffi_score = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
+        python_score = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         for i in range(len(cffi_score)):
             self.assertEqual(cffi_score[i][1], python_score[i][1])
 
@@ -79,16 +91,18 @@ class TestBloomFilterComparison(unittest.TestCase):
                 self.filters1, [], self.default_k, self.default_threshold)
 
     def test_small_input_a(self):
-        similarity = entitymatch.calculate_filter_similarity(
+        py_similarity = entitymatch.calculate_filter_similarity(
             self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(
+        c_similarity = entitymatch.calculate_filter_similarity(
             self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=False)
+        self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
     def test_small_input_b(self):
-        similarity = entitymatch.calculate_filter_similarity(
+        py_similarity = entitymatch.calculate_filter_similarity(
             self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(
+        c_similarity = entitymatch.calculate_filter_similarity(
             self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=False)
+        self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
 
 if __name__ == "__main__":

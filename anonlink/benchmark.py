@@ -109,7 +109,7 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
 
     # Pure Python version
     start = timer()
-    result = python_filter_similarity(filters1, filters2)
+    result = python_filter_similarity(filters1, filters2, 1, 0.0)
     end = timer()
     python_time = end - start
 
