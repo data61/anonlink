@@ -104,6 +104,19 @@ class TestBloomFilterComparison(unittest.TestCase):
             self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=False)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
+    def test_memory_use(self):
+        n = 10
+        f1 = self.filters1[:n]
+        f2 = self.filters2[:n]
+        # If memory is not handled correctly, then this would allocate
+        # several terabytes of RAM.
+        big_k = 1 << 50
+        py_similarity = entitymatch.calculate_filter_similarity(
+            f1, f2, big_k, self.default_threshold, use_python=True)
+        c_similarity = entitymatch.calculate_filter_similarity(
+            f1, f2, big_k, self.default_threshold, use_python=False)
+        self.assert_similarity_matrices_equal(py_similarity, c_similarity)
+
 
 if __name__ == "__main__":
     unittest.main()
