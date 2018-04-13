@@ -22,6 +22,9 @@ class TestBloomFilterComparison(unittest.TestCase):
         cls.filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         cls.filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
+        cls.default_k = 10
+        cls.default_threshold = 0.5
+
     def _check_proportion(self, similarity):
         exact_matches = 0.0
         for (idx1, score, idx2) in similarity:
@@ -55,7 +58,8 @@ class TestBloomFilterComparison(unittest.TestCase):
         self._check_proportion(similarity)
 
     def test_default(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_same_score(self):
@@ -66,19 +70,25 @@ class TestBloomFilterComparison(unittest.TestCase):
 
     def test_empty_input_a(self):
         with self.assertRaises(ValueError):
-            entitymatch.calculate_filter_similarity([], self.filters2)
+            entitymatch.calculate_filter_similarity(
+                [], self.filters2, self.default_k, self.default_threshold)
 
     def test_empty_input_b(self):
         with self.assertRaises(ValueError):
-            entitymatch.calculate_filter_similarity(self.filters1, [])
+            entitymatch.calculate_filter_similarity(
+                self.filters1, [], self.default_k, self.default_threshold)
 
     def test_small_input_a(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1[:10], self.filters2, use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(self.filters1[:10], self.filters2, use_python=False)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=True)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=False)
 
     def test_small_input_b(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2[:10], use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2[:10], use_python=False)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=True)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=False)
 
 
 if __name__ == "__main__":

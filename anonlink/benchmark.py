@@ -70,7 +70,7 @@ def compute_comparison_speed(n1, n2, threshold):
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
     start = timer()
-    sparse_matrix = calculate_filter_similarity(filters1, filters2, k=len(filters2), threshold=threshold)
+    sparse_matrix = calculate_filter_similarity(filters1, filters2, len(filters2), threshold)
     t1 = timer()
     res = greedy_solver(sparse_matrix)
     end = timer()
