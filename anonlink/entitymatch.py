@@ -118,7 +118,7 @@ def greedy_solver(sparse_similarity_matrix):
     return mappings
 
 
-def calculate_mapping_greedy(filters1, filters2, threshold, k):
+def calculate_mapping_greedy(filters1, filters2, k, threshold):
     """
     Brute-force one-shot solver.
 
