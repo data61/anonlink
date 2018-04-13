@@ -41,13 +41,16 @@ class TestBloomFilterComparison(unittest.TestCase):
         f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
         f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
-        ps = entitymatch.python_filter_similarity(f1, f2, self.default_k, self.default_threshold)
-        cs = entitymatch.cffi_filter_similarity_k(f1, f2, self.default_k, self.default_threshold)
+        py_similarity = entitymatch.python_filter_similarity(
+            f1, f2, self.default_k, self.default_threshold)
+        c_similarity = entitymatch.cffi_filter_similarity_k(
+            f1, f2, self.default_k, self.default_threshold)
 
-        python_scores = [p[1] for p in ps]
-        c_scores = [c[1] for c in cs]
-
-        self.assertAlmostEqual(python_scores, c_scores)
+        self.assertEqual(len(py_similarity), len(c_similarity))
+        for p, c in zip(py_similarity, c_similarity):
+            self.assertEqual(p[0], c[0])
+            self.assertAlmostEqual(p[1], c[1])
+            self.assertEqual(p[2], c[2])
 
     def test_cffi(self):
         similarity = entitymatch.cffi_filter_similarity_k(
@@ -83,16 +86,26 @@ class TestBloomFilterComparison(unittest.TestCase):
                 self.filters1, [], self.default_k, self.default_threshold)
 
     def test_small_input_a(self):
-        similarity = entitymatch.calculate_filter_similarity(
+        py_similarity = entitymatch.calculate_filter_similarity(
             self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(
+        c_similarity = entitymatch.calculate_filter_similarity(
             self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=False)
+        self.assertEqual(len(py_similarity), len(c_similarity))
+        for p, c in zip(py_similarity, c_similarity):
+            self.assertEqual(p[0], c[0])
+            self.assertAlmostEqual(p[1], c[1])
+            self.assertEqual(p[2], c[2])
 
     def test_small_input_b(self):
-        similarity = entitymatch.calculate_filter_similarity(
+        py_similarity = entitymatch.calculate_filter_similarity(
             self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=True)
-        similarity = entitymatch.calculate_filter_similarity(
+        c_similarity = entitymatch.calculate_filter_similarity(
             self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=False)
+        self.assertEqual(len(py_similarity), len(c_similarity))
+        for p, c in zip(py_similarity, c_similarity):
+            self.assertEqual(p[0], c[0])
+            self.assertAlmostEqual(p[1], c[1])
+            self.assertEqual(p[2], c[2])
 
 
 if __name__ == "__main__":
