@@ -52,6 +52,11 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     if length_f1 == 0:
         return []
 
+    # There's no sense in having k > length_f2. Also, k is passed to
+    # ffi.new(...) below, so we need to protect against an
+    # out-of-memory DoS if k is of untrustworthy origin.
+    k = min(k, length_f2)
+
     filter_bits = len(filters1[0][0])
     assert(filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.')
     filter_bytes = filter_bits // 8
