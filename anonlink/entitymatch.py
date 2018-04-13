@@ -16,10 +16,10 @@ def python_filter_similarity(filters1, filters2, k, threshold):
 
     Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
 
-    :return: A list of tuples *one* for each entity in filters1.
+    :return: A list of tuples *k* for each entity in filters1.
     The tuple comprises:
         - the index in filters1
-        - the similarity score between 0 and 1 of the best match
+        - the similarity score between 0 and 1 of the k matches above threshold
         - The index in filters2 of the best match
     """
     result = []
