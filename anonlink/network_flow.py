@@ -110,7 +110,7 @@ def calculate_entity_mapping(G, method=None):
     return entity_map
 
 
-def map_entities(weights, threshold=0.8, method=None):
+def map_entities(weights, threshold, method=None):
     """Calculate a dictionary mapping using similarity scores.
 
     :param weights: The list of tuples including n-gram similarity scores

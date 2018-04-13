@@ -118,7 +118,7 @@ def greedy_solver(sparse_similarity_matrix):
     return mappings
 
 
-def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
+def calculate_mapping_greedy(filters1, filters2, threshold, k):
     """
     Brute-force one-shot solver.
 
@@ -136,7 +136,7 @@ def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
     return greedy_solver(sparse_matrix)
 
 
-def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_python=False):
+def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=False):
     """Computes a sparse similarity matrix with:
         - size no larger than k * len(filters1)
         - order of len(filters1) + len(filters2)
@@ -169,5 +169,5 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_pyt
     if use_python:
         return python_filter_similarity(filters1, filters2)
     else:
-        return cffi_filter_similarity_k(filters1, filters2, k=k, threshold=threshold)
+        return cffi_filter_similarity_k(filters1, filters2, k, threshold)
 
