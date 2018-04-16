@@ -112,18 +112,17 @@ def greedy_solver(sparse_similarity_matrix):
 
     :param sparse_similarity_matrix: Iterable of tuples: (indx_a, similarity_score, indx_b)
     """
-    mappings = {}
+    mapping = {}
 
-    # original indicies of filters which have been claimed
-    matched_entries_b = set()
+    # Indices of filters which have been claimed
+    matched = set()
 
-    for result in sparse_similarity_matrix:
-        index_a, score, possible_index_b = result
-        if possible_index_b not in matched_entries_b:
-            mappings[index_a] = possible_index_b
-            matched_entries_b.add(possible_index_b)
+    for i, score, j in sparse_similarity_matrix:
+        if i not in mapping and j not in matched:
+            mapping[i] = j
+            matched.add(j)
 
-    return mappings
+    return mapping
 
 
 def calculate_mapping_greedy(filters1, filters2, k, threshold):
