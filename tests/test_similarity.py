@@ -37,7 +37,7 @@ class TestBloomFilterComparison(unittest.TestCase):
     def assert_similarity_matrices_equal(self, M, N):
         self.assertEqual(len(M), len(N))
         for m in M:
-            assert m in N
+            self.assertIn(m, N)
 
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
