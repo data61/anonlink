@@ -30,12 +30,7 @@ def python_filter_similarity(filters1, filters2, k, threshold):
         coeffs = filter(lambda c: c[1] >= threshold,
                         enumerate(map(dicecoeff, filters2)))
         top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
-
-        # NB: The 'reversed' call here is a "hack" to get the ordering
-        # of the Python similarity matrix to match the C++ similarity
-        # matrix. Ideally these structural details would be abstracted
-        # away.
-        result.extend([(i, coeff, j) for j, coeff in reversed(top_k)])
+        result.extend([(i, coeff, j) for j, coeff in top_k])
     return result
 
 
