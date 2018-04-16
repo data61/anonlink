@@ -53,7 +53,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     k = min(k, length_f2)
 
     filter_bits = len(filters1[0][0])
-    assert(filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.')
+    assert filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.'
     filter_bytes = filter_bits // 8
 
     match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
