@@ -10,8 +10,7 @@ from anonlink.util import chunks
 
 
 def calc_chunk_result(chunk_number, chunk, filters2, k, threshold):
-    chunk_results = anonlink.entitymatch.calculate_filter_similarity(chunk, filters2,
-                                                                     k=k, threshold=threshold)
+    chunk_results = anonlink.entitymatch.calculate_filter_similarity(chunk, filters2, k, threshold)
 
     partial_sparse_result = []
     # offset chunk's A index by chunk_size * chunk_number
@@ -23,7 +22,7 @@ def calc_chunk_result(chunk_number, chunk, filters2, k, threshold):
     return partial_sparse_result
 
 
-def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5):
+def calculate_filter_similarity(filters1, filters2, k, threshold):
     """
     Example way of computing similarity scores in parallel.
 

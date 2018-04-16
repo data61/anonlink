@@ -27,6 +27,11 @@ def generate_data(samples, proportion=0.75):
 
 class EntityHelperMixin(object):
 
+    default_similarity_k = 10
+    default_similarity_threshold = 0.5
+    default_greedy_k = 5
+    default_greedy_threshold = 0.95
+
     def check_accuracy(self, mapping):
         # Assert that there are no false matches
         for indx1 in mapping:
@@ -44,23 +49,28 @@ class EntityHelperMixin(object):
 
 
 class EntityHelperTestMixin(EntityHelperMixin):
+
     def test_default(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
         mapping = network_flow.map_entities(similarity, threshold=0.95)
         self.check_accuracy(mapping)
 
     def test_bipartite(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
         mapping = network_flow.map_entities(similarity, threshold=0.95, method='bipartite')
         self.check_accuracy(mapping)
 
     def test_weighted(self):
-        similarity = entitymatch.calculate_filter_similarity(self.filters1, self.filters2)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
         mapping = network_flow.map_entities(similarity, threshold=0.95, method='weighted')
         self.check_accuracy(mapping)
 
     def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -93,7 +103,8 @@ class TestEntityMatchingE2E_100(EntityHelperTestMixin, unittest.TestCase):
 
         self.filters2[-2] = (b, 101, b.count())
 
-        sparse_scores = entitymatch.calculate_filter_similarity(self.filters1, self.filters2, k=20, threshold=0.8, use_python=False)
+        sparse_scores = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, k=20, threshold=0.8, use_python=False)
         ordered_by_score = sorted(sparse_scores, key=itemgetter(1), reverse=True)
 
         ordered_scores = sorted(ordered_by_score, key=itemgetter(0))
@@ -124,7 +135,8 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -139,7 +151,8 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
     def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(self.filters1, self.filters2)
+        mapping = entitymatch.calculate_mapping_greedy(
+            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
         self.check_accuracy(mapping)
 
 
@@ -154,7 +167,7 @@ class TestEntityMatchTopK(unittest.TestCase):
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
-        mapping = network_flow.map_entities(similarity, threshold=threshold, method=None)
+        mapping = network_flow.map_entities(similarity, threshold, method=None)
 
         for indexA in mapping:
             self.assertEqual(s1[indexA], s2[mapping[indexA]])
@@ -169,26 +182,30 @@ class TestEntityMatchTopK(unittest.TestCase):
 
         threshold = 0.8
         similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
-        mapping = network_flow.map_entities(similarity, threshold=threshold, method=None)
+        mapping = network_flow.map_entities(similarity, threshold, method=None)
 
         for indexA in mapping:
             self.assertEqual(s1[indexA], s2[mapping[indexA]])
 
 
 class TestGreedy(unittest.TestCase):
+    default_greedy_k = 5
+    default_greedy_threshold = 0.95
 
     some_filters = generate_clks(1000)
 
     def test_greedy_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
-        result = entitymatch.calculate_mapping_greedy(filters1, filters2)
+        result = entitymatch.calculate_mapping_greedy(
+            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
 
     def test_greedy_chunked_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
 
-        all_in_one_mapping = entitymatch.calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5)
+        all_in_one_mapping = entitymatch.calculate_mapping_greedy(
+            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
 
         filters1_chunk1, filters1_chunk2 = filters1[:500],  filters1[500:]
         assert len(filters1_chunk1) == 500
