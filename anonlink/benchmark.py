@@ -28,8 +28,14 @@ def compute_popcount_speed(n):
 
     # Python
     popcounts, elapsed_time = popcount_vector(clks, use_python=True)
-    python_speed_in_MiB = clks_MiB / elapsed_time
-    python_Mops = n / (1e6 * elapsed_time)
+
+    # Guard against division by zero (have observed elapsed_nocopy ==
+    # 0 in the wild; see issue #92).
+    inv_elapsed_time = 1 / elapsed_time if elapsed_time > 0 else float('inf')
+
+    python_speed_in_MiB = clks_MiB * inv_elapsed_time
+    python_Mops = (n / 1e6) * inv_elapsed_time
+
     elapsed_time_ms = elapsed_time * 1e3
     print("Python (bitarray.count()):  |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
           .format(elapsed_time_ms, python_speed_in_MiB, python_Mops))
@@ -39,13 +45,19 @@ def compute_popcount_speed(n):
     popcounts, elapsed_nocopy = popcount_vector(clks, use_python=False)
     end = timer()
     elapsed_time = end - start
-    copy_percent = 100*(elapsed_time - elapsed_nocopy) / elapsed_time
+
+    # Guard against division by zero (have observed elapsed_nocopy ==
+    # 0 in the wild; see issue #92).
+    inv_elapsed_time = 1 / elapsed_time if elapsed_time > 0 else float('inf')
+    inv_elapsed_nocopy = 1 / elapsed_nocopy if elapsed_nocopy > 0 else float('inf')
+
+    copy_percent = 100*(elapsed_time - elapsed_nocopy) * inv_elapsed_time
     elapsed_time_ms = elapsed_time * 1e3
     elapsed_nocopy_ms = elapsed_nocopy * 1e3
-    native_speed_in_MiB = clks_MiB / elapsed_time
-    native_speed_in_MiB_nocopy = clks_MiB / elapsed_nocopy
-    native_Mops = n / (1e6 * elapsed_time)
-    native_Mops_nocopy = n / (1e6 * elapsed_nocopy)
+    native_speed_in_MiB = clks_MiB * inv_elapsed_time
+    native_speed_in_MiB_nocopy = clks_MiB * inv_elapsed_nocopy
+    native_Mops = (n / 1e6) * inv_elapsed_time
+    native_Mops_nocopy = (n / 1e6) * inv_elapsed_nocopy
     print("Native code (no copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
           .format(elapsed_nocopy_ms, native_speed_in_MiB_nocopy, native_Mops_nocopy))
     print("Native code (w/ copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f} ({:.1f}% copying)"
@@ -66,6 +78,7 @@ def compute_comparison_speed(n1, n2, threshold):
     Using the greedy solver, how fast can hashes be computed using one core.
     """
 
+    assert n1 != 0 and n2 != 0
     filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
@@ -78,13 +91,17 @@ def compute_comparison_speed(n1, n2, threshold):
     similarity_time = t1 - start
     solver_time = end - t1
     elapsed_time = end - start
+
+    inv_similarity_time = 1 / similarity_time if similarity_time > 0 else float('inf')
+    inv_elapsed_time = 1 / elapsed_time if elapsed_time > 0 else float('inf')
+
     print("{:6d} | {:6d} | {:4d}e6  ({:5.2f}%) | {:6.3f}  ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
         n1, n2, n1*n2 // 1000000,
         100.0*len(sparse_matrix)/(n1*n2),
         elapsed_time,
-        100.0*similarity_time/elapsed_time,
-        100.0*solver_time/elapsed_time,
-        (n1*n2)/(1e6*similarity_time)))
+        100.0*similarity_time * inv_elapsed_time,
+        100.0*solver_time * inv_elapsed_time,
+        (n1*n2 / 1e6) * inv_similarity_time))
     return elapsed_time
 
 
