@@ -1,3 +1,15 @@
+0.8.0
+-----
+
+Fix to greedy solver, so that mappings are set by the first match, not repeatedly overwritten. #89
+
+Other improvements
+~~~~~~~~~~~~~~~~~~
+
+- Order of k and threshold parameters now consistent across library
+- Limit size of `k` to prevent OOM DoS
+- Fix misaligned pointer handling #77
+
 0.7.1
 -----
 Removed the default values for the threshold and "top k results" parameters
