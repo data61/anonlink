@@ -30,12 +30,7 @@ def python_filter_similarity(filters1, filters2, k, threshold):
         coeffs = filter(lambda c: c[1] >= threshold,
                         enumerate(map(dicecoeff, filters2)))
         top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
-
-        # NB: The 'reversed' call here is a "hack" to get the ordering
-        # of the Python similarity matrix to match the C++ similarity
-        # matrix. Ideally these structural details would be abstracted
-        # away.
-        result.extend([(i, coeff, j) for j, coeff in reversed(top_k)])
+        result.extend([(i, coeff, j) for j, coeff in top_k])
     return result
 
 
@@ -58,7 +53,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     k = min(k, length_f2)
 
     filter_bits = len(filters1[0][0])
-    assert(filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.')
+    assert filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.'
     filter_bytes = filter_bits // 8
 
     match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
@@ -117,18 +112,17 @@ def greedy_solver(sparse_similarity_matrix):
 
     :param sparse_similarity_matrix: Iterable of tuples: (indx_a, similarity_score, indx_b)
     """
-    mappings = {}
+    mapping = {}
 
-    # original indicies of filters which have been claimed
-    matched_entries_b = set()
+    # Indices of filters which have been claimed
+    matched = set()
 
-    for result in sparse_similarity_matrix:
-        index_a, score, possible_index_b = result
-        if possible_index_b not in matched_entries_b:
-            mappings[index_a] = possible_index_b
-            matched_entries_b.add(possible_index_b)
+    for i, score, j in sparse_similarity_matrix:
+        if i not in mapping and j not in matched:
+            mapping[i] = j
+            matched.add(j)
 
-    return mappings
+    return mapping
 
 
 def calculate_mapping_greedy(filters1, filters2, k, threshold):

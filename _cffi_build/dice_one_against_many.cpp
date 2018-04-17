@@ -262,7 +262,7 @@ public:
 
 struct score_cmp {
     bool operator()(const Node& a, const Node& b) const {
-        return a.score > b.score;
+        return a.score >= b.score;
     }
 };
 
@@ -506,15 +506,17 @@ extern "C"
             }
         }
 
-        int i = 0;
-        while ( ! top_k_scores.empty()) {
+        // Copy the scores and indices in reverse order so that the
+        // best match is at index 0 and the worst is at index
+        // top_k_scores.size()-1.
+        int nscores = top_k_scores.size();
+        for (int i = top_k_scores.size() - 1; i >= 0; --i) {
            scores[i] = top_k_scores.top().score;
            indices[i] = top_k_scores.top().index;
            // Popping the top element is O(log(k))!
            top_k_scores.pop();
-           i += 1;
         }
-
-        return i;
+        assert(top_k_scores.empty());
+        return nscores;
     }
 }
