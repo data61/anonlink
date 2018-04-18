@@ -1,3 +1,25 @@
+0.8.0
+-----
+
+Fix to greedy solver, so that mappings are set by the first match, not repeatedly overwritten. #89
+
+Other improvements
+~~~~~~~~~~~~~~~~~~
+
+- Order of k and threshold parameters now consistent across library
+- Limit size of `k` to prevent OOM DoS
+- Fix misaligned pointer handling #77
+
+0.7.1
+-----
+Removed the default values for the threshold and "top k results" parameters
+throughout as these parameters should always be determined by the requirements
+at the call site. This modifies the API of the functions
+`entitymatch.{*filter_similarity*,calculate_mapping_greedy}`,
+`distributed_processing.calculate_filter_similarity` and
+`network_flow.map_entities` by requiring the values of `k` and `threshold` to
+be specified in every case.
+
 0.7.0
 -----
 

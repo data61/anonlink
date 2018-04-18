@@ -3,6 +3,7 @@ import logging
 from anonlink._entitymatcher import ffi, lib
 
 import sys
+from operator import itemgetter
 
 from . import bloommatcher as bm
 from . import util
@@ -10,24 +11,26 @@ from . import util
 log = logging.getLogger('anonlink.entitymatch')
 
 
-def python_filter_similarity(filters1, filters2):
+def python_filter_similarity(filters1, filters2, k, threshold):
     """Pure python method for determining Bloom Filter similarity
 
     Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
 
-    :return: A list of tuples *one* for each entity in filters1.
+    :return: A list of tuples *k* for each entity in filters1.
     The tuple comprises:
         - the index in filters1
-        - the similarity score between 0 and 1 of the best match
+        - the similarity score between 0 and 1 of the k matches above threshold
         - The index in filters2 of the best match
     """
     result = []
     for i, f1 in enumerate(filters1):
-        coeffs = [bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2])) for x in filters2]
-        # argmax
-        best = max(enumerate(coeffs), key=lambda x: x[1])[0]
-        assert coeffs[best] <= 1.0
-        result.append((i, coeffs[best], best))
+        def dicecoeff(x):
+            return bm.dicecoeff_precount(f1[0], x[0], float(f1[2] + x[2]))
+
+        coeffs = filter(lambda c: c[1] >= threshold,
+                        enumerate(map(dicecoeff, filters2)))
+        top_k = sorted(coeffs, key=itemgetter(1), reverse=True)[:k]
+        result.extend([(i, coeff, j) for j, coeff in top_k])
     return result
 
 
@@ -44,8 +47,13 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     if length_f1 == 0:
         return []
 
+    # There's no sense in having k > length_f2. Also, k is passed to
+    # ffi.new(...) below, so we need to protect against an
+    # out-of-memory DoS if k is of untrustworthy origin.
+    k = min(k, length_f2)
+
     filter_bits = len(filters1[0][0])
-    assert(filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.')
+    assert filter_bits % 64 == 0, 'Filter length must be a multple of 64 bits.'
     filter_bytes = filter_bits // 8
 
     match_one_against_many_dice_k_top = lib.match_one_against_many_dice_k_top
@@ -104,21 +112,20 @@ def greedy_solver(sparse_similarity_matrix):
 
     :param sparse_similarity_matrix: Iterable of tuples: (indx_a, similarity_score, indx_b)
     """
-    mappings = {}
+    mapping = {}
 
-    # original indicies of filters which have been claimed
-    matched_entries_b = set()
+    # Indices of filters which have been claimed
+    matched = set()
 
-    for result in sparse_similarity_matrix:
-        index_a, score, possible_index_b = result
-        if possible_index_b not in matched_entries_b:
-            mappings[index_a] = possible_index_b
-            matched_entries_b.add(possible_index_b)
+    for i, score, j in sparse_similarity_matrix:
+        if i not in mapping and j not in matched:
+            mapping[i] = j
+            matched.add(j)
 
-    return mappings
+    return mapping
 
 
-def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
+def calculate_mapping_greedy(filters1, filters2, k, threshold):
     """
     Brute-force one-shot solver.
 
@@ -136,7 +143,7 @@ def calculate_mapping_greedy(filters1, filters2, threshold=0.95, k=5):
     return greedy_solver(sparse_matrix)
 
 
-def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_python=False):
+def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=False):
     """Computes a sparse similarity matrix with:
         - size no larger than k * len(filters1)
         - order of len(filters1) + len(filters2)
@@ -167,7 +174,7 @@ def calculate_filter_similarity(filters1, filters2, k=10, threshold=0.5, use_pyt
         raise ValueError("Didn't meet minimum number of entities")
     # use C++ version by default
     if use_python:
-        return python_filter_similarity(filters1, filters2)
+        return python_filter_similarity(filters1, filters2, k, threshold)
     else:
-        return cffi_filter_similarity_k(filters1, filters2, k=k, threshold=threshold)
+        return cffi_filter_similarity_k(filters1, filters2, k, threshold)
 
