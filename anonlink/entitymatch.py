@@ -169,9 +169,8 @@ def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=Fal
             - the similarity score between 0 and 1 of the best match
             - The index in filters2 of the best match
     """
-    MIN_LENGTH = 5
-    if len(filters1) < MIN_LENGTH or len(filters2) < MIN_LENGTH:
-        raise ValueError("Didn't meet minimum number of entities")
+    if not filters1 or not filters2:
+        raise ValueError('empty input')
     # use C++ version by default
     if use_python:
         return python_filter_similarity(filters1, filters2, k, threshold)
