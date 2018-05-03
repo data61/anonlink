@@ -1,3 +1,4 @@
+from itertools import repeat
 import logging
 
 from anonlink._entitymatcher import ffi, lib
@@ -98,10 +99,10 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
 
         if matches < 0:
             raise ValueError('Internal error: Bad key length')
-        for j in range(matches):
-            ind = c_indices[j]
-            assert ind < len(filters2)
-            result.append((i, c_scores[j], ind))
+
+        # Take the first `matches` elements of c_scores and c_indices.
+        # Store them along with `i`.
+        result.extend(zip(repeat(i, matches), c_scores, c_indices))
 
     return result
 
