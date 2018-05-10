@@ -7,7 +7,6 @@ import sys
 from operator import itemgetter
 
 from . import bloommatcher as bm
-from . import util
 
 log = logging.getLogger('anonlink.entitymatch')
 
@@ -177,4 +176,3 @@ def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=Fal
         return python_filter_similarity(filters1, filters2, k, threshold)
     else:
         return cffi_filter_similarity_k(filters1, filters2, k, threshold)
-

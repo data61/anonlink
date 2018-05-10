@@ -85,7 +85,7 @@ def compute_comparison_speed(n1, n2, threshold):
     start = timer()
     sparse_matrix = calculate_filter_similarity(filters1, filters2, len(filters2), threshold)
     t1 = timer()
-    res = greedy_solver(sparse_matrix)
+    _ = greedy_solver(sparse_matrix)
     end = timer()
 
     similarity_time = t1 - start
@@ -176,6 +176,7 @@ def benchmark(size, compare):
         if test_size <= size:
             compute_comparison_speed(test_size, test_size, thld)
 
+
 if __name__ == '__main__':
     benchmark(4000, False)
-    #benchmark(20000, False)
+    # benchmark(20000, False)
