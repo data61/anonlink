@@ -128,14 +128,17 @@ def map_entities(weights, threshold, method=None):
 
 
 if __name__ == "__main__":
-    import numpy as np
     A = [[4.0, 3.0, 2.0, 1.0],
          [1.0, 4.0, 3.0, 2.0],
          [2.0, 1.0, 4.0, 3.0],
          [2.5, 3.5, 4.5, 1.5]]
 
     print("Threshold | Match | Entity Mapping")
-    for threshold in np.linspace(2.5, 3.5, 11):
+    n_thresholds = 10
+    for t in range(n_thresholds + 1):
+        # threshold will range from 2.5 to 3.5 inclusive in steps of 0.1
+        threshold = 2.5 + 1.0 * t / n_thresholds
         entity_map = map_entities(A, threshold)
         perfect_match = len(entity_map) == len(A)
-        print("{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map))
+        print("{:9.3f} | {:5} | {:26s} ".format(
+            threshold, perfect_match, entity_map))
