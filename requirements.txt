@@ -1,4 +1,3 @@
-numpy
 bitarray==0.8.1
 networkx==1.11
 cffi>=1.7
