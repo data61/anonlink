@@ -1,6 +1,3 @@
-from hashlib import sha1, md5
-import hmac
-from bitarray import bitarray
 from anonlink._entitymatcher import ffi, lib
 
 __author__ = 'Stephen Hardy, Brian Thorne'
@@ -12,7 +9,8 @@ def dicecoeff_pure_python(e1, e2):
 
     Implemented exclusively in Python.
 
-    :param e1, e2: bitarrays of same length
+    :param e1: bitarray of same length as e2
+    :param e2: bitarray of same length as e1
     :return: real 0-1 similarity measure
     """
     count1 = e1.count()
@@ -24,18 +22,21 @@ def dicecoeff_pure_python(e1, e2):
     else:
         return 2.0 * overlap_count / combined_count
 
+
 def dicecoeff_native(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
 
     Implemented via an external library.
 
-    :param e1, e2: bitarrays of same length
+    :param e1: bitarray of same length as e2
+    :param e2: bitarray of same length as e1
     :return: real 0-1 similarity measure
     """
     e1array = ffi.new("char[]", e1.tobytes())
     e2array = ffi.new("char[]", e2.tobytes())
     return lib.dice_coeff(e1array, e2array, len(e1array))
+
 
 def dicecoeff(e1, e2):
     """
@@ -85,5 +86,3 @@ def tanimoto_precount(e1, e2, count):
     """
     a = (e1 & e2).count()
     return a / float(count - a)
-
-

@@ -7,6 +7,7 @@ from timeit import default_timer as timer
 
 from anonlink._entitymatcher import ffi, lib
 
+
 def generate_bitarray(length):
     a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
     a.frombytes(os.urandom(length//8))

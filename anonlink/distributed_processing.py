@@ -28,6 +28,8 @@ def calculate_filter_similarity(filters1, filters2, k, threshold):
 
     :param filters1:
     :param filters2:
+    :param k:
+    :param threshold:
     :return:
     """
 
@@ -45,4 +47,3 @@ def calculate_filter_similarity(filters1, filters2, k, threshold):
             results.extend(future.result())
 
     return results
-
