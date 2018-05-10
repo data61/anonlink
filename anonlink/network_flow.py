@@ -140,5 +140,4 @@ if __name__ == "__main__":
         threshold = 2.5 + 1.0 * t / n_thresholds
         entity_map = map_entities(A, threshold)
         perfect_match = len(entity_map) == len(A)
-        print("{:9.3f} | {:5} | {:26s} ".format(
-            threshold, perfect_match, entity_map))
+        print("{:9.3f} | {:5} | {:26s} ".format(threshold, perfect_match, entity_map))
