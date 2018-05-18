@@ -1,3 +1,4 @@
+from itertools import repeat
 import logging
 
 from anonlink._entitymatcher import ffi, lib
@@ -6,7 +7,6 @@ import sys
 from operator import itemgetter
 
 from . import bloommatcher as bm
-from . import util
 
 log = logging.getLogger('anonlink.entitymatch')
 
@@ -97,11 +97,11 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
             c_scores)
 
         if matches < 0:
-            raise ValueError('Internel error: Bad key length')
-        for j in range(matches):
-            ind = c_indices[j]
-            assert ind < len(filters2)
-            result.append((i, c_scores[j], ind))
+            raise ValueError('Internal error: Bad key length')
+
+        # Take the first `matches` elements of c_scores and c_indices.
+        # Store them along with `i`.
+        result.extend(zip(repeat(i, matches), c_scores, c_indices))
 
     return result
 
@@ -169,12 +169,10 @@ def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=Fal
             - the similarity score between 0 and 1 of the best match
             - The index in filters2 of the best match
     """
-    MIN_LENGTH = 5
-    if len(filters1) < MIN_LENGTH or len(filters2) < MIN_LENGTH:
-        raise ValueError("Didn't meet minimum number of entities")
+    if not filters1 or not filters2:
+        raise ValueError('empty input')
     # use C++ version by default
     if use_python:
         return python_filter_similarity(filters1, filters2, k, threshold)
     else:
         return cffi_filter_similarity_k(filters1, filters2, k, threshold)
-
