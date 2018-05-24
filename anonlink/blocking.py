@@ -13,7 +13,7 @@ _T = TypeVar('_T')
 def _evalf(__funcs : 'Iterable[Callable[..., _T]]',  # https://github.com/python/typing/issues/259
            *args,
            **kwargs) -> Iterable[_T]:
-    """ Apply the same arguments to a number of functions.
+    """ Apply a number of functions to the same arguments.
 
         Think of this as reverse map. Instead of having one function and
         multiple data, you have multiple functions and one piece of
