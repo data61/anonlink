@@ -5,8 +5,7 @@ from random import Random
 from typing import (Any, Callable, Hashable, Iterable, List,
                     Optional, overload, Sequence, Tuple, TypeVar, Union)
 
-
-BlockingFunction = Callable[[int, int, Sequence[bool]], Iterable[Hashable]]
+from .typechecking import BlockingFunction
 
 
 _T = TypeVar('_T')
