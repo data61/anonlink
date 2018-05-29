@@ -3,41 +3,41 @@ import itertools
 import numpy as np
 import pytest
 
-from anonlink.similarities import _hamming_sim_f, hamming_similarity
+from anonlink.similarities import _hamming_sim, hamming_similarity
 
 
 def test_hamming_sim_k():
     # This tests an internal function. It may need to change if the
     # implementation of `hamming_similarity` changes.
-    assert _hamming_sim_f([False], [False]) == 1
-    assert _hamming_sim_f([False], [True]) == 0
-    assert _hamming_sim_f([True], [False]) == 0
-    assert _hamming_sim_f([True], [True]) == 1
+    assert _hamming_sim([False], [False]) == 1
+    assert _hamming_sim([False], [True]) == 0
+    assert _hamming_sim([True], [False]) == 0
+    assert _hamming_sim([True], [True]) == 1
 
-    assert _hamming_sim_f([False, False], [False, False]) == 1
-    assert _hamming_sim_f([False, False], [False, True]) == .5
-    assert _hamming_sim_f([False, False], [True, False]) == .5
-    assert _hamming_sim_f([False, False], [True, True]) == 0
-    assert _hamming_sim_f([False, True], [False, False]) == .5
-    assert _hamming_sim_f([False, True], [False, True]) == 1
-    assert _hamming_sim_f([False, True], [True, False]) == 0
-    assert _hamming_sim_f([False, True], [True, True]) == .5
-    assert _hamming_sim_f([True, False], [False, False]) == .5
-    assert _hamming_sim_f([True, False], [False, True]) == 0
-    assert _hamming_sim_f([True, False], [True, False]) == 1
-    assert _hamming_sim_f([True, False], [True, True]) == .5
-    assert _hamming_sim_f([True, True], [False, False]) == 0
-    assert _hamming_sim_f([True, True], [False, True]) == .5
-    assert _hamming_sim_f([True, True], [True, False]) == .5
-    assert _hamming_sim_f([True, True], [True, True]) == 1
+    assert _hamming_sim([False, False], [False, False]) == 1
+    assert _hamming_sim([False, False], [False, True]) == .5
+    assert _hamming_sim([False, False], [True, False]) == .5
+    assert _hamming_sim([False, False], [True, True]) == 0
+    assert _hamming_sim([False, True], [False, False]) == .5
+    assert _hamming_sim([False, True], [False, True]) == 1
+    assert _hamming_sim([False, True], [True, False]) == 0
+    assert _hamming_sim([False, True], [True, True]) == .5
+    assert _hamming_sim([True, False], [False, False]) == .5
+    assert _hamming_sim([True, False], [False, True]) == 0
+    assert _hamming_sim([True, False], [True, False]) == 1
+    assert _hamming_sim([True, False], [True, True]) == .5
+    assert _hamming_sim([True, True], [False, False]) == 0
+    assert _hamming_sim([True, True], [False, True]) == .5
+    assert _hamming_sim([True, True], [True, False]) == .5
+    assert _hamming_sim([True, True], [True, True]) == 1
 
     if __debug__:
         with pytest.raises(AssertionError):
-            _hamming_sim_f([True], [True, True])
+            _hamming_sim([True], [True, True])
         with pytest.raises(AssertionError):
-            _hamming_sim_f([True, False, False], [True, True])
+            _hamming_sim([True, False, False], [True, True])
         with pytest.raises(AssertionError):
-            _hamming_sim_f([], [])
+            _hamming_sim([], [])
 
 
 def _sanity_check_candidates(indices, sims, candidates):
@@ -72,7 +72,7 @@ class TestHammingSimilarity:
 
         for (i0, record0), (i1, record1) \
                 in itertools.product(*map(enumerate, datasets)):
-            sim = _hamming_sim_f(record0, record1)
+            sim = _hamming_sim(record0, record1)
 
             if sim >= threshold:
                 assert (i0, i1) in candidates
@@ -95,7 +95,7 @@ class TestHammingSimilarity:
 
         for (i0, record0), (i1, record1) \
                 in itertools.product(*map(enumerate, datasets)):
-            sim = _hamming_sim_f(record0, record1)
+            sim = _hamming_sim(record0, record1)
 
             if sim >= threshold:
                 if (i0, i1) not in candidates:
