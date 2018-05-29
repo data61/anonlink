@@ -47,6 +47,10 @@ def _hamming_similarity_k(
         sims, indices = zip(*result_pairs)
         sims_arr = np.array(sims, dtype=float)
         indices_arr = np.array(indices, dtype=int, order='F').T
+        assert len(sims_arr.shape) == 1
+        assert len(indices_arr.shape) == 2
+        assert indices_arr.shape[0] == 2
+        assert indices_arr.shape[1] == sims_arr.shape[0]
     else:
         sims_arr = np.empty((0,), dtype=float)
         indices_arr = np.empty((2,0), dtype=int)
@@ -70,9 +74,15 @@ def _hamming_similarity_no_k(
             indices[0].append(i0)
             indices[1].append(i1)
 
-    # Make into arrays
-    sims_arr = np.array(sims, dtype=float)
-    indices_arr = np.array(indices, dtype=int)
+    if sims:
+        assert all(indices)
+        # Make into arrays
+        sims_arr = np.array(sims, dtype=float)
+        indices_arr = np.array(indices, dtype=int)
+    else:
+        assert not any(indices)
+        sims_arr = np.empty((0,), dtype=float)
+        indices_arr = np.empty((2,0), dtype=int)
 
     return indices_arr, sims_arr
 
@@ -95,6 +105,14 @@ def hamming_similarity(
             raise ValueError('inconsistent hash length')
 
     if k is None:
-        return _hamming_similarity_no_k(datasets, threshold)
+        indices, sims = _hamming_similarity_no_k(datasets, threshold)
     else:
-        return _hamming_similarity_k(datasets, threshold, k)
+        indices, sims = _hamming_similarity_k(datasets, threshold, k)
+
+    # Quick sanity checks
+    assert len(sims.shape) == 1
+    assert len(indices.shape) == 2
+    assert indices.shape[0] == 2
+    assert indices.shape[1] == sims.shape[0]
+
+    return indices, sims

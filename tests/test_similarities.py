@@ -40,69 +40,73 @@ def test_hamming_sim_k():
             _hamming_sim_f([], [])
 
 
-@pytest.mark.parametrize('recs_per_dataset', [0, 80])
-@pytest.mark.parametrize('length', [64])
-@pytest.mark.parametrize('threshold', [1.0, 0.6, 0.0])
-def test_hamming_similarity_no_k(recs_per_dataset, length, threshold):
-    datasets = np.random.choice((True, False),
-                                size=(2, recs_per_dataset, length))
-    indices, sims = hamming_similarity(datasets, threshold, k=None)
-    candidates = dict(zip(zip(indices[0], indices[1]), sims))
-
-    assert len(datasets) == 2
-    assert len(datasets[0]) == len(datasets[1]) == recs_per_dataset
-    assert all(len(datasets[0][i]) == length for i in range(recs_per_dataset))
-
+def _sanity_check_candidates(indices, sims, candidates):
     assert len(indices) == 2
     assert all(len(i) == len(sims) for i in indices)
     assert len(candidates) == len(sims)
     assert not candidates or len(next(iter(candidates))) == 2
 
-    for i, j in itertools.product(range(recs_per_dataset), repeat=2):
-        sim = _hamming_sim_f(datasets[0][i], datasets[1][j])
 
-        if sim >= threshold:
-            assert (i, j) in candidates
-            assert candidates[i, j] == sim
-        else:
-            assert (i, j) not in candidates
+@pytest.fixture(scope='module',
+                params=itertools.product([0, 80], [64]))
+def datasets(request):
+    recs_per_dataset, length = request.param
 
-
-@pytest.mark.parametrize('recs_per_dataset', [0, 80])
-@pytest.mark.parametrize('length', [64])
-@pytest.mark.parametrize('threshold', [1.0, 0.6, 0.0])
-@pytest.mark.parametrize('k', [0, 20, 80])
-def test_hamming_similarity_k(recs_per_dataset, length, threshold, k):
-    datasets = np.random.choice((True, False),
+    result = np.random.choice((True, False),
                                 size=(2, recs_per_dataset, length))
-    indices, sims = hamming_similarity(datasets, threshold, k=k)
-    candidates = dict(zip(zip(indices[0], indices[1]), sims))
+    assert len(result) == 2
+    assert all(len(dataset) == recs_per_dataset for dataset in result)
+    assert all(len(record) == length for dataset in result
+                                     for record in dataset)
 
-    assert len(datasets) == 2
-    assert len(datasets[0]) == len(datasets[1]) == recs_per_dataset
-    assert all(len(datasets[0][i]) == length for i in range(recs_per_dataset))
+    return result
 
-    assert len(indices) == 2
-    assert all(len(i) == len(sims) for i in indices)
-    assert len(candidates) == len(sims)
-    assert not candidates or len(next(iter(candidates))) == 2
 
-    # Make sure we return at most k
-    for i in range(recs_per_dataset):
-        assert sum(indices[0] == i for indices in candidates) <= k
-        assert sum(indices[1] == i for indices in candidates) <= k
+@pytest.mark.parametrize('threshold', [1.0, 0.6, 0.0], scope='class')
+class TestHammingSimilarity:
+    def test_no_k(self, datasets, threshold):
+        indices, sims = hamming_similarity(datasets, threshold, k=None)
+        candidates = dict(zip(zip(indices[0], indices[1]), sims))
+        
+        _sanity_check_candidates(indices, sims, candidates)
 
-    for i, j in itertools.product(range(recs_per_dataset), repeat=2):
-        sim = _hamming_sim_f(datasets[0,i], datasets[1,j])
+        for (i0, record0), (i1, record1) \
+                in itertools.product(*map(enumerate, datasets)):
+            sim = _hamming_sim_f(record0, record1)
 
-        if sim >= threshold:
-            if (i, j) not in candidates:
-                assert (not k
-                        or sim <= min(val for index, val in candidates.items()
-                                     if index[0] == i)
-                        or sim <= min(val for index, val in candidates.items()
-                                     if index[1] == j))
+            if sim >= threshold:
+                assert (i0, i1) in candidates
+                assert candidates[i0, i1] == sim
             else:
-                assert candidates[i, j] == sim
-        else:
-            assert (i, j) not in candidates
+                assert (i0, i1) not in candidates
+
+    @pytest.mark.parametrize('k', [0, 20, 80])
+    def test_k(self, datasets, threshold, k):
+        indices, sims = hamming_similarity(datasets, threshold, k=k)
+        candidates = dict(zip(zip(indices[0], indices[1]), sims))
+        
+        _sanity_check_candidates(indices, sims, candidates)
+
+        # Make sure we return at most k
+        for i, _ in enumerate(datasets[0]):
+            assert sum(indices[0] == i for indices in candidates) <= k
+        for i, _ in enumerate(datasets[1]):
+            assert sum(indices[1] == i for indices in candidates) <= k
+
+        for (i0, record0), (i1, record1) \
+                in itertools.product(*map(enumerate, datasets)):
+            sim = _hamming_sim_f(record0, record1)
+
+            if sim >= threshold:
+                if (i0, i1) not in candidates:
+                    assert (not k
+                            or sim <= min(val
+                                          for index, val in candidates.items()
+                                          if index[0] == i0)
+                            or sim <= min(val
+                                          for index, val in candidates.items()
+                                          if index[1] == i1))
+                else:
+                    assert candidates[i0, i1] == sim
+            else:
+                assert (i0, i1) not in candidates
