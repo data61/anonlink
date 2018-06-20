@@ -1,3 +1,9 @@
+0.8.1
+-----
+
+Minor updates and fixes. Code cleanup.
+- Remove checking of chunk size to prevent crashes on small chunks.
+
 0.8.0
 -----
 
