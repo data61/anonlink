@@ -1,14 +1,15 @@
-from typing import Dict, Mapping, Sequence, Set, Tuple
+from itertools import product, repeat
+from typing import Dict, List, Mapping, Sequence, Tuple
 
 import numpy as np
 
-from .typechecking import CandidatePairs
+from .typechecking import CandidatePairs 
 
 
 def greedy_solve(
     candidates: CandidatePairs,
     threshold: float
-) -> Mapping[Tuple[int, int], Set[Tuple[int, int]]]:
+) -> Mapping[Tuple[int, int], List[Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
         We assign each record to exactly one 'group' of records that are
@@ -47,51 +48,61 @@ def greedy_solve(
     assert dset_indices.shape[1] == sorted_indices.shape[0]
     assert rec_indices.shape[1] == sorted_indices.shape[0]
 
-    matches = {}  # type: Dict[Tuple[int, int], Set[Tuple[int,int]]]
+    matches = {}  # type: Dict[Tuple[int, int], List[Tuple[int,int]]]
     matchable_pairs = set()
-    for dset_is, rec_is in zip(dset_indices.T, rec_indices.T): 
-        i0, i1 = zip(dset_is, rec_is)
+
+    # Optimise. This is not nice but it makes things 8% faster on large
+    # problems...
+    matchable_pairs_contains = matchable_pairs.__contains__
+    matchable_pairs_add = matchable_pairs.add
+    product_ = product
+    repeat_ = repeat
+    zip_ = zip
+    map_ = map
+    all_ = all
+    
+
+    for dset_is, rec_is in zip_(dset_indices.T, rec_indices.T): 
+        i0, i1 = zip_(dset_is, rec_is)
 
         if i0 in matches and i1 in matches:
             # Both records are assigned to a group.
             # Check if mergeable.
-            matchable_pairs.add(frozenset((i0, i1)))
-            if all(frozenset((j0, j1)) in matchable_pairs
-                   for j0 in matches[i0]
-                   for j1 in matches[i1]):
-                # Yes, mergeable.
+            matchable_pairs_add((i0, i1))
+            if all_(map_(matchable_pairs_contains, product_(matches[i0], matches[i1]))):
                 # Minor cleanup.
-                matchable_pairs.difference(frozenset((j0, j1))
-                                             for j0 in matches[i0]
-                                             for j1 in matches[i1])
+                matchable_pairs.difference_update(product_(matches[i0], matches[i1]))
                 # Merge groups.
-                merged_group = matches[i0]
-                merged_group.update(matches[i1])
-                matches.update((j, merged_group) for j in matches[i1])
-            continue
+                matches[i0].extend(matches[i1])
+                matches.update(zip_(matches[i1], repeat_(matches[i0])))
+        
+        elif i0 not in matches and i1 in matches:
+            # i0 is not in a group, but i1 is.
+            # See if we may assign i0 to that group.
+            matchable_pairs_add((i0, i1))
+            if all_(map_(matchable_pairs_contains, zip_(repeat_(i0), matches[i1]))):
+                # Minor cleanup.
+                matchable_pairs.difference_update(zip_(repeat_(i0), matches[i1]))
+                # Yes. We let's do that.
+                matches[i1].append(i0)
+                matches[i0] = matches[i1]
 
-        if i0 not in matches and i1 in matches:
-            i0, i1 = i1, i0
-            # Symmetry. Fall through.
-        if i0 in matches and i1 not in matches:
+        elif i0 in matches and i1 not in matches:
             # i0 is in a group, but i1 isn't.
             # See if we may assign i1 to that group.
-            matchable_pairs.add(frozenset((i0, i1)))
-            if all(frozenset((j, i1)) in matchable_pairs
-                   for j in matches[i0]):
-                # Yes. We let's do that.
+            matchable_pairs_add((i0, i1))
+            if all_(map_(matchable_pairs_contains, zip_(matches[i0], repeat_(i1)))):
                 # Minor cleanup.
-                matchable_pairs.difference(frozenset((j, i1))
-                                             for j in matches[i0])
-                # Add i1 to i0's group.
-                matches[i0].add(i1)
+                matchable_pairs.difference_update(zip_(matches[i0], repeat_(i1)))
+                # Yes. We let's do that.
+                matches[i0].append(i1)
                 matches[i1] = matches[i0]
-            continue
 
-        if i0 not in matches and i1 not in matches:
+        elif i0 not in matches and i1 not in matches:
             # Neither is in a group, so let's make a new one.
-            group = {i0, i1}
-            matches[i0] = group
-            matches[i1] = group
+            matches[i0] = matches[i1] = [i0, i1]
+
+        else:
+            raise RuntimeError('nonexhaustive cases')
 
     return matches
