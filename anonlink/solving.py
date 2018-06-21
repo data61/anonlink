@@ -7,68 +7,6 @@ import numpy as np
 from .typechecking import CandidatePairs 
 
 
-def _merge(i0, i1, i0_mid, i1_mid, i0_matches, i1_matches, matches, matchable_pairs):
-    # Optimisation: Make sure we always extend the bigger group.
-    if len(i0_matches) < len(i1_matches):
-        i0, i1 = i1, i0
-        i0_mid, i1_mid = i1_mid, i0_mid
-        i0_matches, i1_matches = i1_matches, i0_matches
-
-    i0_matches.extend(i1_matches)
-    matches.update(zip(i1_matches, repeat(i0_matches)))
-    # Update edges.
-    del matchable_pairs[i0_mid][i1_mid]
-    del matchable_pairs[i1_mid][i0_mid]
-    for j_mid, j_count in matchable_pairs[i1_mid].items():
-        matchable_pairs[i0_mid][j_mid] += j_count
-        matchable_pairs[j_mid][i0_mid] += j_count
-        del matchable_pairs[j_mid][i1_mid]
-        if not matchable_pairs[j_mid]:
-            del matchable_pairs[j_mid]
-    del matchable_pairs[i1_mid]
-    if not matchable_pairs[i0_mid]:
-        del matchable_pairs[i0_mid]
-
-
-def _2groups(i0, i1, matches, matchable_pairs, id_=id, len_=len, _merge_=_merge):
-    i0_matches = matches[i0]
-    i1_matches = matches[i1]
-
-    i0_mid = id_(i0_matches)
-    i1_mid = id_(i1_matches)
-
-    # Both records are assigned to a group.
-    # Check if mergeable.
-    if (matchable_pairs[i0_mid][i1_mid] + 1
-        == len_(i0_matches) * len_(i1_matches)):
-        # Merge groups.
-        _merge_(i0, i1, i0_mid, i1_mid, i0_matches, i1_matches, matches, matchable_pairs)
-
-    else:
-        # Don't merge. Mark they have another edge in common.
-        matchable_pairs[i0_mid][i1_mid] += 1
-        matchable_pairs[i1_mid][i0_mid] += 1
-
-
-def _1group(i0, i1, matches, matchable_pairs):
-    # i0 is not in a group, but i1 is.
-    # See if we may assign i0 to that group.
-    i0_matches = matches[i0]
-    if len(i0_matches) == 1:
-        i0_matches.append(i1)
-        matches[i1] = i0_matches
-    else:
-        i1_matches = [i1]
-        matches[i1] = i1_matches
-
-        matchable_pairs[id(i1_matches)][id(i0_matches)] = 1
-        matchable_pairs[id(i0_matches)][id(i1_matches)] = 1
-
-
-def _0groups(i0, i1, matches):
-    matches[i0] = matches[i1] = [i0, i1]
-
-
 def greedy_solve(
     candidates: CandidatePairs,
     threshold: float
@@ -118,18 +56,64 @@ def greedy_solve(
         i0, i1 = zip(dset_is, rec_is)
 
         if i0 in matches and i1 in matches:
-            _2groups(i0, i1, matches, matchable_pairs)
+            # Both records are assigned to a group.
+            i0_matches = matches[i0]
+            i1_matches = matches[i1]
+
+            i0_mid = id(i0_matches)
+            i1_mid = id(i1_matches)
+
+            # Check if mergeable.
+            if (matchable_pairs[i0_mid][i1_mid] + 1
+                == len(i0_matches) * len(i1_matches)):
+                # Optimisation: Make sure we always extend the bigger group.
+                if len(i0_matches) < len(i1_matches):
+                    i0, i1 = i1, i0
+                    i0_mid, i1_mid = i1_mid, i0_mid
+                    i0_matches, i1_matches = i1_matches, i0_matches
+                # Merge groups.
+                i0_matches.extend(i1_matches)
+                matches.update(zip(i1_matches, repeat(i0_matches)))
+                
+                # Update edges.
+                del matchable_pairs[i0_mid][i1_mid]
+                del matchable_pairs[i1_mid][i0_mid]
+                for j_mid, j_count in matchable_pairs[i1_mid].items():
+                    matchable_pairs[i0_mid][j_mid] += j_count
+                    matchable_pairs[j_mid][i0_mid] += j_count
+                    del matchable_pairs[j_mid][i1_mid]
+                    if not matchable_pairs[j_mid]:
+                        del matchable_pairs[j_mid]
+                del matchable_pairs[i1_mid]
+                if not matchable_pairs[i0_mid]:
+                    del matchable_pairs[i0_mid]
+
+            else:
+                # Don't merge. Mark they have another edge in common.
+                matchable_pairs[i0_mid][i1_mid] += 1
+                matchable_pairs[i1_mid][i0_mid] += 1
             continue
 
         if i0 not in matches and i1 in matches:
             i0, i1 = i1, i0
             # Fall through
         if i0 in matches and i1 not in matches:
-            _1group(i0, i1, matches, matchable_pairs)
+            # i0 is not in a group, but i1 is.
+            # See if we may assign i0 to that group.
+            i0_matches = matches[i0]
+            if len(i0_matches) == 1:
+                i0_matches.append(i1)
+                matches[i1] = i0_matches
+            else:
+                i1_matches = [i1]
+                matches[i1] = i1_matches
+
+                matchable_pairs[id(i1_matches)][id(i0_matches)] = 1
+                matchable_pairs[id(i0_matches)][id(i1_matches)] = 1
             continue
 
         if i0 not in matches and i1 not in matches:
-            _0groups(i0, i1, matches)
+            matches[i0] = matches[i1] = [i0, i1]
             continue
 
         raise RuntimeError('non-exhaustive cases')
