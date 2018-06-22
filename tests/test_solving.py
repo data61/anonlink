@@ -16,8 +16,8 @@ def _zip_candidates(candidates):
 
 
 def _compare_matching(result, truth):
-    result = frozenset(map(frozenset, result.values()))
-    truth = frozenset(map(frozenset, truth))
+    result = set({id(r): frozenset(r) for r in result}.values())
+    truth = set(map(frozenset, truth))
     assert result == truth
 
 

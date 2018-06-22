@@ -1,16 +1,16 @@
-from collections import defaultdict, Counter
-from itertools import product, repeat
-from typing import Dict, List, Mapping, Sequence, Tuple
+import collections
+from itertools import repeat
+from typing import Counter as Counter, DefaultDict, Dict, Iterable, List, Tuple
 
 import numpy as np
 
-from .typechecking import CandidatePairs 
+from .typechecking import CandidatePairs
 
 
 def greedy_solve(
     candidates: CandidatePairs,
     threshold: float
-) -> Mapping[Tuple[int, int], List[Tuple[int, int]]]:
+) -> Iterable[Iterable[Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
         We assign each record to exactly one 'group' of records that are
@@ -49,8 +49,17 @@ def greedy_solve(
     assert dset_indices.shape[1] == sorted_indices.shape[0]
     assert rec_indices.shape[1] == sorted_indices.shape[0]
 
+    # Map (dataset index, record index) to its group.
     matches = {}  # type: Dict[Tuple[int, int], List[Tuple[int,int]]]
-    matchable_pairs = defaultdict(Counter)  # Count edges.
+
+    # Each group is a set of records. We merge two groups every pair of
+    # their records is matchable. A pair is matchable if we have seen
+    # it. Store the number of matchable pairs between two groups. This
+    # is a sparse matrix: the default number of matchable pairs is 0.
+    # Since the groups themselves are not hashable, we use their id as
+    # the key.
+    matchable_pairs = collections.defaultdict(
+        collections.Counter)  # type: DefaultDict[int, Counter[int]]
 
     for dset_is, rec_is in zip(dset_indices.T, rec_indices.T): 
         i0, i1 = zip(dset_is, rec_is)
@@ -59,7 +68,6 @@ def greedy_solve(
             # Both records are assigned to a group.
             i0_matches = matches[i0]
             i1_matches = matches[i1]
-
             i0_mid = id(i0_matches)
             i1_mid = id(i1_matches)
 
@@ -75,36 +83,38 @@ def greedy_solve(
                 i0_matches.extend(i1_matches)
                 matches.update(zip(i1_matches, repeat(i0_matches)))
                 
-                # Update edges.
+                # Update matchable pairs.
                 del matchable_pairs[i0_mid][i1_mid]
                 del matchable_pairs[i1_mid][i0_mid]
                 for j_mid, j_count in matchable_pairs[i1_mid].items():
                     matchable_pairs[i0_mid][j_mid] += j_count
                     matchable_pairs[j_mid][i0_mid] += j_count
                     del matchable_pairs[j_mid][i1_mid]
-                    if not matchable_pairs[j_mid]:
-                        del matchable_pairs[j_mid]
                 del matchable_pairs[i1_mid]
-                if not matchable_pairs[i0_mid]:
+                if not matchable_pairs[i0_mid]:  # Empty. Can delete.
                     del matchable_pairs[i0_mid]
 
             else:
-                # Don't merge. Mark they have another edge in common.
+                # Don't merge. Mark: they have another edge in common.
                 matchable_pairs[i0_mid][i1_mid] += 1
                 matchable_pairs[i1_mid][i0_mid] += 1
             continue
 
         if i0 not in matches and i1 in matches:
             i0, i1 = i1, i0
-            # Fall through
+            # Symmetry. Fall through.
         if i0 in matches and i1 not in matches:
             # i0 is not in a group, but i1 is.
             # See if we may assign i0 to that group.
             i0_matches = matches[i0]
             if len(i0_matches) == 1:
+                # i0 is a group of 1, so trivially we can merge.
                 i0_matches.append(i1)
                 matches[i1] = i0_matches
             else:
+                # i0 is a group of >1. i1 is not in a group, so this is
+                # the first time we're seeing it. Hence, it is not
+                # matchable with the other elements of i0.
                 i1_matches = [i1]
                 matches[i1] = i1_matches
 
@@ -113,10 +123,11 @@ def greedy_solve(
             continue
 
         if i0 not in matches and i1 not in matches:
+            # Neither is in a group, so let's just make one.
             matches[i0] = matches[i1] = [i0, i1]
             continue
 
         raise RuntimeError('non-exhaustive cases')
                 
-
-    return matches
+    # Return all nontrivial groups
+    return (group for group in matches.values() if len(group) > 1)
