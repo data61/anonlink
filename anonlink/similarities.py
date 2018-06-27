@@ -3,7 +3,7 @@ import functools
 import heapq
 import itertools
 import operator
-from typing import (cast, Counter, DefaultDict, Dict, Iterable,
+from typing import (cast, DefaultDict, Dict, Iterable,
                     List, Optional, Sequence, Tuple)
 
 import numpy as np
@@ -42,7 +42,7 @@ def _hamming_similarity_k(
         candidates[1][i1].append(c)
             
     # Take the best k candidates for each record and count them
-    pair_counter = collections.Counter()  # type: Counter[Tuple[float, Tuple[int, int]]]
+    pair_counter = collections.Counter()  # type: Dict[Tuple[float, Tuple[int, int]], int]
     for dset_cands in candidates:
         for unfiltered_cands in dset_cands.values():
             pair_counter.update(heapq.nlargest(k, unfiltered_cands))
