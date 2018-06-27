@@ -1,6 +1,6 @@
 import collections
 from itertools import repeat
-from typing import Counter as Counter, DefaultDict, Dict, Iterable, List, Tuple
+from typing import DefaultDict, Dict, Iterable, List, Tuple
 
 import numpy as np
 
@@ -28,12 +28,11 @@ def greedy_solve(
             `find_candidates`.
         :param float threshold: The similarity threshold. This is
             ignored in this implementation.
-        :param bool overwrite_candidates: Discard data in `candidates`.
-            Enabling may improve performance.
 
-        :return: The mapping. A tuple of (dataset index, record index)
-            maps to a set of its matches. Each match is a similar
-            2-tuple.
+        :return: An iterable of groups. Each group is an iterable of
+            records. Two records are in the same group iff they
+            represent the same entity. Here, a record is a two-tuple of
+            dataset index and record index.
     """
     dset_indices_sseq, rec_indices_sseq, sims_seq = candidates
     
@@ -52,14 +51,14 @@ def greedy_solve(
     # Map (dataset index, record index) to its group.
     matches = {}  # type: Dict[Tuple[int, int], List[Tuple[int,int]]]
 
-    # Each group is a set of records. We merge two groups every pair of
-    # their records is matchable. A pair is matchable if we have seen
-    # it. Store the number of matchable pairs between two groups. This
-    # is a sparse matrix: the default number of matchable pairs is 0.
-    # Since the groups themselves are not hashable, we use their id as
-    # the key.
+    # Each group is a set of records. We merge two groups when 
+    # pair of their records is matchable. A pair is matchable if we have
+    # seen it. Store the number of matchable pairs between two groups.
+    # This is a sparse matrix: the default number of matchable pairs is
+    # 0. Since the groups themselves are not hashable, we use their id
+    # as the key.
     matchable_pairs = collections.defaultdict(
-        collections.Counter)  # type: DefaultDict[int, Counter[int]]
+        collections.Counter)  # type: DefaultDict[int, Dict[int, int]]
 
     for dset_is, rec_is in zip(dset_indices.T, rec_indices.T): 
         i0, i1 = zip(dset_is, rec_is)
@@ -71,7 +70,12 @@ def greedy_solve(
             i0_mid = id(i0_matches)
             i1_mid = id(i1_matches)
 
-            # Check if mergeable.
+            # Check if mergeable. matchable_pairs[i0_mid][i1_mid] is the
+            # number of pairs they have in common not including the
+            # current pair--we add one to include it. The total number
+            # of pairs is len(i0_matches) * len(i1_matches)). When this
+            # is the number of matchable pairs, then every pair is
+            # matchable.
             if (matchable_pairs[i0_mid][i1_mid] + 1
                 == len(i0_matches) * len(i1_matches)):
                 # Optimisation: Make sure we always extend the bigger group.
@@ -104,7 +108,7 @@ def greedy_solve(
             i0, i1 = i1, i0
             # Symmetry. Fall through.
         if i0 in matches and i1 not in matches:
-            # i0 is not in a group, but i1 is.
+            # i0 is in a group, but i1 is not.
             # See if we may assign i0 to that group.
             i0_matches = matches[i0]
             if len(i0_matches) == 1:
