@@ -12,9 +12,9 @@ VENV_DIRECTORY = "env"
 GIT_CONTEXT = "jenkins"
 
 def configs = [
-    [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
+    [label: 'GPU 1', pythons: ['python3.6', 'python3.7'], compilers: ['clang', 'gcc']],
     //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
-    [label: 'McNode', pythons: ['python3.5'], compilers: ['clang']]
+    [label: 'McNode', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
@@ -117,7 +117,7 @@ try {
 node('GPU 1') {
   stage('Release') {
     try {
-      build('python3.5', 'gcc', 'GPU 1', true)
+      build('python3.7', 'gcc', 'GPU 1', true)
       commit.setSuccessStatus(GIT_CONTEXT)
     } catch (Exception e) {
       commit.setFailStatus("Release failed", GIT_CONTEXT);
