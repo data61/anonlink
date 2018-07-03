@@ -96,11 +96,10 @@ def _load_to_iterable(
     f: _typing.BinaryIO
 ) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
     # Make sure that f.read(n) returns exactly n bytes.
-    if isinstance(f, _io.RawIOBase):
-        f = _io.BufferedWriter(f)
-    elif not isinstance(f, _io.BufferedIOBase):
-        msg = 'stream must be instance of BufferedIOBase or RawIOBase'
-        raise ValueError(msg)
+    if not isinstance(f, _io.BufferedIOBase):
+        f = _io.BufferedReader(f)  # type: ignore
+        # Mypy complains that f is not guaranteed to be RawIOBase.
+        # That's true but BufferedReader doesn't explicitly check this.
 
     header_bytes = f.read(_HEADER_STRUCT.size)
     if len(header_bytes) != _HEADER_STRUCT.size:
