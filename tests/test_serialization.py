@@ -45,7 +45,7 @@ def random_pairs_list(sim_size, dset_i_size, rec_i_size,
     rng = random.Random(seed)
     random_pairs = []
     for _ in range(length):
-        # Force single precision
+        # Coerce precision
         float_array[0] = rng.uniform(0, 1)
         sim = float_array[0]
 
