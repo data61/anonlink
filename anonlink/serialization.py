@@ -2,6 +2,9 @@ import array as _array
 import heapq as _heapq
 import io as _io
 import struct as _struct
+import typing as _typing
+
+from . import typechecking as _typechecking
 
 # https://docs.python.org/3/library/struct.html#format-characters
 _STRUCT_UINT_LEN_TO_FMT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
@@ -18,6 +21,9 @@ _ARRAY_FLOAT_LEN_TO_FMT = {_array.array(t).itemsize: t
 _HEADER_STRUCT = _struct.Struct('<BBBB')
 
 
+_CandidatePair = _typing.Tuple[float, int, int, int, int]
+_CandidatePairIter = _typing.Iterable[_CandidatePair]
+
 # This is subject to change.
 # The format is composed of a header and a sequence of entries.
 # The header is composed of:  version (1 byte), number of bytes in
@@ -31,7 +37,11 @@ _HEADER_STRUCT = _struct.Struct('<BBBB')
 # on purpose: if needed, it can be computed from the length of the file.
 
 
-def _entry_struct(sim_t_size: int, dset_i_t_size: int, rec_i_t_size: int):
+def _entry_struct(
+    sim_t_size: int,
+    dset_i_t_size: int,
+    rec_i_t_size: int
+) -> _struct.Struct:
     try:
         sim_t = _STRUCT_FLOAT_LEN_TO_FMT[sim_t_size]
     except KeyError:
@@ -51,11 +61,12 @@ def _entry_struct(sim_t_size: int, dset_i_t_size: int, rec_i_t_size: int):
     
 
 def _dump_from_iterable(
-    f,
-    sim_t_size,
-    dset_i_t_size,
-    rec_i_t_size,
-    iterable):
+    f: _typing.BinaryIO,
+    sim_t_size: int,
+    dset_i_t_size: int,
+    rec_i_t_size: int,
+    iterable: _CandidatePairIter
+) -> None:
     # Fail without writing if the parameters are incorrect.
     entry_struct = _entry_struct(
         sim_t_size, dset_i_t_size, rec_i_t_size)
@@ -67,19 +78,27 @@ def _dump_from_iterable(
         f.write(entry_struct.pack(*entry))
 
 
-def _entries_iterable(f, entry_struct):
+def _entries_iterable(
+    f: _typing.BinaryIO,
+    entry_struct: _struct.Struct
+) -> _CandidatePairIter:
     buffer = f.read(entry_struct.size)
     while buffer:
         if len(buffer) != entry_struct.size:
             raise ValueError('ran out of input')
-        yield entry_struct.unpack(buffer)
+        yield _typing.cast(_CandidatePair, entry_struct.unpack(buffer))
         buffer = f.read(entry_struct.size)
 
 
-def _load_to_iterable(f):
+def _load_to_iterable(
+    f: _typing.BinaryIO
+) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
     # Make sure that f.read(n) returns exactly n bytes.
-    if not isinstance(f, _io.BufferedIOBase):
+    if isinstance(f, _io.RawIOBase):
         f = _io.BufferedWriter(f)
+    elif not isinstance(f, _io.BufferedIOBase):
+        msg = 'stream must be instance of BufferedIOBase or RawIOBase'
+        raise ValueError(msg)
 
     header_bytes = f.read(_HEADER_STRUCT.size)
     if len(header_bytes) != _HEADER_STRUCT.size:
@@ -97,7 +116,10 @@ def _load_to_iterable(f):
             sim_t_size, dset_i_t_size, rec_i_t_size)
 
 
-def dump_candidate_pairs(f, candidate_pairs):
+def dump_candidate_pairs(
+    f: _typing.BinaryIO,
+    candidate_pairs: _typechecking.CandidatePairs
+) -> None:
     """Dump candidate pairs to file.
 
     :param f: Binary buffer to write to.
@@ -121,7 +143,7 @@ def dump_candidate_pairs(f, candidate_pairs):
         f, sim_t_size, dset_i_t_size, rec_i_t_size, iterable)
 
 
-def load_candidate_pairs(f):
+def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     """Load candidate pairs from file.
 
     :param f: Binary buffer to read from.
@@ -148,11 +170,11 @@ def load_candidate_pairs(f):
 
     # Future: preallocate memory according to length of file. This is
     # not possible in pure Python, but can be done in Cython.
-    sims = _array.array(sim_t)
-    dset_is0 = _array.array(dset_i_t)
-    dset_is1 = _array.array(dset_i_t)
-    rec_is0 = _array.array(rec_i_t)
-    rec_is1 = _array.array(rec_i_t)
+    sims: _typechecking.FloatArrayType = _array.array(sim_t)
+    dset_is0: _typechecking.IntArrayType = _array.array(dset_i_t)
+    dset_is1: _typechecking.IntArrayType = _array.array(dset_i_t)
+    rec_is0: _typechecking.IntArrayType = _array.array(rec_i_t)
+    rec_is1: _typechecking.IntArrayType = _array.array(rec_i_t)
     for sim, dset_i0, dset_i1, rec_i0, rec_i1 in iterable:
         sims.append(sim)
         dset_is0.append(dset_i0)
@@ -162,7 +184,10 @@ def load_candidate_pairs(f):
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
 
 
-def merge_streams(f_out, files_in):
+def merge_streams(
+    f_out: _typing.BinaryIO,
+    files_in: _typing.Iterable[_typing.BinaryIO]
+) -> None:
     """Merge multiple files with serialised candidate pairs.
 
     This function preserves the candidate pairs' sorted order. It avoids
@@ -178,7 +203,7 @@ def merge_streams(f_out, files_in):
     :param files_in: Sequence of files to read from.
     """
     if not files_in:
-        raise ValueError(f'no files provided')
+        raise ValueError('no files provided')
 
     file_iterables, *sizes = zip(*map(_load_to_iterable, files_in))
     file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size = sizes
@@ -187,6 +212,8 @@ def merge_streams(f_out, files_in):
     dset_i_t_size = max(file_dset_i_t_size)
     rec_i_t_size = max(file_rec_i_t_size)
     
+    # Sort in decreasing order of similarities. Tiebreak with dataset
+    # indices and then with record indices, in increasing order.
     sorted_iterable = _heapq.merge(*file_iterables,
                                    key=lambda x: (-x[0],) + x[1:])
     _dump_from_iterable(f_out,
