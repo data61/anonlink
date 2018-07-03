@@ -11,9 +11,9 @@ import pytest
 
 from anonlink import serialization
 
-FLOAT_SIZES = (4,) #8)
-UINT_SIZES = (1, )#2, 4, 8)
-CANDIDATE_PAIR_LENGTHS = (#(0, 1, 1000) + (
+FLOAT_SIZES = (4, 8)
+UINT_SIZES = (1, 2, 4, 8)
+CANDIDATE_PAIR_LENGTHS = (0, 1, 1000) + (
     (1000000,)
     if os.environ.get('TEST_SERIALIZATION_BIG', None)
     is not None else ())
@@ -106,9 +106,7 @@ def tmpdir_path(tmpdir_factory):
 
 
 @pytest.fixture(scope='session',
-                params=(
-                    #'file', 
-                    'bytesio',))
+                params=('file', 'bytesio'))
 def new_file_function(request, tmpdir_path):
     if request.param == 'bytesio':
         return io.BytesIO
@@ -241,7 +239,7 @@ class TestLoadCandidatePairs:
 
 
 class TestMergeStreams:
-    @pytest.mark.parametrize('split', (2,))#(1, 2, 5))
+    @pytest.mark.parametrize('split', (1, 2, 5))
     def test_general(self,
                      cands_bytes_pair, new_file_function,
                      split):
