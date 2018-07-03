@@ -6,6 +6,23 @@ import typing as _typing
 
 from . import typechecking as _typechecking
 
+
+# FILE FORMAT
+# This is subject to change.
+# The format is composed of a header and a sequence of entries.
+# The header is composed of a version (1 byte) and the format for every
+# candidate pair. This format consists of the number of bytes in every
+# similarity (1 byte), the number of bytes in every dataset index (1
+# byte), and the number in every record index (1 byte). In total, the
+# header is composed of 4 bytes.
+# Every entry is composed of a similarity as a IEEE floating point
+# value, a two datset indices, and two record indices. Their sizes as
+# determined by the header.
+# All integers are unsigned. All values are *little-endian* since
+# anonlink is realistically only ever run on little-endian machines. The
+# number of candidate matchings is not included on purpose: if needed,
+# it can be computed from the length of the file.
+
 # https://docs.python.org/3/library/struct.html#format-characters
 _STRUCT_UINT_LEN_TO_FMT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
 _STRUCT_FLOAT_LEN_TO_FMT = {2: 'e', 4: 'f', 8: 'd'}
@@ -20,22 +37,8 @@ _ARRAY_FLOAT_LEN_TO_FMT = {_array.array(t).itemsize: t
 
 _HEADER_STRUCT = _struct.Struct('<BBBB')
 
-
 _CandidatePair = _typing.Tuple[float, int, int, int, int]
 _CandidatePairIter = _typing.Iterable[_CandidatePair]
-
-# This is subject to change.
-# The format is composed of a header and a sequence of entries.
-# The header is composed of:  version (1 byte), number of bytes in
-# similarity (1 byte), number of bytes in dataset index (1 byte), number
-# of bytes in record index (1 byte).
-# Every entry is composed of a similarity as a IEEE floating point
-# value, a two datset indices, and two record indices. Their sizes as
-# determined by the header.
-# All integers are unsigned. All values are *little-endian* (yes, this
-# breaks convention). The number of candidate matchings is not included
-# on purpose: if needed, it can be computed from the length of the file.
-
 
 def _entry_struct(
     sim_t_size: int,
@@ -68,8 +71,7 @@ def _dump_from_iterable(
     iterable: _CandidatePairIter
 ) -> None:
     # Fail without writing if the parameters are incorrect.
-    entry_struct = _entry_struct(
-        sim_t_size, dset_i_t_size, rec_i_t_size)
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
     
     # Write header.
     f.write(_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size))
@@ -108,8 +110,8 @@ def _load_to_iterable(
     if version != 1:
         raise ValueError('unsupported version of serialized file')
 
-    # This may throw if the specified format isn't supported on this
-    # platform.
+    # This may throw ValueError if the specified format isn't supported
+    # on this platform.
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
 
     return (_entries_iterable(f, entry_struct),
@@ -117,8 +119,8 @@ def _load_to_iterable(
 
 
 def dump_candidate_pairs(
-    f: _typing.BinaryIO,
-    candidate_pairs: _typechecking.CandidatePairs
+    candidate_pairs: _typechecking.CandidatePairs,
+    f: _typing.BinaryIO
 ) -> None:
     """Dump candidate pairs to file.
 
@@ -185,8 +187,8 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
 
 
 def merge_streams(
-    f_out: _typing.BinaryIO,
-    files_in: _typing.Iterable[_typing.BinaryIO]
+    files_in: _typing.Iterable[_typing.BinaryIO],
+    f_out: _typing.BinaryIO
 ) -> None:
     """Merge multiple files with serialised candidate pairs.
 
