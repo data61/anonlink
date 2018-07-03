@@ -1,12 +1,16 @@
+from array import array
+
 from typing import (Callable, Hashable, Iterable, Mapping,
                     Optional, Sequence, Set, Tuple)
 
 
 Record = Sequence[bool]
 
-CandidatePairs = Tuple[Sequence[Sequence[int]],
-                       Sequence[Sequence[int]],
-                       Sequence[float]]
+
+
+CandidatePairs = Tuple[array,
+                       Tuple[array, ...],
+                       Tuple[array, ...]]
 
 BlockingFunction = Callable[[int, int, Record],
                             Iterable[Hashable]]
