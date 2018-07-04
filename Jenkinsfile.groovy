@@ -51,10 +51,10 @@ def build(python_version, compiler, label, release = false) {
       // below strips leading space and asterisk from each version line, then
       // picks the last x.y.z for which "x.y" matches ${pyver}.
       long_pyver = sh(script: """
-          pyenv versions | \
-            sed -e 's/^\([ *]\)*//' | \
-            cut -f1 -d' ' | \
-            grep '^${pyver}' | \
+          pyenv versions | \\
+            sed -e 's/^\\([ *]\\)*//' | \\
+            cut -f1 -d' ' | \\
+            grep '^${pyver}' | \\
             tail -1
           """, returnStdout: true)
 
