@@ -14,7 +14,7 @@ GIT_CONTEXT = "jenkins"
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
     //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
-    [label: 'McNode', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
+    [label: 'McNode', pythons: ['python3.5', 'python3.6'], compilers: ['clang', 'gcc']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
@@ -42,7 +42,30 @@ def build(python_version, compiler, label, release = false) {
         flatten    : true,
         filter     : 'dist/' + clkhashPackageName
     )
+    if (label == 'McNode') {
+      // Strip 'python' from the 'pythonX.X' version string
+      def pyver = python_version.replace("python", "")
 
+      // 'pyenv versions' returns a list of python versions in x.y.z format
+      // with an asterisk in front of the current version. The unspeakable horror
+      // below strips leading space and asterisk from each version line, then
+      // picks the last x.y.z for which "x.y" matches ${pyver}.
+      long_pyver = sh(script: """
+          pyenv versions | \
+            sed -e 's/^\([ *]\)*//' | \
+            cut -f1 -d' ' | \
+            grep '^${pyver}' | \
+            tail -1
+          """, returnStdout: true)
+
+      // Set Python version
+      sh(script: "pyenv local ${long_pyver}")
+
+      def chkver = sh(script: "python --version | cut -d' ' -f2", returnStdout: true)
+      if ( ! chkver.startsWith(pyver)) {
+        throw new Exception("Can't find requested Python version")
+      }
+    }
     PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
     try {
       venv.runChosenCommand("pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml")
