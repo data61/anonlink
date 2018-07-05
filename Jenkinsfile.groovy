@@ -63,7 +63,9 @@ def build(python_version, compiler, label, release = false) {
 
       def chkver = sh(script: "python --version | cut -d' ' -f2", returnStdout: true)
       if ( ! chkver.startsWith(pyver)) {
-        throw new Exception("Can't find requested Python version")
+        def errstr = "Can't find requested Python version: wanted " + pyver + ", got " + chkver
+        echo  "Error: " + errstr
+        throw new Exception(errstr)
       }
     }
     PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
@@ -87,9 +89,6 @@ def build(python_version, compiler, label, release = false) {
         throw testsError
       }
     }
-  } catch (Exception e) {
-      echo "Error during something: " + e.toString()
-      throw e
   } finally {
     try {
       deleteDir()
