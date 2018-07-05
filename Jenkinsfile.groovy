@@ -12,7 +12,7 @@ VENV_DIRECTORY = "env"
 GIT_CONTEXT = "jenkins"
 
 def configs = [
-    [label: 'GPU 1', pythons: ['python3.6', 'python3.7'], compilers: ['clang', 'gcc']],
+    [label: 'GPU 1', pythons: ['python3.6'], compilers: ['clang', 'gcc']],
     //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
     [label: 'McNode', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
 ]
