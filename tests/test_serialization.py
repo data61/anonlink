@@ -15,7 +15,7 @@ FLOAT_SIZES = (4, 8)
 UINT_SIZES = (1, 2, 4, 8)
 CANDIDATE_PAIR_LENGTHS = (0, 1, 1000) + (
     (1000000,)
-    if os.environ.get('TEST_SERIALIZATION_BIG', None)
+    if os.getenv('TEST_SERIALIZATION_BIG', None)
     is not None else ())
 
 ARRAY_FLOAT_SIZE_TO_FMT = {array.array(t).itemsize: t
