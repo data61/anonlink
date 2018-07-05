@@ -50,7 +50,7 @@ def build(python_version, compiler, label, release = false) {
       // with an asterisk in front of the current version. The unspeakable horror
       // below strips leading space and asterisk from each version line, then
       // picks the last x.y.z for which "x.y" matches ${pyver}.
-      long_pyver = sh(script: """
+      def long_pyver = sh(script: """
           pyenv versions | \\
             sed -e 's/^\\([ *]\\)*//' | \\
             cut -f1 -d' ' | \\
@@ -87,7 +87,9 @@ def build(python_version, compiler, label, release = false) {
         throw testsError
       }
     }
-
+  } catch (Exception e) {
+      echo "Error during something: " + e.toString()
+      throw e
   } finally {
     try {
       deleteDir()
