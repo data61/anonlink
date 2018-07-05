@@ -117,7 +117,7 @@ try {
 node('GPU 1') {
   stage('Release') {
     try {
-      build('python3.7', 'gcc', 'GPU 1', true)
+      build('python3.6', 'gcc', 'GPU 1', true)
       commit.setSuccessStatus(GIT_CONTEXT)
     } catch (Exception e) {
       commit.setFailStatus("Release failed", GIT_CONTEXT);
