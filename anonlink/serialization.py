@@ -6,22 +6,31 @@ import typing as _typing
 
 from . import typechecking as _typechecking
 
-
 # FILE FORMAT
-# This is subject to change.
-# The format is composed of a header and a sequence of entries.
-# The header is composed of a version (1 byte) and the format for every
-# candidate pair. This format consists of the number of bytes in every
-# similarity (1 byte), the number of bytes in every dataset index (1
-# byte), and the number in every record index (1 byte). In total, the
-# header is composed of 4 bytes.
-# Every entry is composed of a similarity as a IEEE floating point
-# value, a two datset indices, and two record indices. Their sizes as
-# determined by the header.
-# All integers are unsigned. All values are *little-endian* since
-# anonlink is realistically only ever run on little-endian machines. The
-# number of candidate matchings is not included on purpose: if needed,
-# it can be computed from the length of the file.
+#   This is subject to change.
+#   The format is composed of a header and a sequence of entries. The
+# header specifies the version of the format and the sizes of floating-
+# -point and integer types used in the entries. Every entry is composed
+# of a similarity score, two dataset indices, and two record indices.
+#   The header is composed of a version (1 byte) and the format of the
+# candidate pairs. This format consists of the number of bytes in a
+# similarity (1 byte), the number of bytes in a dataset index (1 byte),
+# and the number in a record index (1 byte). In total, the header is
+# composed of 4 bytes.
+#   An entry is composed of a similarity as a IEEE floating-point value,
+# two dataset indices, and two record indices. Their sizes are
+# determined by the header. For example, if the similarity is an IEEE
+# double-precision floating-point value, the size noted by the header
+# will be 8 [bytes].
+#   All integers are unsigned. All values are *little-endian* since
+# anonlink is realistically only ever run on little-endian machines.
+# (This code will still run on big-endian machines, implicitly
+# performing byteorder conversion.) The number of candidate matchings is
+# not included on purpose: if needed, it can be computed from the length
+# of the file.
+#   Similarity scores are stored as a structure of arrays when in
+# memory, but we serialise them as an array of structures. This makes it
+# much easier to merge two serialised files.
 
 # https://docs.python.org/3/library/struct.html#format-characters
 _STRUCT_UINT_LEN_TO_FMT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
@@ -60,6 +69,8 @@ def _entry_struct(
     except KeyError:
         msg = f'indices of {rec_i_t_size} bytes are not supported'
         raise ValueError(msg) from None
+    # Every entry has: a similarity score, two datset indices, and two
+    # record indices.
     return _struct.Struct(f"<{sim_t}2{dset_i_t}2{rec_i_t}")
     
 
