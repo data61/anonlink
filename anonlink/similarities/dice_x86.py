@@ -9,7 +9,6 @@ from anonlink.typechecking import FloatArrayType, IntArrayType
 from anonlink._entitymatcher import ffi, lib
 
 
-
 def dice_coefficient_accelerated(
     datasets: Sequence[bitarray],
     threshold: Real,

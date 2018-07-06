@@ -105,7 +105,6 @@ class TestBloomFilterComparison(unittest.TestCase):
         assert indices0.typecode in UINT_ARRAY_TYPES
         assert indices1.typecode in UINT_ARRAY_TYPES
 
-
     def test_empty_input_b(self):
         candidate_pairs = similarities.dice_coefficient(
             (self.filters1, ()), self.default_threshold, self.default_k)
