@@ -117,6 +117,7 @@ try {
 node('GPU 1') {
   stage('Release') {
     try {
+      commit.setInProgressStatus("jenkins/release");
       build('python3.5', 'gcc', 'GPU 1', true)
       commit.setSuccessStatus("jenkins/release")
     } catch (Exception e) {
