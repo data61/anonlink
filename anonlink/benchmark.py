@@ -2,8 +2,7 @@ import random
 from timeit import default_timer as timer
 
 from clkhash.key_derivation import generate_key_lists
-from clkhash.schema import get_schema_types
-from clkhash.bloomfilter import calculate_bloom_filters
+from clkhash.bloomfilter import stream_bloom_filters
 from clkhash.randomnames import NameList
 
 from anonlink.entitymatch import *
@@ -120,9 +119,9 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     nml = NameList(ntotal)
     sl1, sl2 = nml.generate_subsets(nsubset, frac)
 
-    keys = generate_key_lists(('test1', 'test2'), len(nml.schema))
-    filters1 = calculate_bloom_filters(sl1, get_schema_types(nml.schema), keys)
-    filters2 = calculate_bloom_filters(sl2, get_schema_types(nml.schema), keys)
+    keys = generate_key_lists(('test1', 'test2'), len(nml.schema_types))
+    filters1 = tuple(stream_bloom_filters(sl1, keys, nml.SCHEMA))
+    filters2 = tuple(stream_bloom_filters(sl2, keys, nml.SCHEMA))
 
     # Pure Python version
     start = timer()
