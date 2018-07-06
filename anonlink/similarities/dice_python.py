@@ -1,9 +1,15 @@
 from array import array
 from itertools import repeat
+from numbers import Real
 from operator import itemgetter
+from typing import Optional, Sequence, Tuple
 
 
-def dice_coefficient_python(datasets, threshold, k=None):
+def dice_coefficient_python(
+    datasets: Sequence[Sequence[bitarray]],
+    threshold: Real,
+    k: Optional[int] = None
+) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
     """Find Dice coefficients of CLKs.
 
     This version is written in Python, so it does not rely on

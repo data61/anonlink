@@ -10,7 +10,7 @@ from anonlink._entitymatcher import ffi, lib
 
 
 def dice_coefficient_accelerated(
-    datasets: Sequence[bitarray],
+    datasets: Sequence[Sequence[bitarray]],
     threshold: Real,
     k: Optional[int] = None
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
