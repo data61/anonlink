@@ -9,7 +9,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 VENV_DIRECTORY = "env"
 
-GIT_CONTEXT = "jenkins"
+GIT_CONTEXT = "jenkins/test"
 
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
@@ -118,9 +118,9 @@ node('GPU 1') {
   stage('Release') {
     try {
       build('python3.5', 'gcc', 'GPU 1', true)
-      commit.setSuccessStatus(GIT_CONTEXT)
+      commit.setSuccessStatus("jenkins/release")
     } catch (Exception e) {
-      commit.setFailStatus("Release failed", GIT_CONTEXT);
+      commit.setFailStatus("Release failed", "jenkins/release");
       throw e;
     }
   }
