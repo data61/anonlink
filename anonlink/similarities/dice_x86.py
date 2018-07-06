@@ -15,11 +15,23 @@ def dice_coefficient_accelerated(
     threshold: Real,
     k: Optional[int] = None
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
-    """Accelerated method for determining Bloom Filter similarity.
+    """Find Dice coefficients of CLKs.
 
-    Assumes all filters are the same length, being a multiple of 64
+    This version uses x86 popcount instructions.
+
+    We assume all filters are the same length, being a multiple of 64
     bits.
 
+    :param datasets: A length 2 sequence of datasets. A dataset is a
+        sequence of bitarrays.
+    :param threshold: Pairs whose similarity is above this value may be
+        a match.
+    :param k: We only return the top k candidates for every record. Set
+        to None to return all candidates.
+    
+    :return: A 2-tuple of similarity scores and indices. The similarity
+        scores are an array of floating-point values. The indices are a
+        2-tuple of arrays of integers.
     """
     n_datasets = len(datasets)
     if n_datasets < 2:

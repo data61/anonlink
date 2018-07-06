@@ -3,15 +3,22 @@ from itertools import repeat
 from operator import itemgetter
 
 def dice_coefficient_python(datasets, threshold, k=None):
-    """Pure python method for determining Bloom Filter similarity
+    """Find Dice coefficients of CLKs.
 
-    Both arguments are 3-tuples - bitarray with bloom filter for record, index of record, bitcount
+    This version is written in Python, so it does not rely on
+    architecture-specific instructions. It may be slower than an
+    accelerated version.
 
-    :return: A list of tuples *k* for each entity in filters1.
-    The tuple comprises:
-        - the index in filters1
-        - the similarity score between 0 and 1 of the k matches above threshold
-        - The index in filters2 of the best match
+    :param datasets: A length 2 sequence of datasets. A dataset is a
+        sequence of bitarrays.
+    :param threshold: Pairs whose similarity is above this value may be
+        a match.
+    :param k: We only return the top k candidates for every record. Set
+        to None to return all candidates.
+    
+    :return: A 2-tuple of similarity scores and indices. The similarity
+        scores are an array of floating-point values. The indices are a
+        2-tuple of arrays of integers.
     """
     n_datasets = len(datasets)
     if n_datasets < 2:
