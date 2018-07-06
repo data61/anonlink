@@ -8,7 +8,7 @@ from typing import (cast, DefaultDict, Dict, Iterable,
 
 import numpy as np
 
-from .typechecking import Record
+from anonlink.typechecking import Record
 
 
 def _hamming_sim(clk1: Record, clk2: Record) -> float:
