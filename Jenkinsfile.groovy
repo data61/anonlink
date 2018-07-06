@@ -1,4 +1,4 @@
-@Library("N1Pipeline@0.0.5")
+@Library("N1Pipeline@feature-pyenv-on-macosx")
 import com.n1analytics.git.GitUtils;
 import com.n1analytics.git.GitCommit;
 import com.n1analytics.n1.docker.N1EngineContainer;
@@ -13,12 +13,12 @@ GIT_CONTEXT = "jenkins"
 
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
-    //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
+    //[label: 'osx', pythons: ['python3.5', 'python3.6'], compilers: ['clang', 'gcc']]
     [label: 'McNode', pythons: ['python3.5', 'python3.6'], compilers: ['clang', 'gcc']]
 ]
 
-def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
-  PythonVirtualEnvironment venv = new PythonVirtualEnvironment(this, venv_directory, pythonVersion);
+def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, label, venv_directory = VENV_DIRECTORY) {
+  PythonVirtualEnvironment venv = new PythonVirtualEnvironment(this, venv_directory, pythonVersion, label == 'osx');
   venv.create();
   venv.runPipCommand("install --upgrade pip coverage setuptools wheel")
   venv.runPipCommand("install --quiet --upgrade ${clkhashPackageName}");
@@ -42,33 +42,7 @@ def build(python_version, compiler, label, release = false) {
         flatten    : true,
         filter     : 'dist/' + clkhashPackageName
     )
-    if (label == 'McNode') {
-      // Strip 'python' from the 'pythonX.X' version string
-      def pyver = python_version.replace("python", "")
-
-      // 'pyenv versions' returns a list of python versions in x.y.z format
-      // with an asterisk in front of the current version. The unspeakable horror
-      // below strips leading space and asterisk from each version line, then
-      // picks the last x.y.z for which "x.y" matches ${pyver}.
-      def long_pyver = sh(script: """
-          pyenv versions | \\
-            sed -e 's/^\\([ *]\\)*//' | \\
-            cut -f1 -d' ' | \\
-            grep '^${pyver}' | \\
-            tail -1
-          """, returnStdout: true)
-
-      // Set Python version
-      sh(script: "pyenv local ${long_pyver}")
-
-      def chkver = sh(script: "python --version | cut -d' ' -f2", returnStdout: true)
-      if ( ! chkver.startsWith(pyver)) {
-        def errstr = "Can't find requested Python version: wanted " + pyver + ", got " + chkver
-        echo  "Error: " + errstr
-        throw new Exception(errstr)
-      }
-    }
-    PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
+    PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler, label)
     try {
       venv.runChosenCommand("pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml")
       if (release) {
