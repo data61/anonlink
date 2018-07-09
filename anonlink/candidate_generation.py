@@ -51,8 +51,10 @@ def find_candidate_pairs(
             matrix between two sequences of hashes and finds candidates
             above the threshold.
         :param threshold: The similarity threshold. We accept pairs that
-            have similarity above this value.
-        :param 
+            have similarity of at least this value.
+        :param k: Only permit this many candidate pairs per dataset pair
+            per record. Set to `None` to permit all pairs above with
+            similarity at least `threshold`.
 
         :return: A 3-tuple `(similarity, dataset_i, record_i)`. 
             `dataset_i` and `record_i` are sequences of sequences. 
