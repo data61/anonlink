@@ -1,17 +1,47 @@
 from array import array
 from itertools import combinations, repeat
+from heapq import merge
+from numbers import Real
 from typing import Optional, Sequence
 
 from .typechecking import (BlockingFunction, CandidatePairs,
                            Record, SimilarityFunction)
 
 
+def _merge_similarities(similarities):
+    # Merge similarities in sorted order.
+    # This is almost certainly an inefficient way of doing this, but
+    # it's hard to get anything more efficient in pure Python.
+    # Future: redo this in Cython, which has the ability to directly
+    # modify and resize array buffers.
+    if not similarities:
+        raise ValueError('empty similarities')
+    similarities_iters = (zip(sims, repeat(dataset_is), zip(*record_is))
+                          for dataset_is, (sims, record_is) in similarities)
+    merged_similarities = merge(*similarities_iters,
+                                key=lambda x: (-x[0],) + x[1:])
+    
+    # Assume all arrays are the same type.
+    # Future: this may require changing.
+    fst_datset_is, (fst_sims, fst_record_is) = similarities[0]
+    result_sims = array(fst_sims.typecode)
+    result_dataset_is = tuple(array('I') for _ in fst_datset_is)
+    result_record_is = tuple(array(f.typecode) for f in fst_record_is)
+    for sim, dataset_is, record_is in merged_similarities:
+        result_sims.append(sim)
+        for result_dataset_i, dataset_i in zip(result_dataset_is, dataset_is):
+            result_dataset_i.append(dataset_i)
+        for result_record_i, record_i in zip(result_record_is, record_is):
+            result_record_i.append(record_i)
+    return result_sims, result_dataset_is, result_record_is
+
+
 def find_candidate_pairs(
     datasets: Sequence[Sequence[Record]],
     similarity_f: SimilarityFunction,
-    threshold: float,
-    blocking_f: Optional[BlockingFunction] = None,
-    k: Optional[int] = None
+    threshold: Real,
+    k: Optional[int] = None,
+    blocking_f: BlockingFunction = None
 ) -> CandidatePairs:
     """ Find candidate pairs from multiple datasets. Optional blocking.
 
@@ -21,15 +51,15 @@ def find_candidate_pairs(
             matrix between two sequences of hashes and finds candidates
             above the threshold.
         :param threshold: The similarity threshold. We accept pairs that
-            have similarity above this value.
-        :param blocking_f: A function returning all block IDs for a
-            record. Two records are compared iff they have at least one
-            block ID in common.
-        :param k: Only consider the top `k` candidate partners from any
-            one dataset for any particular record. Leave as `None` to
-            keep all pairs with similarity above `threshold`.
+            have similarity of at least this value.
+        :param k: Only permit this many candidate pairs per dataset pair
+            per record. Set to `None` to permit all pairs above with
+            similarity at least `threshold`.
+        :param blocking_f: Not yet implemented. Future: A function
+            returning all block IDs for a record. Two records are
+            compared iff they have at least one block ID in common.
 
-        :return: A 3-tuple `(dataset_i, record_i, similarity)`. 
+        :return: A 3-tuple `(similarity, dataset_i, record_i)`. 
             `dataset_i` and `record_i` are sequences of sequences. 
             `similarity` as well as every sequence in `dataset_i` and in
             `record_i` as well as are of equal length. Currently
@@ -40,7 +70,7 @@ def find_candidate_pairs(
             match. `dataset[0][i]` is the index of the dataset of the
             first record in the pair; `record[0][i]` is this record's
             index in its dataset. `dataset_[1][i]` is the index of the
-            dataset of the secod record in the pair; `record_[1][i]` is
+            dataset of the second record in the pair; `record_[1][i]` is
             this record's index in its dataset. `similarity[i]` is the
             pair's similarity; this value will be greater than
             `threshold`.
@@ -48,30 +78,23 @@ def find_candidate_pairs(
     if blocking_f is not None:
         raise NotImplementedError('blocking is not yet implemented')
 
-    if k is not None:
-        raise NotImplementedError('k is not yet implemented')
+    # Computational shortcuts
+    if len(datasets) < 2:
+        # Empty result of correct type
+        return array('d'), (array('I'), array('I')), (array('I'), array('I'))
+    if len(datasets) == 2:
+        sims, record_is = similarity_f(datasets, threshold, k=k)
+        n = len(sims)
+        assert all(len(r) == n for r in record_is)
+        return (sims,
+                (array('I', repeat(0, n)) , array('I', repeat(1, n))),
+                record_is)
 
-    dataset_is0 = array('I')
-    dataset_is1 = array('I')
-    record_is0 = array('I')
-    record_is1 = array('I')
-    sims = array('d')  # type: array[float]
-
+    similarities = []
     for (i0, dataset0), (i1, dataset1) in combinations(enumerate(datasets), 2):
-        (record_i0, record_i1), sim = similarity_f(
-            (dataset0, dataset1), threshold, k)
+        similarity = similarity_f((dataset0, dataset1), threshold, k=k)
+        similarities.append(((i0, i1), similarity))
 
-        n = len(sim)
-        assert len(record_i0) == n
-        assert len(record_i1) == n
+    return _merge_similarities(similarities)
 
-        dataset_is0.extend(repeat(i0, n))
-        dataset_is1.extend(repeat(i1, n))
-        record_is0.extend(record_i0)
-        record_is1.extend(record_i1)
-        sims.extend(sim)
 
-    assert (len(dataset_is0) == len(dataset_is1)
-            == len(record_is0) == len(record_is0)
-            == len(sims))
-    return (dataset_is0, dataset_is1), (record_is0, record_is1), sims
