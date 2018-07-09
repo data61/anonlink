@@ -1,6 +1,6 @@
 import collections
 from itertools import repeat
-from typing import DefaultDict, Dict, Iterable, List, Tuple
+from typing import Counter, DefaultDict, Dict, Iterable, List, Sequence, Tuple
 
 import numpy as np
 
@@ -8,9 +8,8 @@ from .typechecking import CandidatePairs
 
 
 def greedy_solve(
-    candidates: CandidatePairs,
-    threshold: float
-) -> Iterable[Iterable[Tuple[int, int]]]:
+    candidates: CandidatePairs
+) -> Sequence[Sequence[Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
         We assign each record to exactly one 'group' of records that are
@@ -34,22 +33,19 @@ def greedy_solve(
             represent the same entity. Here, a record is a two-tuple of
             dataset index and record index.
     """
-    dset_indices_sseq, rec_indices_sseq, sims_seq = candidates
-    
-    # Sort pairs in decreasing order of similarity
-    sorted_indices = np.argsort(sims_seq)[::-1]
-    dset_indices = np.asarray(dset_indices_sseq)[:,sorted_indices]
-    rec_indices = np.asarray(rec_indices_sseq)[:,sorted_indices]
+    _, dset_is, rec_is = candidates
+    if len(dset_is) != len(rec_is):
+        raise ValueError('inconsistent shape of index arrays')
+    if len(dset_is) != 2:
+        raise ValueError('only binary solving is supported')
 
-    assert len(sorted_indices.shape) == 1
-    assert len(dset_indices.shape) == 2
-    assert len(rec_indices.shape) == 2
-    assert dset_indices.shape == rec_indices.shape
-    assert dset_indices.shape[1] == sorted_indices.shape[0]
-    assert rec_indices.shape[1] == sorted_indices.shape[0]
+    dset_is0, dset_is1 = dset_is
+    rec_is0, rec_is1 = rec_is
+    if not (len(dset_is0) == len(dset_is1) == len(rec_is0) == len(rec_is1)):
+        raise ValueError('inconsistent shape of index arrays')
 
     # Map (dataset index, record index) to its group.
-    matches = {}  # type: Dict[Tuple[int, int], List[Tuple[int,int]]]
+    matches: Dict[Tuple[int, int], List[Tuple[int, int]]] = {}
 
     # Each group is a set of records. We merge two groups when 
     # pair of their records is matchable. A pair is matchable if we have
@@ -57,11 +53,13 @@ def greedy_solve(
     # This is a sparse matrix: the default number of matchable pairs is
     # 0. Since the groups themselves are not hashable, we use their id
     # as the key.
-    matchable_pairs = collections.defaultdict(
-        collections.Counter)  # type: DefaultDict[int, Dict[int, int]]
+    matchable_pairs: DefaultDict[int, Counter[int]] = collections.defaultdict(
+        collections.Counter)
 
-    for dset_is, rec_is in zip(dset_indices.T, rec_indices.T): 
-        i0, i1 = zip(dset_is, rec_is)
+    for dset_i0, dset_i1, rec_i0, rec_i1 in zip(
+            dset_is0, dset_is1, rec_is0, rec_is1):
+        i0 = dset_i0, rec_i0
+        i1 = dset_i1, rec_i1
 
         if i0 in matches and i1 in matches:
             # Both records are assigned to a group.
@@ -134,4 +132,4 @@ def greedy_solve(
         raise RuntimeError('non-exhaustive cases')
                 
     # Return all nontrivial groups
-    return (group for group in matches.values() if len(group) > 1)
+    return tuple(group for group in matches.values() if len(group) > 1)

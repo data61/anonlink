@@ -1,32 +1,30 @@
-from array import array
+import array as _array
+import numbers as _numbers
+import typing as _typing
 
-from typing import (Callable, Hashable, Iterable, Mapping,
-                    Optional, Sequence, Set, Tuple, TYPE_CHECKING)
+import mypy_extensions as _mypy_extensions
 
+_Record = _typing.TypeVar('_Record')
+Dataset = _typing.Sequence[_Record]
 
-Record = Sequence[bool]
-
-if TYPE_CHECKING:
-    FloatArrayType = array[float]
-    IntArrayType = array[int]
+if _typing.TYPE_CHECKING:
+    FloatArrayType = _array.array[float]
+    IntArrayType = _array.array[int]
 else:
-    FloatArrayType = array
-    IntArrayType = array
+    FloatArrayType = _array.array
+    IntArrayType = _array.array
 
-CandidatePairs = Tuple[FloatArrayType,
-                       Tuple[IntArrayType, ...],
-                       Tuple[IntArrayType, ...]]
+CandidatePairs = _typing.Tuple[FloatArrayType,
+                       _typing.Tuple[IntArrayType, ...],
+                       _typing.Tuple[IntArrayType, ...]]
 
-BlockingFunction = Callable[[int, int, Record],
-                            Iterable[Hashable]]
+BlockingFunction = _typing.Callable[
+    [int, int, _Record],
+    _typing.Iterable[_typing.Hashable]]
 
-SimilarityFunction = Callable[
-    [Sequence[Sequence[Record]], float, Optional[int]],
-    Tuple[Sequence[Sequence[int]], Sequence[float]]]
-
-RecordId = Tuple[int, int]
-
-MatchedGroup = Set[RecordId]
-
-SolvingFunction = Callable[[CandidatePairs, float],
-    Mapping[RecordId, MatchedGroup]]
+SimilarityFunction = _typing.Callable[
+    [_typing.Sequence[Dataset],
+     _numbers.Real,
+     _mypy_extensions.DefaultNamedArg(_typing.Optional[_numbers.Integral],
+                                      'k')],
+    _typing.Tuple[FloatArrayType, _typing.Sequence[IntArrayType]]]

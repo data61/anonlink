@@ -38,9 +38,9 @@ def dice_coefficient_python(
         raise ValueError(f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
-    result_sims = array('d')
-    result_indices0 = array('I')
-    result_indices1 = array('I')
+    result_sims: FloatArrayType = array('d')
+    result_indices0: IntArrayType = array('I')
+    result_indices1: IntArrayType = array('I')
 
     if not filters0 or not filters1:
         # Empty result of the correct type.

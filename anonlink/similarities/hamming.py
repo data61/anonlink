@@ -6,19 +6,20 @@ import operator
 from typing import (cast, DefaultDict, Dict, Iterable,
                     List, Optional, Sequence, Tuple)
 
+from bitarray import bitarray
 import numpy as np
 
-from anonlink.typechecking import Record
+from anonlink.typechecking import Dataset
 
 
-def _hamming_sim(clk1: Record, clk2: Record) -> float:
+def _hamming_sim(clk1: bitarray, clk2: bitarray) -> float:
     assert len(clk1) == len(clk2)
     assert len(clk1) != 0
     return sum(map(operator.eq, clk1, clk2)) / len(clk1)
 
 
 def _hamming_sims_gt_threshold(
-    datasets: Sequence[Sequence[Record]],
+    datasets: Sequence[Dataset[bitarray]],
     threshold: float
 ) -> Iterable[Tuple[int, int, float]]:
     for records in itertools.product(*map(enumerate, datasets)):  # type: ignore  # Not recognising enumerate as callable
@@ -29,7 +30,7 @@ def _hamming_sims_gt_threshold(
 
 
 def _hamming_similarity_k(
-    datasets: Sequence[Sequence[Record]],
+    datasets: Sequence[Dataset[bitarray]],
     threshold: float,
     k: int
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -66,7 +67,7 @@ def _hamming_similarity_k(
 
 
 def _hamming_similarity_no_k(
-    datasets: Sequence[Sequence[Record]],
+    datasets: Sequence[Dataset[bitarray]],
     threshold: float
 ) -> Tuple[np.ndarray, np.ndarray]:
     sims = []
@@ -92,7 +93,7 @@ def _hamming_similarity_no_k(
 
 
 def hamming_similarity(
-    datasets: Sequence[Sequence[Record]],
+    datasets: Sequence[Dataset[bitarray]],
     threshold: float,
     k: Optional[int]
 ) -> Tuple[Sequence[Sequence[int]], Sequence[float]]:

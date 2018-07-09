@@ -1,15 +1,17 @@
 from abc import ABCMeta, abstractmethod
 from itertools import chain, product, repeat
-from numbers import Real
+from numbers import Integral, Real
 from random import Random
-from typing import (Any, Callable, Hashable, Iterable, List,
+from typing import (Any, Callable, Generic, Hashable, Iterable, List,
                     Optional, overload, Sequence, Tuple, TypeVar, Union)
+
+from bitarray import bitarray
 
 from .typechecking import BlockingFunction
 
 
 _T = TypeVar('_T')
-def _evalf(__funcs : 'Iterable[Callable[..., _T]]',  # https://github.com/python/typing/issues/259
+def _evalf(__funcs : Iterable[Callable[..., _T]],  # https://github.com/python/typing/issues/259
            *args,
            **kwargs) -> Iterable[_T]:
     """ Apply a number of functions to the same arguments.
@@ -21,21 +23,22 @@ def _evalf(__funcs : 'Iterable[Callable[..., _T]]',  # https://github.com/python
     return (f(*args, **kwargs) for f in __funcs)
 
 
-class _AssociativeBinaryOp(metaclass=ABCMeta):
-    __slots__ = '_funcs'
+_Record = TypeVar('_Record')
+class _AssociativeBinaryOp(Generic[_Record], metaclass=ABCMeta):
+    __slots__ = '_funcs',
 
     # http://mypy.readthedocs.io/en/latest/function_overloading.html
     @overload
     def __init__(self,
-                 __funcs: Iterable[BlockingFunction]
+                 __funcs: Iterable[BlockingFunction[_Record]]
                  ) -> None:
         pass
 
     @overload
     def __init__(self,
-                 __func1: BlockingFunction,
-                 __func2: BlockingFunction,
-                 *funcs: BlockingFunction
+                 __func1: BlockingFunction[_Record],
+                 __func2: BlockingFunction[_Record],
+                 *funcs: BlockingFunction[_Record]
                  ) -> None:
         pass
 
@@ -51,12 +54,12 @@ class _AssociativeBinaryOp(metaclass=ABCMeta):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]
+                 hash_: _Record
                  ) -> Iterable[Hashable]:
         pass
 
 
-class block_and(_AssociativeBinaryOp):
+class block_and(_AssociativeBinaryOp[_Record]):
     """ Conjunction of multiple blocking functions.
 
         Records share a block if they share a block in all of the
@@ -71,13 +74,13 @@ class block_and(_AssociativeBinaryOp):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]
+                 hash_: _Record
                  ) -> Iterable[Hashable]:
         funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
         return product(*funcs_eval)
 
 
-class block_or(_AssociativeBinaryOp):
+class block_or(_AssociativeBinaryOp[_Record]):
     """ Disjunction of multiple blocking functions.
 
         Records share a block if they share a block in any of the
@@ -92,7 +95,7 @@ class block_or(_AssociativeBinaryOp):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]
+                 hash_: _Record
                  ) -> Iterable[Hashable]:
         funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
         funcs_enum = (zip(repeat(i), f) for i, f in enumerate(funcs_eval))
@@ -155,7 +158,7 @@ class bit_blocking:
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]
+                 hash_: bitarray
                  ) -> Iterable[Hashable]:
         hash_len = len(hash_)
         if self._hash_indices is None:
@@ -170,7 +173,7 @@ class bit_blocking:
         for i, table_indices in enumerate(hash_indices):
             vals = map(hash_.__getitem__, table_indices)
             
-            # We need to turn this iterable of boolsinto something
+            # We need to turn this iterable of bools into something
             # hashable. An int will do just fine.
             table_block = sum(b << j for j, b in enumerate(vals))
 
@@ -178,7 +181,7 @@ class bit_blocking:
             yield table_block * len(hash_indices) + i
 
 
-class continuous_blocking:
+class continuous_blocking(Generic[_Record]):
     """ Block on continuous variables.
 
         Split the real number line into overlapping blocks. A quantity
@@ -203,7 +206,7 @@ class continuous_blocking:
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]) -> Iterable[Hashable]:
+                 hash_: _Record) -> Iterable[Hashable]:
         x = self._source[dataset_index][record_index]
         r = self._radius
 
@@ -214,14 +217,14 @@ class continuous_blocking:
         return (bucket_1 * 2, bucket_2 * 2 + 1)
 
 
-class list_blocking:
+class list_blocking(Generic[_Record]):
     """ Convenience function getting blocks from sequence of sequences.
 
         :param source: Sequence of sequence of blocks.
 
         :return: The blocking function.
     """
-    __slots__ = '_source'
+    __slots__ = '_source',
 
     def __init__(self,
                  source: Sequence[Sequence[Hashable]]
@@ -231,5 +234,5 @@ class list_blocking:
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: Sequence[bool]) -> Iterable[Hashable]:
-        return self._source[dataset_index][record_index],
+                 hash_: _Record) -> Iterable[Hashable]:
+        return (self._source[dataset_index][record_index],)
