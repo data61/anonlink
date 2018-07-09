@@ -67,7 +67,7 @@ def find_candidate_pairs(
             match. `dataset[0][i]` is the index of the dataset of the
             first record in the pair; `record[0][i]` is this record's
             index in its dataset. `dataset_[1][i]` is the index of the
-            dataset of the secod record in the pair; `record_[1][i]` is
+            dataset of the second record in the pair; `record_[1][i]` is
             this record's index in its dataset. `similarity[i]` is the
             pair's similarity; this value will be greater than
             `threshold`.
