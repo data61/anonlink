@@ -9,12 +9,13 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 VENV_DIRECTORY = "env"
 
-GIT_CONTEXT = "jenkins/test"
+GITHUB_TEST_CONTEXT = "jenkins/test"
+GITHUB_RELEASE_CONTEXT = "jenkins/test"
 
 def configs = [
     [label: 'GPU 1', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
     //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
-    [label: 'McNode', pythons: ['python3.5'], compilers: ['clang']]
+    [label: 'osx', pythons: ['python3.5'], compilers: ['clang']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
@@ -102,14 +103,14 @@ for (config in configs) {
 GitCommit commit;
 node() {
   commit = GitUtils.checkoutFromSCM(this);
-  commit.setInProgressStatus(GIT_CONTEXT);
+  commit.setInProgressStatus(GITHUB_TEST_CONTEXT);
 }
 
 try {
   parallel builders
 } catch (Exception err) {
   node() {
-    commit.setFailStatus("Build failed", GIT_CONTEXT);
+    commit.setFailStatus("Build failed", GITHUB_TEST_CONTEXT);
   }
   throw err
 }
@@ -117,11 +118,11 @@ try {
 node('GPU 1') {
   stage('Release') {
     try {
-      commit.setInProgressStatus("jenkins/release");
+      commit.setInProgressStatus(GITHUB_RELEASE_CONTEXT);
       build('python3.5', 'gcc', 'GPU 1', true)
-      commit.setSuccessStatus("jenkins/release")
+      commit.setSuccessStatus(GITHUB_RELEASE_CONTEXT)
     } catch (Exception e) {
-      commit.setFailStatus("Release failed", "jenkins/release");
+      commit.setFailStatus("Release failed", GITHUB_RELEASE_CONTEXT);
       throw e;
     }
   }
