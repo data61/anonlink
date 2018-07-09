@@ -23,10 +23,11 @@ def dice_coefficient_accelerated(
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
         sequence of bitarrays.
-    :param threshold: Pairs whose similarity is above this value may be
-        a match.
-    :param k: We only return the top k candidates for every record. Set
-        to None to return all candidates.
+    :param threshold: The similarity threshold. We accept pairs that
+        have similarity of at least this value.
+    :param k: Only permit this many candidate pairs per dataset pair
+        per record. Set to `None` to permit all pairs above with
+        similarity at least `threshold`.
     
     :return: A 2-tuple of similarity scores and indices. The similarity
         scores are an array of floating-point values. The indices are a
