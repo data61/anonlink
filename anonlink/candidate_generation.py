@@ -55,6 +55,9 @@ def find_candidate_pairs(
         :param k: Only permit this many candidate pairs per dataset pair
             per record. Set to `None` to permit all pairs above with
             similarity at least `threshold`.
+        :param blocking_f: Not yet implemented. Future: A function
+            returning all block IDs for a record. Two records are
+            compared iff they have at least one block ID in common.
 
         :return: A 3-tuple `(similarity, dataset_i, record_i)`. 
             `dataset_i` and `record_i` are sequences of sequences. 
