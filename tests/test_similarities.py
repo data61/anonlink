@@ -3,7 +3,8 @@ import itertools
 import numpy as np
 import pytest
 
-from anonlink.similarities import _hamming_sim, hamming_similarity
+from anonlink.similarities.hamming import _hamming_sim
+from anonlink.similarities import hamming_similarity
 
 
 def test_hamming_sim_k():
