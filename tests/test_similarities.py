@@ -1,7 +1,8 @@
 import itertools
+import random
 
-import numpy as np
 import pytest
+from bitarray import bitarray
 
 from anonlink.similarities.hamming import _hamming_sim
 from anonlink.similarities import hamming_similarity
@@ -10,38 +11,30 @@ from anonlink.similarities import hamming_similarity
 def test_hamming_sim_k():
     # This tests an internal function. It may need to change if the
     # implementation of `hamming_similarity` changes.
-    assert _hamming_sim([False], [False]) == 1
-    assert _hamming_sim([False], [True]) == 0
-    assert _hamming_sim([True], [False]) == 0
-    assert _hamming_sim([True], [True]) == 1
+    assert _hamming_sim(bitarray('0'), bitarray('0')) == 1
+    assert _hamming_sim(bitarray('0'), bitarray('1')) == 0
+    assert _hamming_sim(bitarray('1'), bitarray('0')) == 0
+    assert _hamming_sim(bitarray('1'), bitarray('1')) == 1
 
-    assert _hamming_sim([False, False], [False, False]) == 1
-    assert _hamming_sim([False, False], [False, True]) == .5
-    assert _hamming_sim([False, False], [True, False]) == .5
-    assert _hamming_sim([False, False], [True, True]) == 0
-    assert _hamming_sim([False, True], [False, False]) == .5
-    assert _hamming_sim([False, True], [False, True]) == 1
-    assert _hamming_sim([False, True], [True, False]) == 0
-    assert _hamming_sim([False, True], [True, True]) == .5
-    assert _hamming_sim([True, False], [False, False]) == .5
-    assert _hamming_sim([True, False], [False, True]) == 0
-    assert _hamming_sim([True, False], [True, False]) == 1
-    assert _hamming_sim([True, False], [True, True]) == .5
-    assert _hamming_sim([True, True], [False, False]) == 0
-    assert _hamming_sim([True, True], [False, True]) == .5
-    assert _hamming_sim([True, True], [True, False]) == .5
-    assert _hamming_sim([True, True], [True, True]) == 1
-
-    if __debug__:
-        with pytest.raises(AssertionError):
-            _hamming_sim([True], [True, True])
-        with pytest.raises(AssertionError):
-            _hamming_sim([True, False, False], [True, True])
-        with pytest.raises(AssertionError):
-            _hamming_sim([], [])
+    assert _hamming_sim(bitarray('00'), bitarray('00')) == 1
+    assert _hamming_sim(bitarray('00'), bitarray('01')) == .5
+    assert _hamming_sim(bitarray('00'), bitarray('10')) == .5
+    assert _hamming_sim(bitarray('00'), bitarray('11')) == 0
+    assert _hamming_sim(bitarray('01'), bitarray('00')) == .5
+    assert _hamming_sim(bitarray('01'), bitarray('01')) == 1
+    assert _hamming_sim(bitarray('01'), bitarray('10')) == 0
+    assert _hamming_sim(bitarray('01'), bitarray('11')) == .5
+    assert _hamming_sim(bitarray('10'), bitarray('00')) == .5
+    assert _hamming_sim(bitarray('10'), bitarray('01')) == 0
+    assert _hamming_sim(bitarray('10'), bitarray('10')) == 1
+    assert _hamming_sim(bitarray('10'), bitarray('11')) == .5
+    assert _hamming_sim(bitarray('11'), bitarray('00')) == 0
+    assert _hamming_sim(bitarray('11'), bitarray('01')) == .5
+    assert _hamming_sim(bitarray('11'), bitarray('10')) == .5
+    assert _hamming_sim(bitarray('11'), bitarray('11')) == 1
 
 
-def _sanity_check_candidates(indices, sims, candidates):
+def _sanity_check_candidates(sims, indices, candidates):
     assert len(indices) == 2
     assert all(len(i) == len(sims) for i in indices)
     assert len(candidates) == len(sims)
@@ -53,8 +46,10 @@ def _sanity_check_candidates(indices, sims, candidates):
 def datasets(request):
     recs_per_dataset, length = request.param
 
-    result = np.random.choice((True, False),
-                                size=(2, recs_per_dataset, length))
+    result = tuple([bitarray(random.choices((False, True), k=length))
+                    for _ in range(recs_per_dataset)]
+                   for _ in range(2))
+    
     assert len(result) == 2
     assert all(len(dataset) == recs_per_dataset for dataset in result)
     assert all(len(record) == length for dataset in result
@@ -63,16 +58,17 @@ def datasets(request):
     return result
 
 
-@pytest.mark.parametrize('threshold', [1.0, 0.6, 0.0], scope='class')
+@pytest.mark.parametrize('threshold', [1.0, 0.6, 0.0])
 class TestHammingSimilarity:
     def test_no_k(self, datasets, threshold):
-        indices, sims = hamming_similarity(datasets, threshold, k=None)
+        sims, indices = hamming_similarity(datasets, threshold, k=None)
         candidates = dict(zip(zip(indices[0], indices[1]), sims))
         
-        _sanity_check_candidates(indices, sims, candidates)
+        _sanity_check_candidates(sims, indices, candidates)
 
         for (i0, record0), (i1, record1) \
-                in itertools.product(*map(enumerate, datasets)):
+                in itertools.product(enumerate(datasets[0]),
+                                     enumerate(datasets[1])):
             sim = _hamming_sim(record0, record1)
 
             if sim >= threshold:
@@ -83,10 +79,10 @@ class TestHammingSimilarity:
 
     @pytest.mark.parametrize('k', [0, 20, 80])
     def test_k(self, datasets, threshold, k):
-        indices, sims = hamming_similarity(datasets, threshold, k=k)
+        sims, indices = hamming_similarity(datasets, threshold, k=k)
         candidates = dict(zip(zip(indices[0], indices[1]), sims))
         
-        _sanity_check_candidates(indices, sims, candidates)
+        _sanity_check_candidates(sims, indices, candidates)
 
         # Make sure we return at most k
         for i, _ in enumerate(datasets[0]):
