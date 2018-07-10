@@ -23,28 +23,28 @@ def _compare_matching(result, truth):
 
 def test_greedy_twoparty():
     candidates = [((0, 0), (1, 0), .8)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0)}])
 
     candidates = [((0, 0), (1, 0), .8),
                   ((0, 1), (1, 0), .7)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0)}])
-    result = greedy_solve(_zip_candidates(reversed(candidates)), .5)
+    result = greedy_solve(_zip_candidates(reversed(candidates)))
     _compare_matching(result, [{(0,0), (1,0)}])
     
     candidates = []
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [])
     
     candidates = [((0, 0), (1, 0), .8),
                   ((0, 0), (1, 1), .7),
                   ((0, 1), (1, 0), .7),
                   ((0, 1), (1, 1), .6)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0)},
                                {(0,1), (1,1)}])
-    result = greedy_solve(_zip_candidates(reversed(candidates)), .5)
+    result = greedy_solve(_zip_candidates(reversed(candidates)))
     _compare_matching(result, [{(0,0), (1,0)},
                                {(0,1), (1,1)}])
 
@@ -56,7 +56,7 @@ def test_greedy_threeparty():
                   ((0, 0), (1, 1), .8),
                   ((0, 0), (2, 1), .8),
                   ((1, 1), (2, 1), .8)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,1), (2,1)},
                                {(1,0), (2,0)}])
     
@@ -65,7 +65,7 @@ def test_greedy_threeparty():
                   ((0, 1), (1, 1), .7),
                   ((0, 1), (2, 1), .8),
                   ((1, 1), (2, 1), .8)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0)},
                                {(0,1), (1,1), (2,1)}])
 
@@ -77,5 +77,5 @@ def test_greedy_fourparty():
                   ((1, 0), (3, 0), .7),
                   ((0, 0), (3, 0), .7),
                   ((1, 0), (2, 0), .7)]
-    result = greedy_solve(_zip_candidates(candidates), .5)
+    result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0)}])
