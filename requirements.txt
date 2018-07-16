@@ -4,3 +4,4 @@ cffi>=1.7
 pytest>=3.4
 pytest-cov>=2.5
 clkhash==0.10.1
+mypy-extensions==0.3.0
