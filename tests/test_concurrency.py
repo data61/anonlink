@@ -25,12 +25,8 @@ def test_chunk_size(datasets, chunk_size_aim):
         for a, b in chunk['ranges']:
             assert a <= b
             size *= b - a
-        try:
-            assert (chunk_size_aim / 4 < size
-                    or 4 * chunk_size_aim > datasets[i0] * datasets[i1])
-        except AssertionError:
-            print(datasets[i0], datasets[i1], size, chunk_size_aim)
-            raise
+        assert (chunk_size_aim / 4 < size
+                or 4 * chunk_size_aim > datasets[i0] * datasets[i1])
         assert size < chunk_size_aim * 4
                 
 

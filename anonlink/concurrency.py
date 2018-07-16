@@ -50,6 +50,8 @@ def split_to_chunks(
     looking at elements 3-20 (inclusive) of dataset 2 and elements 18
     and 19 of dataset 4.
 
+    The chunks are always JSON serialisable.
+
     :param chunk_size_aim: Number of comparisons per chunk to aim for.
         This is a hint only. No promises.
     :param datset_sizes: The sizes of the datsets to compare, as a
