@@ -37,6 +37,27 @@ def split_to_chunks(
     # needed once we do blocking
     dataset_sizes: _typing.Sequence[_numbers.Integral]
 ) -> _typing.Iterable[ChunkInfo]:
+    """Split datasets into chunks for parallel processing.
+
+    Resulting chunks are dictionaries with two keys: "datasetIndices"
+    and "ranges". The value for "datasetIndices" is a length 2 list of
+    the two datasets that we are comparing in this chunk. The value for
+    "ranges" is a length 2 list of ranges within those datasets. A range
+    is a length 2 list [a, b] representing range(a, b).
+
+    For example, {"datasetIndices": [2, 4], "ranges": [[3, 21], [18, 20]]}
+    means that this chunk compares (0-indexed) datasets 2 and 4. We are
+    looking at elements 3-20 (inclusive) of dataset 2 and elements 18
+    and 19 of dataset 4.
+
+    :param chunk_size_aim: Number of comparisons per chunk to aim for.
+        This is a hint only. No promises.
+    :param datset_sizes: The sizes of the datsets to compare, as a
+        sequence.
+
+    :return: An iterable of chunks.
+    """
+
     # int-like and float-like types such as np.int64 are welcome but are
     # not JSON-serialisable.
     chunk_size_aim_float = float(chunk_size_aim)
