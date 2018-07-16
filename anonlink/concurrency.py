@@ -6,6 +6,14 @@ import typing as _typing
 import mypy_extensions as _mypy_extensions
 
 
+# Future: There may be better ways of chunking. Hamish suggests putting
+# a better guarantee on the maximum size of a chunk. This may help with
+# optimisation (e.g., set chunk size to be the size of a page,
+# eliminating page faults).
+# As the function currently makes no guarantees, any such changes would
+# be backwards compatible.
+
+
 ChunkInfo = _mypy_extensions.TypedDict(
     'ChunkInfo',
     {'datasetIndices': _typing.List[int],
