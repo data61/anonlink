@@ -14,8 +14,7 @@ GITHUB_RELEASE_CONTEXT = "jenkins/test"
 
 def configs = [
     [os: 'linux', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
-    //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
-    [os: 'osx', pythons: ['python3.5'], compilers: ['clang']]
+    [os: 'osx', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
@@ -86,8 +85,9 @@ for (config in configs) {
     for (_compiler in compilers) {
 
       def py_version = _py_version
-      def label = "$os&&$py_version"
       def compiler = _compiler
+
+      def label = "$os&&$py_version&&$compiler"
       def combinedName = "${os} ${compiler} ${py_version}"
 
       builders[combinedName] = {
