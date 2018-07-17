@@ -109,6 +109,9 @@ node() {
 
 try {
   parallel builders
+  node() {
+    commit.setSuccessStatus(GITHUB_TEST_CONTEXT)
+  }
 } catch (Exception err) {
   node() {
     commit.setFailStatus("Build failed", GITHUB_TEST_CONTEXT);
