@@ -88,7 +88,7 @@ for (config in configs) {
       def py_version = _py_version
       def label = "$os&&$py_version"
       def compiler = _compiler
-      def combinedName = "${label}-${py_version}-${compiler}"
+      def combinedName = "${os} ${compiler} ${py_version}"
 
       builders[combinedName] = {
         node(label) {
