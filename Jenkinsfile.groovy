@@ -10,7 +10,7 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 VENV_DIRECTORY = "env"
 
 GITHUB_TEST_CONTEXT = "jenkins/test"
-GITHUB_RELEASE_CONTEXT = "jenkins/test"
+GITHUB_RELEASE_CONTEXT = "jenkins/release"
 
 def configs = [
     [os: 'linux', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
