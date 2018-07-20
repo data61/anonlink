@@ -9,12 +9,12 @@ def isDevelop = env.BRANCH_NAME == 'develop'
 
 VENV_DIRECTORY = "env"
 
-GIT_CONTEXT = "jenkins"
+GITHUB_TEST_CONTEXT = "jenkins/test"
+GITHUB_RELEASE_CONTEXT = "jenkins/release"
 
 def configs = [
-    [label: 'GPU 1', pythons: ['python3.6'], compilers: ['clang', 'gcc']],
-    //[label: 'osx', pythons: ['python3.5'], compilers: ['clang', 'gcc']]
-    [label: 'McNode', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
+    [os: 'linux', pythons: ['python3.6'], compilers: ['clang', 'gcc']],
+    [os: 'osx', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
 ]
 
 def PythonVirtualEnvironment prepareVirtualEnvironment(String pythonVersion, clkhashPackageName, compiler, venv_directory = VENV_DIRECTORY) {
@@ -77,7 +77,7 @@ def build(python_version, compiler, label, release = false) {
 
 def builders = [:]
 for (config in configs) {
-  def label = config["label"]
+  def os = config["os"]
   def pythons = config["pythons"]
   def compilers = config["compilers"]
 
@@ -86,7 +86,9 @@ for (config in configs) {
 
       def py_version = _py_version
       def compiler = _compiler
-      def combinedName = "${label}-${py_version}-${compiler}"
+
+      def label = "$os&&$py_version&&$compiler"
+      def combinedName = "${os} ${compiler} ${py_version}"
 
       builders[combinedName] = {
         node(label) {
@@ -102,14 +104,17 @@ for (config in configs) {
 GitCommit commit;
 node() {
   commit = GitUtils.checkoutFromSCM(this);
-  commit.setInProgressStatus(GIT_CONTEXT);
+  commit.setInProgressStatus(GITHUB_TEST_CONTEXT);
 }
 
 try {
   parallel builders
+  node() {
+    commit.setSuccessStatus(GITHUB_TEST_CONTEXT)
+  }
 } catch (Exception err) {
   node() {
-    commit.setFailStatus("Build failed", GIT_CONTEXT);
+    commit.setFailStatus("Build failed", GITHUB_TEST_CONTEXT);
   }
   throw err
 }
@@ -117,10 +122,11 @@ try {
 node('GPU 1') {
   stage('Release') {
     try {
+      commit.setInProgressStatus(GITHUB_RELEASE_CONTEXT);
       build('python3.6', 'gcc', 'GPU 1', true)
-      commit.setSuccessStatus(GIT_CONTEXT)
+      commit.setSuccessStatus(GITHUB_RELEASE_CONTEXT)
     } catch (Exception e) {
-      commit.setFailStatus("Release failed", GIT_CONTEXT);
+      commit.setFailStatus("Release failed", GITHUB_RELEASE_CONTEXT);
       throw e;
     }
   }
