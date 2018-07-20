@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from itertools import chain, product, repeat
-from numbers import Integral, Real
+from numbers import Real
 from random import Random
 from typing import (Any, Callable, Generic, Hashable, Iterable, List,
                     Optional, overload, Sequence, Tuple, TypeVar, Union)
@@ -9,9 +9,11 @@ from bitarray import bitarray
 
 from .typechecking import BlockingFunction
 
+_Record = TypeVar('_Record')
+
 
 _T = TypeVar('_T')
-def _evalf(__funcs : Iterable[Callable[..., _T]],  # https://github.com/python/typing/issues/259
+def _evalf(__funcs : Iterable[Callable[..., _T]],
            *args,
            **kwargs) -> Iterable[_T]:
     """ Apply a number of functions to the same arguments.
@@ -23,7 +25,6 @@ def _evalf(__funcs : Iterable[Callable[..., _T]],  # https://github.com/python/t
     return (f(*args, **kwargs) for f in __funcs)
 
 
-_Record = TypeVar('_Record')
 class _AssociativeBinaryOp(Generic[_Record], metaclass=ABCMeta):
     __slots__ = '_funcs',
 
