@@ -7,11 +7,11 @@ from typing import (Any, Callable, Generic, Hashable, Iterable, List,
 
 from bitarray import bitarray
 
-from .typechecking import BlockingFunction
+from .typechecking import BlockingFunction, Record
 
 
 _T = TypeVar('_T')
-def _evalf(__funcs : Iterable[Callable[..., _T]],  # https://github.com/python/typing/issues/259
+def _evalf(__funcs : Iterable[Callable[..., _T]],
            *args,
            **kwargs) -> Iterable[_T]:
     """ Apply a number of functions to the same arguments.
@@ -23,43 +23,20 @@ def _evalf(__funcs : Iterable[Callable[..., _T]],  # https://github.com/python/t
     return (f(*args, **kwargs) for f in __funcs)
 
 
-_Record = TypeVar('_Record')
-class _AssociativeBinaryOp(Generic[_Record], metaclass=ABCMeta):
-    __slots__ = '_funcs',
-
-    # http://mypy.readthedocs.io/en/latest/function_overloading.html
-    @overload
-    def __init__(self,
-                 __funcs: Iterable[BlockingFunction[_Record]]
-                 ) -> None:
-        pass
-
-    @overload
-    def __init__(self,
-                 __func1: BlockingFunction[_Record],
-                 __func2: BlockingFunction[_Record],
-                 *funcs: BlockingFunction[_Record]
-                 ) -> None:
-        pass
-
-    def __init__(self, *args):
-        if len(args) == 0:
-            raise ValueError('at least one argument required')
-        elif len(args) == 1:
-            self._funcs = tuple(args[0])
-        else:
-            self._funcs = args
-
-    @abstractmethod
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: _Record
-                 ) -> Iterable[Hashable]:
-        pass
-
-
-class block_and(_AssociativeBinaryOp[_Record]):
+# http://mypy.readthedocs.io/en/latest/function_overloading.html
+@overload
+def block_and(
+    __funcs: Iterable[BlockingFunction[Record]]
+) -> BlockingFunction[Record]:
+    ...
+@overload
+def block_and(
+    __func1: BlockingFunction[Record],
+    __func2: BlockingFunction[Record],
+    *funcs: BlockingFunction[Record]
+) -> BlockingFunction[Record]:
+    ...
+def block_and(*args) -> BlockingFunction[Record]:
     """ Conjunction of multiple blocking functions.
 
         Records share a block if they share a block in all of the
@@ -69,18 +46,37 @@ class block_and(_AssociativeBinaryOp[_Record]):
 
         :return: The blocking function.
     """
-    __slots__ = ()
+    if len(args) == 0:
+        raise ValueError('at least one argument required')
+    elif len(args) == 1:
+        funcs = tuple(args[0])
+    else:
+        funcs = args
 
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: _Record
-                 ) -> Iterable[Hashable]:
-        funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
+    def block_and_inner(
+        dataset_index: int,
+        record_index: int,
+        hash_: Record
+    ) -> Iterable[Hashable]:
+        funcs_eval = _evalf(funcs, dataset_index, record_index, hash_)
         return product(*funcs_eval)
 
+    return block_and_inner
 
-class block_or(_AssociativeBinaryOp[_Record]):
+
+@overload
+def block_or(
+    __funcs: Iterable[BlockingFunction[Record]]
+) -> BlockingFunction[Record]:
+    ...
+@overload
+def block_or(
+    __func1: BlockingFunction[Record],
+    __func2: BlockingFunction[Record],
+    *funcs: BlockingFunction[Record]
+) -> BlockingFunction[Record]:
+    ...
+def block_or(*args) -> BlockingFunction[Record]:
     """ Disjunction of multiple blocking functions.
 
         Records share a block if they share a block in any of the
@@ -90,19 +86,31 @@ class block_or(_AssociativeBinaryOp[_Record]):
 
         :return: The blocking function.
     """
-    __slots__ = ()
+    if len(args) == 0:
+        raise ValueError('at least one argument required')
+    elif len(args) == 1:
+        funcs = tuple(args[0])
+    else:
+        funcs = args
 
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: _Record
-                 ) -> Iterable[Hashable]:
-        funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
+    def block_or_inner(
+        dataset_index: int,
+        record_index: int,
+        hash_: Record
+    ) -> Iterable[Hashable]:
+        funcs_eval = _evalf(funcs, dataset_index, record_index, hash_)
         funcs_enum = (zip(repeat(i), f) for i, f in enumerate(funcs_eval))
         return chain.from_iterable(funcs_enum)
 
+    return block_or_inner
 
-class bit_blocking:
+
+def bit_blocking(
+    g: int,
+    r: int,
+    *,
+    seed: Any = None
+) -> BlockingFunction[bitarray]:
     """ Blocking on bits of the hash.
 
         This blocking type has the advantage that it doesn't require any
@@ -116,63 +124,43 @@ class bit_blocking:
 
         :return: The blocking function.
     """
-    
-    __slots__ = '_initial_params', '_hash_len', '_hash_indices'
+    if g < 1:
+        msg = 'g is expected to be positive but is {}'.format(g)
+        raise ValueError(msg)
+    if r < 1:
+        msg = 'r is expected to be positive but is {}'.format(r)
+        raise ValueError(msg)
 
-    def __init__(self,
-                 g: int,
-                 r: int,
-                 *,
-                 seed: Any = None
-                 ) -> None:
-        if g < 1:
-            msg = 'g is expected to be positive but is {}'.format(g)
-            raise ValueError(msg)
-        if r < 1:
-            msg = 'r is expected to be positive but is {}'.format(r)
-            raise ValueError(msg)
-        
-        self._initial_params = g, r, seed  # type: Optional[Tuple[int, int, Any]]
-        self._hash_len = None  # type: Optional[int]
-        self._hash_indices = None  # type: Optional[Sequence[Sequence[int]]]
+    hash_len: Optional[int] = None
+    hash_indices: Optional[Sequence[Sequence[int]]] = None
 
-    def _first_call(self,
-                    hash_len: int
-                    ) -> None:
-        assert self._initial_params is not None
-        g, r, seed = self._initial_params
+    def bit_blocking_inner(
+        dataset_index: int,
+        record_index: int,
+        hash_: bitarray
+    ) -> Iterable[Hashable]:
+        nonlocal hash_len, hash_indices
 
-        self._hash_len = hash_len
+        this_hash_len = len(hash_)
+        if hash_indices is None:
+            # First call.
+            hash_len = this_hash_len
 
-        rng = Random()
-        rng.seed(seed)
+            rng = Random(seed)
+            # Future: consider keeping track of already chosen indices
+            # and avoiding them. This may improve performance by making
+            # tables more independent.
+            hash_indices = tuple(rng.sample(range(hash_len), r)
+                                 for _ in range(g))
 
-        # Future: consider keeping track of already chosen indices and
-        # avoiding them. This may improve performance by making tables
-        # more independent.
-        self._hash_indices = tuple(rng.sample(range(hash_len), r)
-                                   for _ in range(g))
-
-        self._initial_params = None  # No longer needed.
-
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: bitarray
-                 ) -> Iterable[Hashable]:
-        hash_len = len(hash_)
-        if self._hash_indices is None:
-            self._first_call(hash_len)
-
-        assert self._hash_len is not None
-        if hash_len != self._hash_len:
+        assert hash_len is not None
+        if this_hash_len != hash_len:
             raise ValueError('inconsistent hash length')
 
-        hash_indices = self._hash_indices
         assert hash_indices is not None
         for i, table_indices in enumerate(hash_indices):
             vals = map(hash_.__getitem__, table_indices)
-            
+
             # We need to turn this iterable of bools into something
             # hashable. An int will do just fine.
             table_block = sum(b << j for j, b in enumerate(vals))
@@ -180,8 +168,13 @@ class bit_blocking:
             # Distinguish between tables.
             yield table_block * len(hash_indices) + i
 
+    return bit_blocking_inner
 
-class continuous_blocking(Generic[_Record]):
+
+def continuous_blocking(
+    radius: Real,
+    source: Sequence[Sequence[Real]]
+) -> BlockingFunction[Record]:
     """ Block on continuous variables.
 
         Split the real number line into overlapping blocks. A quantity
@@ -194,21 +187,13 @@ class continuous_blocking(Generic[_Record]):
 
         :return: The blocking function.
     """
-    __slots__ = '_radius', '_source'
-
-    def __init__(self,
-                 radius: Real,
-                 source: Sequence[Sequence[Real]]
-                 ) -> None:
-        self._radius = radius
-        self._source = source
-
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: _Record) -> Iterable[Hashable]:
-        x = self._source[dataset_index][record_index]
-        r = self._radius
+    def continuous_blocking_inner(
+        dataset_index: int,
+        record_index: int,
+        hash_: Record
+    ) -> Iterable[Hashable]:
+        x = source[dataset_index][record_index]
+        r = radius
 
         bucket_1 = int(x // (2 * r))
         bucket_2 = int((x + r) // (2 * r))
@@ -216,23 +201,23 @@ class continuous_blocking(Generic[_Record]):
         # Ensure bucket_1 is odd and bucket_2 is even to distinguish.
         return (bucket_1 * 2, bucket_2 * 2 + 1)
 
+    return continuous_blocking_inner
 
-class list_blocking(Generic[_Record]):
+
+def list_blocking(
+    source: Sequence[Sequence[Hashable]]
+) -> BlockingFunction[Record]:
     """ Convenience function getting blocks from sequence of sequences.
 
         :param source: Sequence of sequence of blocks.
 
         :return: The blocking function.
     """
-    __slots__ = '_source',
+    def list_blocking_inner(
+        dataset_index: int,
+        record_index: int,
+        hash_: Record
+    ) -> Iterable[Hashable]:
+        return (source[dataset_index][record_index],)
 
-    def __init__(self,
-                 source: Sequence[Sequence[Hashable]]
-                 ) -> None:
-        self._source = source
-
-    def __call__(self,
-                 dataset_index: int,
-                 record_index: int,
-                 hash_: _Record) -> Iterable[Hashable]:
-        return (self._source[dataset_index][record_index],)
+    return list_blocking_inner

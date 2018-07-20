@@ -9,7 +9,8 @@ requirements = [
         "networkx==1.11",
         "cffi>=1.7",
         "clkhash>=0.10",
-        "numpy>=1.14"
+        "numpy>=1.14",
+        "mypy-extensions>=0.3"
     ]
 
 setup(
