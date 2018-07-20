@@ -7,9 +7,7 @@ from typing import (Any, Callable, Generic, Hashable, Iterable, List,
 
 from bitarray import bitarray
 
-from .typechecking import BlockingFunction
-
-_Record = TypeVar('_Record')
+from .typechecking import BlockingFunction, Record
 
 
 _T = TypeVar('_T')
@@ -25,21 +23,21 @@ def _evalf(__funcs : Iterable[Callable[..., _T]],
     return (f(*args, **kwargs) for f in __funcs)
 
 
-class _AssociativeBinaryOp(Generic[_Record], metaclass=ABCMeta):
+class _AssociativeBinaryOp(Generic[Record], metaclass=ABCMeta):
     __slots__ = '_funcs',
 
     # http://mypy.readthedocs.io/en/latest/function_overloading.html
     @overload
     def __init__(self,
-                 __funcs: Iterable[BlockingFunction[_Record]]
+                 __funcs: Iterable[BlockingFunction[Record]]
                  ) -> None:
         pass
 
     @overload
     def __init__(self,
-                 __func1: BlockingFunction[_Record],
-                 __func2: BlockingFunction[_Record],
-                 *funcs: BlockingFunction[_Record]
+                 __func1: BlockingFunction[Record],
+                 __func2: BlockingFunction[Record],
+                 *funcs: BlockingFunction[Record]
                  ) -> None:
         pass
 
@@ -55,12 +53,12 @@ class _AssociativeBinaryOp(Generic[_Record], metaclass=ABCMeta):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: _Record
+                 hash_: Record
                  ) -> Iterable[Hashable]:
         pass
 
 
-class block_and(_AssociativeBinaryOp[_Record]):
+class block_and(_AssociativeBinaryOp[Record]):
     """ Conjunction of multiple blocking functions.
 
         Records share a block if they share a block in all of the
@@ -75,13 +73,13 @@ class block_and(_AssociativeBinaryOp[_Record]):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: _Record
+                 hash_: Record
                  ) -> Iterable[Hashable]:
         funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
         return product(*funcs_eval)
 
 
-class block_or(_AssociativeBinaryOp[_Record]):
+class block_or(_AssociativeBinaryOp[Record]):
     """ Disjunction of multiple blocking functions.
 
         Records share a block if they share a block in any of the
@@ -96,7 +94,7 @@ class block_or(_AssociativeBinaryOp[_Record]):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: _Record
+                 hash_: Record
                  ) -> Iterable[Hashable]:
         funcs_eval = _evalf(self._funcs, dataset_index, record_index, hash_)
         funcs_enum = (zip(repeat(i), f) for i, f in enumerate(funcs_eval))
@@ -182,7 +180,7 @@ class bit_blocking:
             yield table_block * len(hash_indices) + i
 
 
-class continuous_blocking(Generic[_Record]):
+class continuous_blocking(Generic[Record]):
     """ Block on continuous variables.
 
         Split the real number line into overlapping blocks. A quantity
@@ -207,7 +205,7 @@ class continuous_blocking(Generic[_Record]):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: _Record) -> Iterable[Hashable]:
+                 hash_: Record) -> Iterable[Hashable]:
         x = self._source[dataset_index][record_index]
         r = self._radius
 
@@ -218,7 +216,7 @@ class continuous_blocking(Generic[_Record]):
         return (bucket_1 * 2, bucket_2 * 2 + 1)
 
 
-class list_blocking(Generic[_Record]):
+class list_blocking(Generic[Record]):
     """ Convenience function getting blocks from sequence of sequences.
 
         :param source: Sequence of sequence of blocks.
@@ -235,5 +233,5 @@ class list_blocking(Generic[_Record]):
     def __call__(self,
                  dataset_index: int,
                  record_index: int,
-                 hash_: _Record) -> Iterable[Hashable]:
+                 hash_: Record) -> Iterable[Hashable]:
         return (self._source[dataset_index][record_index],)

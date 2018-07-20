@@ -4,8 +4,10 @@ import typing as _typing
 
 import mypy_extensions as _mypy_extensions
 
-_Record = _typing.TypeVar('_Record')
-Dataset = _typing.Sequence[_Record]
+# This is for parametrisation only. You shouldn't need to import it.
+Record = _typing.TypeVar('Record')
+
+Dataset = _typing.Sequence[Record]
 
 if _typing.TYPE_CHECKING:
     FloatArrayType = _array.array[float]
@@ -19,7 +21,7 @@ CandidatePairs = _typing.Tuple[FloatArrayType,
                        _typing.Tuple[IntArrayType, ...]]
 
 BlockingFunction = _typing.Callable[
-    [int, int, _Record],
+    [int, int, Record],
     _typing.Iterable[_typing.Hashable]]
 
 SimilarityFunction = _typing.Callable[
