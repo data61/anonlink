@@ -143,12 +143,13 @@ def bit_blocking(
 
         this_hash_len = len(hash_)
         if hash_indices is None:
+            # First call.
             hash_len = this_hash_len
 
             rng = Random(seed)
-            # Future: consider keeping track of already chosen indices and
-            # avoiding them. This may improve performance by making tables
-            # more independent.
+            # Future: consider keeping track of already chosen indices
+            # and avoiding them. This may improve performance by making
+            # tables more independent.
             hash_indices = tuple(rng.sample(range(hash_len), r)
                                  for _ in range(g))
 
