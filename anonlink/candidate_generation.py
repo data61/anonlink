@@ -1,14 +1,18 @@
 from array import array
 from itertools import combinations, repeat
 from heapq import merge
-from numbers import Real
-from typing import Optional, Sequence
+from numbers import Integral, Real
+from typing import Optional, Sequence, Tuple
 
-from .typechecking import (BlockingFunction, CandidatePairs,
-                           Record, SimilarityFunction)
+from .typechecking import (BlockingFunction, CandidatePairs, Dataset,
+                           FloatArrayType, IntArrayType, SimilarityFunction)
 
 
-def _merge_similarities(similarities):
+def _merge_similarities(
+    similarities: Sequence[Tuple[Tuple[int, int],
+                                 Tuple[FloatArrayType,
+                                       Sequence[IntArrayType]]]]
+) -> CandidatePairs:
     # Merge similarities in sorted order.
     # This is almost certainly an inefficient way of doing this, but
     # it's hard to get anything more efficient in pure Python.
@@ -19,14 +23,16 @@ def _merge_similarities(similarities):
     similarities_iters = (zip(sims, repeat(dataset_is), zip(*record_is))
                           for dataset_is, (sims, record_is) in similarities)
     merged_similarities = merge(*similarities_iters,
-                                key=lambda x: (-x[0],) + x[1:])
+                                key=lambda x: (-x[0], *x[1:]))
     
     # Assume all arrays are the same type.
     # Future: this may require changing.
     fst_datset_is, (fst_sims, fst_record_is) = similarities[0]
-    result_sims = array(fst_sims.typecode)
-    result_dataset_is = tuple(array('I') for _ in fst_datset_is)
-    result_record_is = tuple(array(f.typecode) for f in fst_record_is)
+    result_sims: FloatArrayType = array(fst_sims.typecode)
+    result_dataset_is: Tuple[IntArrayType, ...] = tuple(
+        array('I') for _ in fst_datset_is)
+    result_record_is: Tuple[IntArrayType, ...] = tuple(
+        array(f.typecode) for f in fst_record_is)
     for sim, dataset_is, record_is in merged_similarities:
         result_sims.append(sim)
         for result_dataset_i, dataset_i in zip(result_dataset_is, dataset_is):
@@ -37,10 +43,10 @@ def _merge_similarities(similarities):
 
 
 def find_candidate_pairs(
-    datasets: Sequence[Sequence[Record]],
+    datasets: Sequence[Dataset],
     similarity_f: SimilarityFunction,
     threshold: Real,
-    k: Optional[int] = None,
+    k: Optional[Integral] = None,
     blocking_f: BlockingFunction = None
 ) -> CandidatePairs:
     """ Find candidate pairs from multiple datasets. Optional blocking.
@@ -88,7 +94,7 @@ def find_candidate_pairs(
         assert all(len(r) == n for r in record_is)
         return (sims,
                 (array('I', repeat(0, n)) , array('I', repeat(1, n))),
-                record_is)
+                tuple(record_is))
 
     similarities = []
     for (i0, dataset0), (i1, dataset1) in combinations(enumerate(datasets), 2):
@@ -96,5 +102,3 @@ def find_candidate_pairs(
         similarities.append(((i0, i1), similarity))
 
     return _merge_similarities(similarities)
-
-
