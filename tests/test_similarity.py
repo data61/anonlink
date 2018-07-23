@@ -1,139 +1,102 @@
+
+
 import unittest
 
-import pytest
-from bitarray import bitarray
 from clkhash import bloomfilter, randomnames, schema
 from clkhash.key_derivation import generate_key_lists
 
-from anonlink import similarities
+from anonlink import entitymatch
 
 __author__ = 'Brian Thorne'
 
-FLOAT_ARRAY_TYPES = 'fd'
-UINT_ARRAY_TYPES = 'BHILQ'
 
-SIM_FUNS = [similarities.dice_coefficient_python,
-            similarities.dice_coefficient_accelerated]
+class TestBloomFilterComparison(unittest.TestCase):
 
-
-class TestBloomFilterComparison:
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
         cls.proportion = 0.8
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(200, cls.proportion)
 
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
-        cls.filters1 = tuple(
-            f[0]
-            for f in bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
-        cls.filters2 = tuple(
-            f[0]
-            for f in bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
-        cls.filters = cls.filters1, cls.filters2
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
+        cls.filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
+        cls.filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
         cls.default_k = 10
         cls.default_threshold = 0.5
 
-    def _check_proportion(self, candidate_pairs):
-        sims, _ = candidate_pairs
-        exact_matches = sum(sim == 1 for sim in sims)
+    def _check_proportion(self, similarity):
+        exact_matches = 0.0
+        for (idx1, score, idx2) in similarity:
+            if score == 1.0:
+                exact_matches += 1
 
-        assert (exact_matches / len(self.filters1)
-                == pytest.approx(self.proportion))
-        assert (exact_matches / len(self.filters2)
-                == pytest.approx(self.proportion))
+        self.assertAlmostEqual(exact_matches/len(self.filters1), self.proportion)
+        self.assertAlmostEqual(exact_matches/len(self.filters2), self.proportion)
 
     def assert_similarity_matrices_equal(self, M, N):
-        M_sims, (M_indices0, M_indices1) = M
-        N_sims, (N_indices0, N_indices1) = N
-        assert (set(zip(M_sims, M_indices0, M_indices1))
-                == set(zip(N_sims, N_indices0, N_indices1)))
+        self.assertEqual(len(M), len(N))
+        for m in M:
+            self.assertIn(m, N)
 
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
-        f1 = tuple(
-            f[0]
-            for f in bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
-        f2 = tuple(
-            f[0]
-            for f in bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
+        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
+        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
 
-        py_similarity = similarities.dice_coefficient_python(
-            (f1, f2), self.default_threshold, self.default_k)
-        c_similarity = similarities.dice_coefficient_accelerated(
-            (f1, f2), self.default_threshold, self.default_k)
+        py_similarity = entitymatch.python_filter_similarity(
+            f1, f2, self.default_k, self.default_threshold)
+        c_similarity = entitymatch.cffi_filter_similarity_k(
+            f1, f2, self.default_k, self.default_threshold)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
     def test_cffi(self):
-        similarity = similarities.dice_coefficient_accelerated(
-            self.filters, self.default_threshold, self.default_k)
+        similarity = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_python(self):
-        similarity = similarities.dice_coefficient_python(
-            self.filters, self.default_threshold, self.default_k)
+        similarity = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_default(self):
-        similarity = similarities.dice_coefficient(
-            self.filters, self.default_threshold, self.default_k)
+        similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
         self._check_proportion(similarity)
 
     def test_same_score(self):
-        cffi_cands = similarities.dice_coefficient_accelerated(
-            self.filters, self.default_threshold, self.default_k)
-        cffi_scores, _ = cffi_cands
-        python_cands = similarities.dice_coefficient_python(
-            self.filters, self.default_threshold, self.default_k)
-        python_scores, _ = python_cands
-        assert cffi_scores == python_scores
-
-    def test_same_score_k_none(self):
-        cffi_cands = similarities.dice_coefficient_accelerated(
-            self.filters, self.default_threshold, None)
-        cffi_scores, _ = cffi_cands
-        python_cands = similarities.dice_coefficient_python(
-            self.filters, self.default_threshold, None)
-        python_scores, _ = python_cands
-        assert cffi_scores == python_scores
+        cffi_score = entitymatch.cffi_filter_similarity_k(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
+        python_score = entitymatch.python_filter_similarity(
+            self.filters1, self.filters2, self.default_k, self.default_threshold)
+        for i in range(len(cffi_score)):
+            self.assertEqual(cffi_score[i][1], python_score[i][1])
 
     def test_empty_input_a(self):
-        candidate_pairs = similarities.dice_coefficient(
-            ((), self.filters2), self.default_threshold, self.default_k)
-        sims, (indices0, indices1) = candidate_pairs
-        assert len(sims) == len(indices0) == len(indices1) == 0
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert indices0.typecode in UINT_ARRAY_TYPES
-        assert indices1.typecode in UINT_ARRAY_TYPES
+        with self.assertRaises(ValueError):
+            entitymatch.calculate_filter_similarity(
+                [], self.filters2, self.default_k, self.default_threshold)
 
     def test_empty_input_b(self):
-        candidate_pairs = similarities.dice_coefficient(
-            (self.filters1, ()), self.default_threshold, self.default_k)
-        sims, (indices0, indices1) = candidate_pairs
-        assert len(sims) == len(indices0) == len(indices1) == 0
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert indices0.typecode in UINT_ARRAY_TYPES
-        assert indices1.typecode in UINT_ARRAY_TYPES
+        with self.assertRaises(ValueError):
+            entitymatch.calculate_filter_similarity(
+                self.filters1, [], self.default_k, self.default_threshold)
 
     def test_small_input_a(self):
-        py_similarity = similarities.dice_coefficient_python(
-            (self.filters1[:10], self.filters2),
-            self.default_threshold, self.default_k)
-        c_similarity = similarities.dice_coefficient_accelerated(
-            (self.filters1[:10], self.filters2),
-            self.default_threshold, self.default_k)
+        py_similarity = entitymatch.calculate_filter_similarity(
+            self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=True)
+        c_similarity = entitymatch.calculate_filter_similarity(
+            self.filters1[:10], self.filters2, self.default_k, self.default_threshold, use_python=False)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
     def test_small_input_b(self):
-        py_similarity = similarities.dice_coefficient_python(
-            (self.filters1, self.filters2[:10]),
-            self.default_threshold, self.default_k)
-        c_similarity = similarities.dice_coefficient_accelerated(
-            (self.filters1, self.filters2[:10]),
-            self.default_threshold, self.default_k)
+        py_similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=True)
+        c_similarity = entitymatch.calculate_filter_similarity(
+            self.filters1, self.filters2[:10], self.default_k, self.default_threshold, use_python=False)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
     def test_memory_use(self):
@@ -143,111 +106,12 @@ class TestBloomFilterComparison:
         # If memory is not handled correctly, then this would allocate
         # several terabytes of RAM.
         big_k = 1 << 50
-        py_similarity = similarities.dice_coefficient_python(
-            (f1, f2), self.default_threshold, big_k)
-        c_similarity = similarities.dice_coefficient_accelerated(
-            (f1, f2), self.default_threshold, big_k)
+        py_similarity = entitymatch.calculate_filter_similarity(
+            f1, f2, big_k, self.default_threshold, use_python=True)
+        c_similarity = entitymatch.calculate_filter_similarity(
+            f1, f2, big_k, self.default_threshold, use_python=False)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
-    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
-    @pytest.mark.parametrize('dataset_n', [0, 1])
-    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
-    @pytest.mark.parametrize('threshold', [0., .5, 1.])
-    def test_too_few_datasets(self, sim_fun, dataset_n, k, threshold):
-        datasets = [[bitarray('01001011') * 8, bitarray('01001011' * 8)]
-                    for _ in range(dataset_n)]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
 
-    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
-    @pytest.mark.parametrize('p_arity', [3, 5])
-    @pytest.mark.parametrize('k', [None, 0, 1, 2])
-    @pytest.mark.parametrize('threshold', [0., .5, 1.])
-    def test_unsupported_p_arity(self, sim_fun, p_arity, k, threshold):
-        datasets = [[bitarray('01001011') * 8, bitarray('01001011' * 8)]
-                    for _ in range(p_arity)]
-        with pytest.raises(NotImplementedError):
-            sim_fun(datasets, threshold, k=k)
-    
-    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
-    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
-    @pytest.mark.parametrize('threshold', [0., .5, 1.])
-    def test_inconsistent_filter_length(self, sim_fun, k, threshold):
-        datasets = [[bitarray('01001011') * 8, bitarray('01001011') * 16],
-                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-
-        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
-                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-            
-        datasets = [[bitarray('01001011') * 8, bitarray('01001011') * 8],
-                    [bitarray('01001011') * 16, bitarray('01001011') * 8]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-            
-        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
-                    [bitarray('01001011') * 8, bitarray('01001011') * 16]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-            
-        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
-                    [bitarray('01001011') * 16, bitarray('01001011') * 8]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-            
-        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 16],
-                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
-        with pytest.raises(ValueError):
-            sim_fun(datasets, threshold, k=k)
-
-    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
-    @pytest.mark.parametrize('threshold', [0., .5, 1.])
-    @pytest.mark.parametrize('bytes_n', [1, 7, 9, 15, 17, 23, 25])
-    def test_not_multiple_of_64(self, k, threshold, bytes_n):
-        datasets = [[bitarray('01001011') * bytes_n],
-                    [bitarray('01001011') * bytes_n]]
-        with pytest.raises(NotImplementedError):
-            similarities.dice_coefficient_accelerated(datasets, threshold, k=k)
-
-    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
-    @pytest.mark.parametrize('k', [None, 0, 1])
-    @pytest.mark.parametrize('threshold', [0., .5, 1.])
-    def test_empty(self, sim_fun, k, threshold):
-        datasets = [[], [bitarray('01001011') * 8]]
-        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert (rec_is0.typecode in UINT_ARRAY_TYPES
-                and rec_is1.typecode in UINT_ARRAY_TYPES)
-
-        datasets = [[bitarray('01001011') * 8], []]
-        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert (rec_is0.typecode in UINT_ARRAY_TYPES
-                and rec_is1.typecode in UINT_ARRAY_TYPES)
-
-    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
-    @pytest.mark.parametrize('k', [None, 0, 1])
-    @pytest.mark.parametrize('threshold', [0., .5])
-    def test_all_low(self, sim_fun, k, threshold):
-        datasets = [[bitarray('01001011') * 8],
-                    [bitarray('00000000') * 8]]
-        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert (len(sims) == len(rec_is0) == len(rec_is1)
-                == (1 if threshold == 0. and k != 0 else 0))
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert (rec_is0.typecode in UINT_ARRAY_TYPES
-                and rec_is1.typecode in UINT_ARRAY_TYPES)
-
-        datasets = [[bitarray('00000000') * 8],
-                    [bitarray('01001011') * 8]]
-        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert (len(sims) == len(rec_is0) == len(rec_is1)
-                == (1 if threshold == 0. and k != 0 else 0))
-        assert sims.typecode in FLOAT_ARRAY_TYPES
-        assert (rec_is0.typecode in UINT_ARRAY_TYPES
-                and rec_is1.typecode in UINT_ARRAY_TYPES)
+if __name__ == "__main__":
+    unittest.main()
