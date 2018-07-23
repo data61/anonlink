@@ -262,7 +262,7 @@ public:
 
 struct score_cmp {
     bool operator()(const Node& a, const Node& b) const {
-        return a.score >= b.score;
+        return a.score > b.score || (a.score == b.score && a.index < b.index);
     }
 };
 
