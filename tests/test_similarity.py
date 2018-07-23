@@ -18,9 +18,9 @@ class TestBloomFilterComparison(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(200, cls.proportion)
 
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
-        cls.filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-        cls.filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+        cls.filters1 = list(bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
+        cls.filters2 = list(bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
 
         cls.default_k = 10
         cls.default_threshold = 0.5
@@ -42,9 +42,9 @@ class TestBloomFilterComparison(unittest.TestCase):
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
-        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+        f1 = list(bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
+        f2 = list(bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
 
         py_similarity = entitymatch.python_filter_similarity(
             f1, f2, self.default_k, self.default_threshold)
