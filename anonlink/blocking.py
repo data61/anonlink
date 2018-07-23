@@ -136,7 +136,7 @@ def bit_blocking(
 
     def bit_blocking_inner(
         dataset_index: int,
-        record_index: int,s
+        record_index: int,
         hash_: bitarray
     ) -> Iterable[Hashable]:
         nonlocal hash_len, hash_indices
