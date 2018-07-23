@@ -476,6 +476,8 @@ extern "C"
             for (uint32_t j = 0; j < k; ++j) {
                 indices[j] = j;
             }
+
+            return static_cast<int>(k);
         }
 
         uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
