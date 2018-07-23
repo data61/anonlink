@@ -3,10 +3,13 @@ import operator
 import random
 import unittest
 
+import bitarray
+import pytest
+
 from anonlink import blocking
 
 
-class TestBlockAnd(unittest.TestCase):
+class TestBlockAnd:
     def test_block_and_two(self):
         datasets = 3
         samples = 20
@@ -32,7 +35,7 @@ class TestBlockAnd(unittest.TestCase):
             v1_intersect = bool(vals1[i1][j1] & vals1[i2][j2])
             v2_intersect = bool(vals2[i1][j1] & vals2[i2][j2])
 
-            self.assertEqual(b_intersect, v1_intersect and v2_intersect)
+            assert b_intersect == (v1_intersect and v2_intersect)
 
     def test_block_and_three(self):
         datasets = 3
@@ -63,11 +66,15 @@ class TestBlockAnd(unittest.TestCase):
             v2_intersect = bool(vals2[i1][j1] & vals2[i2][j2])
             v3_intersect = bool(vals3[i1][j1] & vals3[i2][j2])
 
-            self.assertEqual(b_intersect,
-                             v1_intersect and v2_intersect and v3_intersect)
+            assert (b_intersect
+                    == (v1_intersect and v2_intersect and v3_intersect))
+
+    def test_empty(self):
+        with pytest.raises(TypeError):
+            blocking.block_and()
 
 
-class TestBlockOr(unittest.TestCase):
+class TestBlockOr:
     def test_block_or_two(self):
         datasets = 3
         samples = 20
@@ -93,7 +100,7 @@ class TestBlockOr(unittest.TestCase):
             v1_intersect = bool(vals1[i1][j1] & vals1[i2][j2])
             v2_intersect = bool(vals2[i1][j1] & vals2[i2][j2])
 
-            self.assertEqual(b_intersect, v1_intersect or v2_intersect)
+            assert b_intersect == (v1_intersect or v2_intersect)
 
     def test_block_or_three(self):
         datasets = 3
@@ -124,15 +131,19 @@ class TestBlockOr(unittest.TestCase):
             v2_intersect = bool(vals2[i1][j1] & vals2[i2][j2])
             v3_intersect = bool(vals3[i1][j1] & vals3[i2][j2])
 
-            self.assertEqual(b_intersect,
-                             v1_intersect or v2_intersect or v3_intersect)
+            assert (b_intersect
+                    == (v1_intersect or v2_intersect or v3_intersect))
+
+    def test_empty(self):
+        with pytest.raises(TypeError):
+            blocking.block_or()
 
 
-class TestBitBlocking(unittest.TestCase):
-    def test_bit_blocking(self):
+class TestBitBlocking:
+    @pytest.mark.parametrize('seed', [345, None])
+    def test_bit_blocking(self, seed):
         datasets = 3
         samples = 25
-        seed = 345
         hash_lens = 5
         r = 2
         g = 2
@@ -153,14 +164,33 @@ class TestBitBlocking(unittest.TestCase):
             same_block = bool(blocks[i1][j1] & blocks[i2][j2])
 
             if hash_diffs == 0:
-                self.assertTrue(same_block)
+                assert same_block
             elif hash_diffs > r * g:
-                self.assertFalse(same_block)
+                assert not same_block
+
+    @pytest.mark.parametrize('g', [-5, -1, 0, 1, 5])
+    @pytest.mark.parametrize('r', [-5, -1, 0, 1, 5])
+    def test_invalid_r_g(self, g, r):
+        if g <= 0 or r <= 0:
+            with pytest.raises(ValueError):
+                blocking.bit_blocking(g, r)
+        else:
+            # Make sure doesn't raise
+            blocking.bit_blocking(g, r)
+
+    def test_inconsistent_hash_length(self):
+        g = 2
+        r = 2
+        bitarray5 = bitarray.bitarray('01010')
+        bitarray6 = bitarray.bitarray('010101')
+        
+        fun = blocking.bit_blocking(g, r)
+        tuple(fun(0, 0, bitarray5))
+        with pytest.raises(ValueError):
+            tuple(fun(0, 1, bitarray6))
 
 
-
-
-class TestContinuousBlocking(unittest.TestCase):
+class TestContinuousBlocking:
     def test_int(self):
         datasets = 3
         samples = 20
@@ -176,12 +206,10 @@ class TestContinuousBlocking(unittest.TestCase):
         for (v1, b1), (v2, b2) in itertools.product(blocks, repeat=2):
             dist = abs(v1 - v2)
             intersect = bool(b1 & b2)
-            self.assertTrue(
-                dist > radius or intersect,
-                'Records separated by <= radius should share a block.')
-            self.assertTrue(
-                dist <= 2 * radius or not intersect,
-                'Records separated by > 2 * radius should not share a block.')
+            assert dist > radius or intersect, \
+                'Records separated by <= radius should share a block.'
+            assert dist <= 2 * radius or not intersect, \
+                'Records separated by > 2 * radius should not share a block.'
 
     def test_float(self):
         datasets = 3
@@ -202,15 +230,23 @@ class TestContinuousBlocking(unittest.TestCase):
         for (v1, b1), (v2, b2) in itertools.product(blocks, repeat=2):
             dist = abs(v1 - v2)
             intersect = bool(b1 & b2)
-            self.assertTrue(
-                dist > radius or intersect,
-                'Records separated by <= radius should share a block.')
-            self.assertTrue(
-                dist <= 2 * radius or not intersect,
-                'Records separated by > 2 * radius should not share a block.')
+            assert dist > radius or intersect, \
+                'Records separated by <= radius should share a block.'
+            assert dist <= 2 * radius or not intersect, \
+                'Records separated by > 2 * radius should not share a block.'
+
+    @pytest.mark.parametrize('radius', [-5, -1, -.5, 0, .5, 1, 5])
+    def test_nonpositive_radius(self, radius):
+        datasets = [[.2, .4], [.6, .8]]
+        if radius > 0:
+            # Shouldn't throw.
+            blocking.continuous_blocking(radius, datasets)
+        else:
+            with pytest.raises(ValueError):
+                blocking.continuous_blocking(radius, datasets)
 
 
-class TestListBlocking(unittest.TestCase):
+class TestListBlocking:
     def test_list_blocking(self):
         datasets = 3
         samples = 20
@@ -222,4 +258,4 @@ class TestListBlocking(unittest.TestCase):
                   for i in range(datasets)]
 
         for v, b in itertools.chain.from_iterable(blocks):
-            self.assertEqual((v,), b)
+            assert (v,) == b

@@ -107,3 +107,11 @@ class TestHammingSimilarity:
                     assert candidates[i0, i1] == sim
             else:
                 assert (i0, i1) not in candidates
+
+@pytest.mark.parametrize('size', [0, 1, 3, 5])
+@pytest.mark.parametrize('threshold', [0., .5, 1.])
+@pytest.mark.parametrize('k', [None, 0, 10])
+def test_unsupported_size(size, threshold, k):
+    datasets = [['01001101'] for _ in range(size)]
+    with pytest.raises(NotImplementedError):
+        hamming_similarity(datasets, threshold, k=k)

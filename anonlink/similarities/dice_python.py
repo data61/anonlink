@@ -35,7 +35,7 @@ def dice_coefficient_python(
     if n_datasets < 2:
         raise ValueError(f'not enough datasets (expected 2, got {n_datasets})')
     elif n_datasets > 2:
-        raise ValueError(f'too many datasets (expected 2, got {n_datasets})')
+        raise NotImplementedError(f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
     result_sims: FloatArrayType = array('d')

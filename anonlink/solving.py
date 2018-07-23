@@ -33,15 +33,17 @@ def greedy_solve(
             represent the same entity. Here, a record is a two-tuple of
             dataset index and record index.
     """
-    _, dset_is, rec_is = candidates
+    sims, dset_is, rec_is = candidates
     if len(dset_is) != len(rec_is):
         raise ValueError('inconsistent shape of index arrays')
     if len(dset_is) != 2:
-        raise ValueError('only binary solving is supported')
+        raise NotImplementedError('only binary solving is supported')
 
     dset_is0, dset_is1 = dset_is
     rec_is0, rec_is1 = rec_is
-    if not (len(dset_is0) == len(dset_is1) == len(rec_is0) == len(rec_is1)):
+    if not (len(sims)
+            == len(dset_is0) == len(dset_is1)
+            == len(rec_is0) == len(rec_is1)):
         raise ValueError('inconsistent shape of index arrays')
 
     # Map (dataset index, record index) to its group.

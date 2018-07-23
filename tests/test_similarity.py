@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+from bitarray import bitarray
 from clkhash import bloomfilter, randomnames, schema
 from clkhash.key_derivation import generate_key_lists
 
@@ -10,11 +12,13 @@ __author__ = 'Brian Thorne'
 FLOAT_ARRAY_TYPES = 'fd'
 UINT_ARRAY_TYPES = 'BHILQ'
 
+SIM_FUNS = [similarities.dice_coefficient_python,
+            similarities.dice_coefficient_accelerated]
 
-class TestBloomFilterComparison(unittest.TestCase):
 
+class TestBloomFilterComparison:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cls.proportion = 0.8
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(200, cls.proportion)
@@ -35,10 +39,10 @@ class TestBloomFilterComparison(unittest.TestCase):
         sims, _ = candidate_pairs
         exact_matches = sum(sim == 1 for sim in sims)
 
-        self.assertAlmostEqual(exact_matches / len(self.filters1),
-                               self.proportion)
-        self.assertAlmostEqual(exact_matches / len(self.filters2),
-                               self.proportion)
+        assert (exact_matches / len(self.filters1)
+                == pytest.approx(self.proportion))
+        assert (exact_matches / len(self.filters2)
+                == pytest.approx(self.proportion))
 
     def assert_similarity_matrices_equal(self, M, N):
         M_sims, (M_indices0, M_indices1) = M
@@ -145,6 +149,105 @@ class TestBloomFilterComparison(unittest.TestCase):
             (f1, f2), self.default_threshold, big_k)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    @pytest.mark.parametrize('dataset_n', [0, 1])
+    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
+    @pytest.mark.parametrize('threshold', [0., .5, 1.])
+    def test_too_few_datasets(self, sim_fun, dataset_n, k, threshold):
+        datasets = [[bitarray('01001011') * 8, bitarray('01001011' * 8)]
+                    for _ in range(dataset_n)]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
 
-if __name__ == "__main__":
-    unittest.main()
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    @pytest.mark.parametrize('p_arity', [3, 5])
+    @pytest.mark.parametrize('k', [None, 0, 1, 2])
+    @pytest.mark.parametrize('threshold', [0., .5, 1.])
+    def test_unsupported_p_arity(self, sim_fun, p_arity, k, threshold):
+        datasets = [[bitarray('01001011') * 8, bitarray('01001011' * 8)]
+                    for _ in range(p_arity)]
+        with pytest.raises(NotImplementedError):
+            sim_fun(datasets, threshold, k=k)
+    
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
+    @pytest.mark.parametrize('threshold', [0., .5, 1.])
+    def test_inconsistent_filter_length(self, sim_fun, k, threshold):
+        datasets = [[bitarray('01001011') * 8, bitarray('01001011') * 16],
+                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+
+        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
+                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+            
+        datasets = [[bitarray('01001011') * 8, bitarray('01001011') * 8],
+                    [bitarray('01001011') * 16, bitarray('01001011') * 8]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+            
+        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
+                    [bitarray('01001011') * 8, bitarray('01001011') * 16]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+            
+        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 8],
+                    [bitarray('01001011') * 16, bitarray('01001011') * 8]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+            
+        datasets = [[bitarray('01001011') * 16, bitarray('01001011') * 16],
+                    [bitarray('01001011') * 8, bitarray('01001011') * 8]]
+        with pytest.raises(ValueError):
+            sim_fun(datasets, threshold, k=k)
+
+    @pytest.mark.parametrize('k', [None, 0, 1, 2, 3, 5])
+    @pytest.mark.parametrize('threshold', [0., .5, 1.])
+    @pytest.mark.parametrize('bytes_n', [1, 7, 9, 15, 17, 23, 25])
+    def test_not_multiple_of_64(self, k, threshold, bytes_n):
+        datasets = [[bitarray('01001011') * bytes_n],
+                    [bitarray('01001011') * bytes_n]]
+        with pytest.raises(NotImplementedError):
+            similarities.dice_coefficient_accelerated(datasets, threshold, k=k)
+
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    @pytest.mark.parametrize('k', [None, 0, 1])
+    @pytest.mark.parametrize('threshold', [0., .5, 1.])
+    def test_empty(self, sim_fun, k, threshold):
+        datasets = [[], [bitarray('01001011') * 8]]
+        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
+        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
+        assert sims.typecode in FLOAT_ARRAY_TYPES
+        assert (rec_is0.typecode in UINT_ARRAY_TYPES
+                and rec_is1.typecode in UINT_ARRAY_TYPES)
+
+        datasets = [[bitarray('01001011') * 8], []]
+        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
+        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
+        assert sims.typecode in FLOAT_ARRAY_TYPES
+        assert (rec_is0.typecode in UINT_ARRAY_TYPES
+                and rec_is1.typecode in UINT_ARRAY_TYPES)
+
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    @pytest.mark.parametrize('k', [None, 0, 1])
+    @pytest.mark.parametrize('threshold', [0., .5])
+    def test_all_low(self, sim_fun, k, threshold):
+        datasets = [[bitarray('01001011') * 8],
+                    [bitarray('00000000') * 8]]
+        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
+        assert (len(sims) == len(rec_is0) == len(rec_is1)
+                == (1 if threshold == 0. and k != 0 else 0))
+        assert sims.typecode in FLOAT_ARRAY_TYPES
+        assert (rec_is0.typecode in UINT_ARRAY_TYPES
+                and rec_is1.typecode in UINT_ARRAY_TYPES)
+
+        datasets = [[bitarray('00000000') * 8],
+                    [bitarray('01001011') * 8]]
+        sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
+        assert (len(sims) == len(rec_is0) == len(rec_is1)
+                == (1 if threshold == 0. and k != 0 else 0))
+        assert sims.typecode in FLOAT_ARRAY_TYPES
+        assert (rec_is0.typecode in UINT_ARRAY_TYPES
+                and rec_is1.typecode in UINT_ARRAY_TYPES)
