@@ -472,8 +472,6 @@ extern "C"
 
             for (uint32_t j = 0; j < k; ++j) {
                 scores[j] = 0.0;
-            }
-            for (uint32_t j = 0; j < k; ++j) {
                 indices[j] = j;
             }
 
