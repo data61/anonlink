@@ -1,9 +1,8 @@
-from abc import ABCMeta, abstractmethod
 from itertools import chain, product, repeat
-from numbers import Integral, Real
+from numbers import Real
 from random import Random
-from typing import (Any, Callable, Generic, Hashable, Iterable, List,
-                    Optional, overload, Sequence, Tuple, TypeVar, Union)
+from typing import (Any, Callable, Hashable, Iterable,
+                    overload, Sequence, TypeVar)
 
 from bitarray import bitarray
 
