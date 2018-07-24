@@ -465,8 +465,18 @@ extern "C"
         node_queue top_k_scores(score_cmp(), std::move(vec));
 
         uint32_t count_one = _popcount_array(comp1, keywords);
-        if (count_one == 0)
-            return 0;
+        if (count_one == 0) {
+            if (threshold > 0) {
+                return 0;
+            }
+
+            for (uint32_t j = 0; j < k; ++j) {
+                scores[j] = 0.0;
+                indices[j] = j;
+            }
+
+            return static_cast<int>(k);
+        }
 
         uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
         if(threshold > 0) {
