@@ -1,5 +1,7 @@
 from array import array
 
+import pytest
+
 from anonlink.solving import greedy_solve
 
 def _zip_candidates(candidates):
@@ -66,6 +68,25 @@ def test_greedy_threeparty():
     result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0)},
                                {(0,1), (1,1), (2,1)}])
+    
+    candidates = [(1., (0, 0), (1, 0)),
+                  (1., (0, 0), (2, 0)),
+                  (1., (2, 0), (2, 1))]
+    result = greedy_solve(_zip_candidates(candidates))
+    _compare_matching(result, [{(0,0), (1,0)}, {(2,0), (2,1)}])
+    
+    candidates = [(1., (0, 0), (1, 0)),
+                  (1., (2, 0), (3, 0)),
+                  (1., (2, 0), (4, 0)),
+                  (1., (3, 0), (4, 0)),
+                  (1., (0, 0), (2, 0)),
+                  (1., (0, 0), (3, 0)),
+                  (1., (0, 0), (4, 0)),
+                  (1., (1, 0), (2, 0)),
+                  (1., (1, 0), (3, 0)),
+                  (1., (1, 0), (4, 0))]
+    result = greedy_solve(_zip_candidates(candidates))
+    _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0), (4,0)}])
 
 
 def test_greedy_fourparty():
@@ -77,3 +98,73 @@ def test_greedy_fourparty():
                   (.7, (1, 0), (2, 0))]
     result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0)}])
+
+
+def test_inconsistent_dataset_number():
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3]), array('I', [4])),
+        (array('I', [2]), array('I', [6]), array('I', [7])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+
+
+@pytest.mark.parametrize('datasets_n', [0, 1, 3, 5])
+def test_unsupported_shape(datasets_n):
+    candidates = (
+        array('d', [.5]),
+        tuple(array('I', [3]) for _ in range(datasets_n)),
+        tuple(array('I', [2]) for _ in range(datasets_n)))
+    with pytest.raises(NotImplementedError):
+        greedy_solve(candidates)
+
+
+def test_inconsistent_entry_number():
+    candidates = (
+        array('d', [.5, .3]),
+        (array('I', [3]), array('I', [4])),
+        (array('I', [2]), array('I', [6])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3, 3]), array('I', [4])),
+        (array('I', [2]), array('I', [6])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3, 3]), array('I', [4, 6])),
+        (array('I', [2]), array('I', [6])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3]), array('I', [4, 6])),
+        (array('I', [2]), array('I', [6])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3]), array('I', [4])),
+        (array('I', [2]), array('I', [6, 3])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3]), array('I', [4])),
+        (array('I', [2, 1]), array('I', [6, 3])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)
+    
+    candidates = (
+        array('d', [.5]),
+        (array('I', [3]), array('I', [4])),
+        (array('I', [2, 1]), array('I', [6])))
+    with pytest.raises(ValueError):
+        greedy_solve(candidates)

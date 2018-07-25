@@ -1,9 +1,8 @@
-from abc import ABCMeta, abstractmethod
 from itertools import chain, product, repeat
 from numbers import Real
 from random import Random
-from typing import (Any, Callable, Generic, Hashable, Iterable, List,
-                    Optional, overload, Sequence, Tuple, TypeVar, Union)
+from typing import (Any, Callable, Hashable, Iterable,
+                    overload, Sequence, TypeVar)
 
 from bitarray import bitarray
 
@@ -47,7 +46,7 @@ def block_and(*args) -> BlockingFunction[Record]:
         :return: The blocking function.
     """
     if len(args) == 0:
-        raise ValueError('at least one argument required')
+        raise TypeError('expected at least 1 argument, got 0')
     elif len(args) == 1:
         funcs = tuple(args[0])
     else:
@@ -87,7 +86,7 @@ def block_or(*args) -> BlockingFunction[Record]:
         :return: The blocking function.
     """
     if len(args) == 0:
-        raise ValueError('at least one argument required')
+        raise TypeError('expected at least 1 argument, got 0')
     elif len(args) == 1:
         funcs = tuple(args[0])
     else:
@@ -125,12 +124,12 @@ def bit_blocking(
         :return: The blocking function.
     """
     if g < 1:
-        msg = 'g is expected to be positive but is {}'.format(g)
+        msg = f'g is expected to be positive but is {g}'
         raise ValueError(msg)
     if r < 1:
-        msg = 'r is expected to be positive but is {}'.format(r)
+        msg = f'r is expected to be positive but is {r}'
         raise ValueError(msg)
-    
+
     hash_len: Optional[int] = None
     hash_indices: Optional[Sequence[Sequence[int]]] = None
 
@@ -160,7 +159,7 @@ def bit_blocking(
         assert hash_indices is not None
         for i, table_indices in enumerate(hash_indices):
             vals = map(hash_.__getitem__, table_indices)
-            
+
             # We need to turn this iterable of bools into something
             # hashable. An int will do just fine.
             table_block = sum(b << j for j, b in enumerate(vals))
@@ -187,6 +186,9 @@ def continuous_blocking(
 
         :return: The blocking function.
     """
+    if radius <= 0:
+        raise ValueError(f'radius should be positive, got {radius}')
+
     def continuous_blocking_inner(
         dataset_index: int,
         record_index: int,
@@ -219,5 +221,5 @@ def list_blocking(
         hash_: Record
     ) -> Iterable[Hashable]:
         return (source[dataset_index][record_index],)
-    
+
     return list_blocking_inner

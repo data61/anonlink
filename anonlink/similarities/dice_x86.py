@@ -37,7 +37,7 @@ def dice_coefficient_accelerated(
     if n_datasets < 2:
         raise ValueError(f'not enough datasets (expected 2, got {n_datasets})')
     elif n_datasets > 2:
-        raise ValueError(f'too many datasets (expected 2, got {n_datasets})')
+        raise NotImplementedError(f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
     result_sims: FloatArrayType = array('d')
@@ -61,9 +61,9 @@ def dice_coefficient_accelerated(
             or any(len(f) != filter_bits for f in filters1)):
         raise ValueError('inconsistent filter length')
     if filter_bits % 64:
-        msg = (f'invalid filter length (expected multiple of 64, got '
-               f'{filter_bits})')
-        raise ValueError(msg)
+        msg = (f'only filters whose length is a multiple of 64 are currently '
+               f'supported (got filter with length ({filter_bits})')
+        raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
 
     # An array of the *one* filter
