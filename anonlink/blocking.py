@@ -142,8 +142,9 @@ def bit_blocking(
         msg = f'r is expected to be positive but is {r}'
         raise ValueError(msg)
 
-    hash_len: Optional[int] = None
-    hash_indices: Optional[_typing.Sequence[_typing.Sequence[int]]] = None
+    hash_len: _typing.Optional[int] = None
+    hash_indices: _typing.Optional[_typing.Sequence[_typing.Sequence[int]]] \
+        = None
 
     def bit_blocking_inner(
         dataset_index: int,
