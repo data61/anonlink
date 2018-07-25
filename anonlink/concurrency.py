@@ -1,3 +1,5 @@
+"""Helpers for concurrency."""
+
 import itertools as _itertools
 import math as _math
 import numbers as _numbers
@@ -5,14 +7,12 @@ import typing as _typing
 
 import mypy_extensions as _mypy_extensions
 
-
 # Future: There may be better ways of chunking. Hamish suggests putting
 # a better guarantee on the maximum size of a chunk. This may help with
 # optimisation (e.g., set chunk size to be the size of a page,
 # eliminating page faults).
 # As the function currently makes no guarantees, any such changes would
 # be backwards compatible.
-
 
 ChunkInfo = _mypy_extensions.TypedDict(
     'ChunkInfo',
@@ -53,10 +53,10 @@ def split_to_chunks(
     "ranges" is a length 2 list of ranges within those datasets. A range
     is a length 2 list [a, b] representing range(a, b).
 
-    For example, {"datasetIndices": [2, 4], "ranges": [[3, 21], [18, 20]]}
-    means that this chunk compares (0-indexed) datasets 2 and 4. We are
-    looking at elements 3-20 (inclusive) of dataset 2 and elements 18
-    and 19 of dataset 4.
+    For example, {"datasetIndices": [2, 4], "ranges": [[3, 21], [18,
+    20]]} means that this chunk compares (0-indexed) datasets 2 and 4.
+    We are looking at elements 3-20 (inclusive) of dataset 2 and
+    elements 18 and 19 of dataset 4.
 
     The chunks are always JSON serialisable.
 

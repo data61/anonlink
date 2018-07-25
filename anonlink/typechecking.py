@@ -1,3 +1,5 @@
+"""Types for typechecking. Aimed at Mypy."""
+
 import array as _array
 import numbers as _numbers
 import typing as _typing

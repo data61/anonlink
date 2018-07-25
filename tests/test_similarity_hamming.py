@@ -4,7 +4,7 @@ import random
 import pytest
 from bitarray import bitarray
 
-from anonlink.similarities.hamming import _hamming_sim
+from anonlink.similarities._hamming import _hamming_sim
 from anonlink.similarities import hamming_similarity
 
 

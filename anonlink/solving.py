@@ -1,37 +1,40 @@
-import collections
-from itertools import repeat
-from typing import Counter, DefaultDict, Dict, Iterable, List, Sequence, Tuple
+"""Solvers.
 
-import numpy as np
+Solvers accept candidate pairs and return a concrete matching. In other
+words, they accept a similarity for every candidate pair and turn it
+into a boolean for every candidate pair.
+"""
 
-from .typechecking import CandidatePairs
+import collections as _collections
+import itertools as _itertools
+import typing as _typing
+
+import anonlink.typechecking as _typechecking
 
 
 def greedy_solve(
-    candidates: CandidatePairs
-) -> Sequence[Sequence[Tuple[int, int]]]:
+    candidates: _typechecking.CandidatePairs
+) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
-        We assign each record to exactly one 'group' of records that are
-        pairwise matched together. We iterate over `candidates` in order
-        of decreasing similarity. When we encounter a pair of records
-        (let s be their similarity) that do not already belong to the
-        same group, we merge their groups iff (a) every pair of records
-        is permitted to be matched, and (b) the similarity of every pair
-        of records is above s. The latter requirement is only for
-        tie-breaking: we prefer groups whose minimum pairwise similarity
-        is highest. Any group merge rejected due to requirement (b) will
-        be revisited later with that requirement relaxed.
+    We assign each record to exactly one 'group' of records that are
+    pairwise matched together. We iterate over `candidates` in order of
+    decreasing similarity. When we encounter a pair of records (let s be
+    their similarity) that do not already belong to the same group, we
+    merge their groups iff (a) every pair of records is permitted to be
+    matched, and (b) the similarity of every pair of records is above s.
+    The latter requirement is only for tie-breaking: we prefer groups
+    whose minimum pairwise similarity is highest. Any group merge
+    rejected due to requirement (b) will be revisited later with that
+    requirement relaxed.
 
-        :param tuple candidates: Candidates, as returned by
-            `find_candidates`.
-        :param float threshold: The similarity threshold. This is
-            ignored in this implementation.
+    :param tuple candidates: Candidates, as returned by
+        `find_candidates`.
 
-        :return: An iterable of groups. Each group is an iterable of
-            records. Two records are in the same group iff they
-            represent the same entity. Here, a record is a two-tuple of
-            dataset index and record index.
+    :return: An iterable of groups. Each group is an iterable of
+        records. Two records are in the same group iff they represent
+        the same entity. Here, a record is a two-tuple of dataset index
+        and record index.
     """
     sims, dset_is, rec_is = candidates
     if len(dset_is) != len(rec_is):
@@ -47,7 +50,8 @@ def greedy_solve(
         raise ValueError('inconsistent shape of index arrays')
 
     # Map (dataset index, record index) to its group.
-    matches: Dict[Tuple[int, int], List[Tuple[int, int]]] = {}
+    matches: _typing.Dict[_typing.Tuple[int, int],
+                          _typing.List[_typing.Tuple[int, int]]] = {}
 
     # Each group is a set of records. We merge two groups when 
     # pair of their records is matchable. A pair is matchable if we have
@@ -55,8 +59,8 @@ def greedy_solve(
     # This is a sparse matrix: the default number of matchable pairs is
     # 0. Since the groups themselves are not hashable, we use their id
     # as the key.
-    matchable_pairs: DefaultDict[int, Counter[int]] = collections.defaultdict(
-        collections.Counter)
+    matchable_pairs: _typing.DefaultDict[int, _typing.Counter[int]] \
+        = _collections.defaultdict(_collections.Counter)
 
     for dset_i0, dset_i1, rec_i0, rec_i1 in zip(
             dset_is0, dset_is1, rec_is0, rec_is1):
@@ -78,14 +82,14 @@ def greedy_solve(
             # matchable.
             if (matchable_pairs[i0_mid][i1_mid] + 1
                 == len(i0_matches) * len(i1_matches)):
-                # Optimisation: Make sure we always extend the bigger group.
+                # Optimise by always extending the bigger group.
                 if len(i0_matches) < len(i1_matches):
                     i0, i1 = i1, i0
                     i0_mid, i1_mid = i1_mid, i0_mid
                     i0_matches, i1_matches = i1_matches, i0_matches
                 # Merge groups.
                 i0_matches.extend(i1_matches)
-                matches.update(zip(i1_matches, repeat(i0_matches)))
+                matches.update(zip(i1_matches, _itertools.repeat(i0_matches)))
                 
                 # Update matchable pairs.
                 del matchable_pairs[i0_mid][i1_mid]
