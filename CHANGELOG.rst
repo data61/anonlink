@@ -1,3 +1,10 @@
+0.8.2
+-----
+
+Fix discrepancies between Python and C++ versions #102
+Utility added to ``anonlink/concurrency.py`` help with chunking.
+Better Github status messages posted by jenkins.
+
 0.8.1
 -----
 
