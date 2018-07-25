@@ -1,12 +1,21 @@
 from array import array
-from itertools import repeat
+from itertools import chain, groupby, repeat
 from numbers import Real
 from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
-from anonlink.typechecking import FloatArrayType, IntArrayType
 from anonlink._entitymatcher import ffi, lib
+from anonlink.typechecking import FloatArrayType, IntArrayType
+
+__all__ = ['dice_coefficient_accelerated']
+
+
+def _all_equal(iterable):
+    # https://docs.python.org/3/library/itertools.html#itertools-recipes
+    """Return True if all the elements are equal to each other."""
+    g = groupby(iterable)
+    return next(g, True) and not next(g, False)
 
 
 def dice_coefficient_accelerated(
@@ -18,8 +27,8 @@ def dice_coefficient_accelerated(
 
     This version uses x86 popcount instructions.
 
-    We assume all filters are the same length, being a multiple of 64
-    bits.
+    We assume all filters are the same length and that this length is a
+    multiple of 64 bits.
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
         sequence of bitarrays.
@@ -37,7 +46,8 @@ def dice_coefficient_accelerated(
     if n_datasets < 2:
         raise ValueError(f'not enough datasets (expected 2, got {n_datasets})')
     elif n_datasets > 2:
-        raise NotImplementedError(f'too many datasets (expected 2, got {n_datasets})')
+        raise NotImplementedError(
+            f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
     result_sims: FloatArrayType = array('d')
@@ -56,32 +66,34 @@ def dice_coefficient_accelerated(
     if k is None or k > length_f1:
         k = length_f1
 
-    filter_bits = len(filters0[0])
-    if (any(len(f) != filter_bits for f in filters0)
-            or any(len(f) != filter_bits for f in filters1)):
+    if not _all_equal(map(len, chain(filters0, filters1))):
         raise ValueError('inconsistent filter length')
+    filter_bits = len(filters0[0])
     if filter_bits % 64:
         msg = (f'only filters whose length is a multiple of 64 are currently '
                f'supported (got filter with length ({filter_bits})')
         raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
 
-    # An array of the *one* filter
-    clist0 = (ffi.new(f"char[{filter_bytes}]", f.tobytes()) for f in filters0)
+    # Array of the one filter from filters0 at a time.
+    carr0 = ffi.new('char[]', filter_bytes)
+
+    # Array of all filters from filters1.
     carr1 = ffi.new(f"char[{filter_bytes * length_f1}]",
                     b''.join(f.tobytes() for f in filters1))
+
     c_popcounts = ffi.new(f"uint32_t[{length_f1}]",
-                          [f.count() for f in filters1])
+                          tuple(f.count() for f in filters1))
 
     # easier to do all buffer allocations in Python and pass them to C,
     # even for output-only arguments
     c_scores = ffi.new("double[]", k)
     c_indices = ffi.new("int[]", k)
 
-    for i, f0 in enumerate(clist0):
-        assert len(f0) == filter_bytes
+    for i, f0 in enumerate(filters0):
+        carr0[0:filter_bytes] = f0.tobytes()
         matches = lib.match_one_against_many_dice_k_top(
-            f0,
+            carr0,
             carr1,
             c_popcounts,
             length_f1,
@@ -93,9 +105,9 @@ def dice_coefficient_accelerated(
 
         if matches < 0:
             raise RuntimeError('bad key length')
-        elif matches > 0:  # TODO: Things may be faster without this check
-            result_sims.extend(c_scores[0:matches])
-            result_indices0.extend(repeat(i, matches))
-            result_indices1.extend(c_indices[0:matches])
+
+        result_sims.extend(c_scores[0:matches])
+        result_indices0.extend(repeat(i, matches))
+        result_indices1.extend(c_indices[0:matches])
 
     return result_sims, (result_indices0, result_indices1)
