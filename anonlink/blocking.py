@@ -33,7 +33,7 @@ def _evalf(__funcs : _typing.Iterable[_typing.Callable[..., _T]],
     return (f(*args, **kwargs) for f in __funcs)
 
 
-# http://mypy.readthedocs.io/en/latest/function__typing.overloading.html
+# https://mypy.readthedocs.io/en/stable/more_types.html#function-overloading
 @_typing.overload
 def block_and(
     __funcs: _typing.Iterable[
