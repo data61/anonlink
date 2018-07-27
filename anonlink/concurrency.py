@@ -53,10 +53,10 @@ def split_to_chunks(
     "ranges" is a length 2 list of ranges within those datasets. A range
     is a length 2 list [a, b] representing range(a, b).
 
-    For example, {"datasetIndices": [2, 4], "ranges": [[3, 21], [18,
-    20]]} means that this chunk compares (0-indexed) datasets 2 and 4.
-    We are looking at elements 3-20 (inclusive) of dataset 2 and
-    elements 18 and 19 of dataset 4.
+    Example: {"datasetIndices": [2, 4], "ranges": [[3, 21], [18, 20]]}
+    means that this chunk compares (0-indexed) datasets 2 and 4. We are
+    looking at elements 3-20 (inclusive) of dataset 2 and elements 18
+    and 19 of dataset 4.
 
     The chunks are always JSON serialisable.
 

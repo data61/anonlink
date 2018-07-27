@@ -6,8 +6,8 @@ only comparing records that are more likely to be a match. Blocking
 generally reduces recall, but does not reduce precision.
 
 Records are split into discrete buckets. A record may belong to multiple
-buckets. Two records are compared by a similarity function if they share
-at least one bucket.
+buckets. Generally, two records are compared by a similarity function if
+they share at least one bucket.
 """
 
 import itertools as _itertools
@@ -24,11 +24,10 @@ _T = _typing.TypeVar('_T')
 def _evalf(__funcs : _typing.Iterable[_typing.Callable[..., _T]],
            *args,
            **kwargs) -> _typing.Iterable[_T]:
-    """ Apply a number of functions to the same arguments.
+    """Apply a number of functions to the same arguments.
 
-        Think of this as reverse map. Instead of having one function and
-        multiple data, you have multiple functions and one piece of
-        data.
+    Think of this as reverse map. Instead of having one function and
+    multiple data, you have multiple functions and one piece of data.
     """
     return (f(*args, **kwargs) for f in __funcs)
 

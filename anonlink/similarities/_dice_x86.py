@@ -75,7 +75,8 @@ def dice_coefficient_accelerated(
         raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
 
-    # Array of the one filter from filters0 at a time.
+    # Space for one filter. We will fill it with one filter from
+    # filters0 at a time.
     carr0 = ffi.new('char[]', filter_bytes)
 
     # Array of all filters from filters1.

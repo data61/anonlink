@@ -75,10 +75,11 @@ def find_candidate_pairs(
         have at least one block ID in common.
 
     :return: A 3-tuple `(similarity, dataset_i, record_i)`. `dataset_i`
-        and `record_i` are sequences of sequences. `similarity` as well
-        as every sequence in `dataset_i` and in `record_i` as well as
-        are of equal length. Currently `dataset_i` and `record_i` have
-        length 2, but this may be changed in the future.
+        and `record_i` are sequences of sequences. Every sequence in
+        `dataset_i` has the same length as `similarity`; also, every
+        sequence in `record_i` has the same length as `similarity`.
+        Currently `dataset_i` and `record_i` have length 2, but this may
+        be changed in the future.
             Every valid index `i` corresponds to one candidate match.
         `dataset[0][i]` is the index of the dataset of the first record
         in the pair; `record[0][i]` is this record's index in its
