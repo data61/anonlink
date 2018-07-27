@@ -1,10 +1,16 @@
+"""Serialisation of candidate pairs.
+
+The file format is not fixed and is subject to change. Backwards
+compatibility will be attempted, but not guaranteed.
+"""
+
 import array as _array
 import heapq as _heapq
 import io as _io
 import struct as _struct
 import typing as _typing
 
-from . import typechecking as _typechecking
+import anonlink.typechecking as _typechecking
 
 # FILE FORMAT
 #   This is subject to change.
@@ -48,6 +54,7 @@ _HEADER_STRUCT = _struct.Struct('<BBBB')
 
 _CandidatePair = _typing.Tuple[float, int, int, int, int]
 _CandidatePairIter = _typing.Iterable[_CandidatePair]
+
 
 def _entry_struct(
     sim_t_size: int,

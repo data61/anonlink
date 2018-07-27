@@ -1,12 +1,13 @@
 from array import array
 from itertools import repeat
 from numbers import Real
-from operator import itemgetter
 from typing import Optional, Sequence, Tuple
+
+from bitarray import bitarray
 
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
-from bitarray import bitarray
+__all__ = ['dice_coefficient_python']
 
 
 def dice_coefficient_python(
@@ -35,7 +36,8 @@ def dice_coefficient_python(
     if n_datasets < 2:
         raise ValueError(f'not enough datasets (expected 2, got {n_datasets})')
     elif n_datasets > 2:
-        raise NotImplementedError(f'too many datasets (expected 2, got {n_datasets})')
+        raise NotImplementedError(
+            f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
     result_sims: FloatArrayType = array('d')
@@ -57,7 +59,7 @@ def dice_coefficient_python(
             coeffs = repeat(0., len(filters1))
         
         cands = filter(lambda c: c[1] >= threshold, enumerate(coeffs))
-        top_k = sorted(cands, key=itemgetter(1), reverse=True)[:k]
+        top_k = sorted(cands, key=lambda x: -x[1])[:k]
 
         result_sims.extend(sim for _, sim in top_k)
         result_indices0.extend(repeat(i, len(top_k)))

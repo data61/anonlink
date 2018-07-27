@@ -1,25 +1,21 @@
 import collections
-import functools
 import heapq
-import itertools
-import operator
 from array import array
-from typing import (cast, Counter, DefaultDict, Dict, Iterable,
+from typing import (Counter, DefaultDict, Iterable,
                     List, Optional, Sequence, Tuple)
 
-import numpy as np
 from bitarray import bitarray
 
 from anonlink.typechecking import Dataset, FloatArrayType, IntArrayType
 
+__all__ = ['hamming_similarity']
 
 _Similarity = Tuple[float, int, int]
 
 
 def _hamming_sim(clk1: bitarray, clk2: bitarray) -> float:
-    assert len(clk1) == len(clk2)
-    assert len(clk1) != 0
-    return 1 - (clk1 ^ clk2).count() / len(clk1)
+    n = len(clk1)
+    return (n - (clk1 ^ clk2).count()) / n
 
 
 def _hamming_sims_gt_threshold(
@@ -40,7 +36,8 @@ def _hamming_similarity_k(
     k: int
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
     # Dictionaries support sparsity, but these could also be list...
-    candidates: Tuple[DefaultDict[int, List[_Similarity]], ...] = tuple(collections.defaultdict(list) for _ in datasets)
+    candidates: Tuple[DefaultDict[int, List[_Similarity]], ...] \
+        = tuple(collections.defaultdict(list) for _ in datasets)
 
     for sim, i0, i1 in _hamming_sims_gt_threshold(datasets, threshold):
         c = sim, i0, i1
@@ -91,16 +88,25 @@ def hamming_similarity(
     threshold: float,
     k: Optional[int]
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
+    """Find Hamming similarities of CLKs.
+
+    A Hamming similarity of two binary strings is defined as
+    1 - (Hamming distance) / (string length).
+
+    :param datasets: A length 2 sequence of datasets. A dataset is a
+        sequence of bitarrays.
+    :param threshold: Pairs whose similarity is above this value may be
+        a match.
+    :param k: We only return the top k candidates for every record. Set
+        to None to return all candidates.
+    
+    :return: A 2-tuple of similarity scores and indices. The similarity
+        scores are an array of floating-point values. The indices are a
+        2-tuple of arrays of integers.
+    """
     if len(datasets) != 2:
         msg = 'only binary matching is currently supported'
         raise NotImplementedError(msg)
-    
-    if not datasets[0] or not datasets[1]:
-        # Empty result of correct shape
-        sims: FloatArrayType = array('d')
-        indices0: IntArrayType = array('I')
-        indices1: IntArrayType = array('I')
-        return sims, (indices0, indices1)
 
     if k is None:
         sims, indices = _hamming_similarity_no_k(datasets, threshold)
