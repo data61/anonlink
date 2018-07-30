@@ -5,8 +5,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 requirements = [
-        "bitarray==0.8.1",
-        "networkx==1.11",
+        "bitarray>=0.8.1",
+        "networkx>=1.11",
         "cffi>=1.7",
         "clkhash>=0.10"
     ]
