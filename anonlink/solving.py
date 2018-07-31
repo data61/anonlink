@@ -13,7 +13,9 @@ import anonlink.typechecking as _typechecking
 
 
 def greedy_solve(
-    candidates: _typechecking.CandidatePairs
+    candidates: _typechecking.CandidatePairs,
+    *,
+    agreement_threshold=.5
 ) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
@@ -74,6 +76,10 @@ def greedy_solve(
             i0_mid = id(i0_matches)
             i1_mid = id(i1_matches)
 
+            if i0_mid == i1_mid:
+                # Already matched.
+                continue
+
             # Check if mergeable. matchable_pairs[i0_mid][i1_mid] is the
             # number of pairs they have in common not including the
             # current pair--we add one to include it. The total number
@@ -81,7 +87,7 @@ def greedy_solve(
             # is the number of matchable pairs, then every pair is
             # matchable.
             if (matchable_pairs[i0_mid][i1_mid] + 1
-                == len(i0_matches) * len(i1_matches)):
+                >= len(i0_matches) * len(i1_matches) * agreement_threshold):
                 # Optimise by always extending the bigger group.
                 if len(i0_matches) < len(i1_matches):
                     i0, i1 = i1, i0
