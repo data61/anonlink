@@ -7,7 +7,6 @@ into a boolean for every candidate pair.
 
 import collections as _collections
 import itertools as _itertools
-import numbers as _numbers
 import typing as _typing
 
 import anonlink.typechecking as _typechecking
