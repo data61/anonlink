@@ -7,6 +7,7 @@ into a boolean for every candidate pair.
 
 import collections as _collections
 import itertools as _itertools
+import numbers as _numbers
 import typing as _typing
 
 import anonlink.typechecking as _typechecking
@@ -15,7 +16,7 @@ import anonlink.typechecking as _typechecking
 def greedy_solve(
     candidates: _typechecking.CandidatePairs,
     *,
-    agreement_threshold=.5
+    agreement_threshold: float = .5
 ) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
 
