@@ -23,10 +23,10 @@ def greedy_solve(
     pairwise matched together. We iterate over `candidates` in order of
     decreasing similarity. When we encounter a pair of records (let s be
     their similarity) that do not already belong to the same group, we
-    merge their groups iff (a) the proportion of pairs of the groups'
-    records that are permitted to be matched is at least
-    `agreement_threshold`, and (b) the proportion of pairs of the
-    groups' records whose similarity is above s is at least
+    merge their groups iff (a) the proportion of pairs that are
+    permitted to be matched in the groups' records is at least
+    `agreement_threshold`, and (b) the proportion of pairs whose
+    similarity is above s in the groups' records is at least
     `agreement_threshold`. The latter requirement is only for tie-
     -breaking: we prefer groups whose minimum pairwise similarity is
     highest. Any group merge rejected due to requirement (b) will be
