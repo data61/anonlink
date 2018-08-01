@@ -23,15 +23,37 @@ def greedy_solve(
     pairwise matched together. We iterate over `candidates` in order of
     decreasing similarity. When we encounter a pair of records (let s be
     their similarity) that do not already belong to the same group, we
-    merge their groups iff (a) every pair of records is permitted to be
-    matched, and (b) the similarity of every pair of records is above s.
-    The latter requirement is only for tie-breaking: we prefer groups
-    whose minimum pairwise similarity is highest. Any group merge
-    rejected due to requirement (b) will be revisited later with that
-    requirement relaxed.
+    merge their groups iff (a) a proportion of pair of records that are
+    permitted to be matched is at least `agreement_threshold`, and (b)
+    the proportion of pairs of records whose similarity is above s is at
+    least `agreement_threshold`. The latter requirement is only for tie-
+    -breaking: we prefer groups whose minimum pairwise similarity is
+    highest. Any group merge rejected due to requirement (b) will be
+    revisited later with that requirement relaxed.
 
     :param tuple candidates: Candidates, as returned by
         `find_candidates`.
+    :param float agreement_threshold: Proportion of agreement between
+        groups required to merge them. In (0, 1].
+            When considering whether to merge two groups, we compute the
+        groups' Cartesian product. We count the pairs in that product
+        whose similarity is above the threshold. We merge the groups if
+        our count is at least `agreement_threshold` of the total number
+        of pairs between the two groups.
+            For example, suppose that we have two groups of records: 
+        {A, B} and {C, D}. Let A-C, A-D and B-C be candidate pairs.
+        Setting `agreement_threshold` to any value not greater than .75
+        will permit the two groups to be merged since they share three
+        candidate pairs out of all four pairs. Even though the
+        similarity of B-D is below the threshold, there is enough
+        evidence in the other pairs to conclude that it must be a match.
+        The `agreement_threshold` can be thought of as the inverse of
+        the weight we place on that evidence.
+            Higher values increase precision, but decrease recall.
+            An `agreement_threshold` lower than one permits two records
+        to be matched without having a corresponding candidate pair. Set
+        it to 1.0 to ensure that two records will only be matched if
+        their similarity is above the threshold.
 
     :return: An iterable of groups. Each group is an iterable of
         records. Two records are in the same group iff they represent
