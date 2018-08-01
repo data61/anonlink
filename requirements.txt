@@ -3,5 +3,6 @@ networkx==1.11
 cffi>=1.7
 pytest>=3.4
 pytest-cov>=2.5
-clkhash==0.10.1
+clkhash==0.11.0
+numpy==1.14.3
 mypy-extensions==0.3.0

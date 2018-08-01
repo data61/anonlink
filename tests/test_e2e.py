@@ -18,9 +18,9 @@ def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
     s1, s2 = nl.generate_subsets(samples, proportion)
 
-    keys = generate_key_lists(('test1', 'test2'), len(nl.schema))
-    filters1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), keys)
-    filters2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), keys)
+    keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+    filters1 = list(bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
+    filters2 = list(bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
 
     return (s1, s2, filters1, filters2)
 
@@ -161,9 +161,9 @@ class TestEntityMatchTopK(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(150, 0.8)
         keys = ('test1', 'test2')
-        key_lists = generate_key_lists(keys, len(nl.schema))
-        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), key_lists)
-        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), key_lists)
+        key_lists = generate_key_lists(keys, len(nl.schema_types))
+        f1 = tuple(bloomfilter.stream_bloom_filters(s1, key_lists, nl.SCHEMA))
+        f2 = tuple(bloomfilter.stream_bloom_filters(s2, key_lists, nl.SCHEMA))
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
@@ -176,9 +176,9 @@ class TestEntityMatchTopK(unittest.TestCase):
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(150, 0.8)
         keys = ('test1', 'test2')
-        key_lists = generate_key_lists(keys, len(nl.schema))
-        f1 = bloomfilter.calculate_bloom_filters(s1, schema.get_schema_types(nl.schema), key_lists)
-        f2 = bloomfilter.calculate_bloom_filters(s2, schema.get_schema_types(nl.schema), key_lists)
+        key_lists = generate_key_lists(keys, len(nl.schema_types))
+        f1 = tuple(bloomfilter.stream_bloom_filters(s1, key_lists, nl.SCHEMA))
+        f2 = tuple(bloomfilter.stream_bloom_filters(s2, key_lists, nl.SCHEMA))
 
         threshold = 0.8
         similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
