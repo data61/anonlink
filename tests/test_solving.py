@@ -99,6 +99,15 @@ def test_greedy_fourparty():
     result = greedy_solve(_zip_candidates(candidates))
     _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0)}])
 
+    candidates = [(.9, (0, 0), (1, 0)),
+                  (.8, (1, 0), (3, 0)),
+                  (.7, (2, 0), (3, 0)),
+                  (.6, (0, 0), (2, 0)),
+                  (.5, (0, 0), (3, 0)),
+                  (.4, (0, 0), (1, 1))]
+    result = greedy_solve(_zip_candidates(candidates))
+    _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0)}])
+
 
 def test_inconsistent_dataset_number():
     candidates = (
