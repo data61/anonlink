@@ -3,11 +3,15 @@ from itertools import repeat
 from numbers import Real
 from typing import Optional, Sequence, Tuple
 
+import numpy as np
 from bitarray import bitarray
 
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_python']
+
+_SIM_ARRAY_TYPE = 'd'
+_INDEX_ARRAY_TYPE = 'I'
 
 
 def dice_coefficient_python(
@@ -40,9 +44,9 @@ def dice_coefficient_python(
             f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
-    result_sims: FloatArrayType = array('d')
-    result_indices0: IntArrayType = array('I')
-    result_indices1: IntArrayType = array('I')
+    result_sims: FloatArrayType = array(_SIM_ARRAY_TYPE)
+    result_indices0: IntArrayType = array(_INDEX_ARRAY_TYPE)
+    result_indices1: IntArrayType = array(_INDEX_ARRAY_TYPE)
 
     if not filters0 or not filters1:
         # Empty result of the correct type.
@@ -64,5 +68,19 @@ def dice_coefficient_python(
         result_sims.extend(sim for _, sim in top_k)
         result_indices0.extend(repeat(i, len(top_k)))
         result_indices1.extend(j for j, _ in top_k)
+
+    np_sims = np.frombuffer(result_sims, dtype=_SIM_ARRAY_TYPE)
+    np_indices0 = np.frombuffer(result_indices0, dtype=_INDEX_ARRAY_TYPE)
+    np_indices1 = np.frombuffer(result_indices1, dtype=_INDEX_ARRAY_TYPE)
+    
+    np.negative(np_sims, out=np_sims)  # Sort in reverse.
+    # Mergesort is stable. We need that for correct tiebreaking.
+    order = np.argsort(np_sims, kind='mergesort')
+    np.negative(np_sims, out=np_sims)
+
+    # This modifies the original arrays since they share a buffer.
+    np_sims[:] = np_sims[order]
+    np_indices0[:] = np_indices0[order]
+    np_indices1[:] = np_indices1[order]
     
     return result_sims, (result_indices0, result_indices1)
