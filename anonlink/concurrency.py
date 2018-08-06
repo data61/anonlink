@@ -1,11 +1,15 @@
 """Helpers for concurrency."""
 
+import array as _array
 import itertools as _itertools
 import math as _math
 import numbers as _numbers
 import typing as _typing
 
 import mypy_extensions as _mypy_extensions
+import numpy as _np
+
+import anonlink.typechecking as _typechecking
 
 # Future: There may be better ways of chunking. Hamish suggests putting
 # a better guarantee on the maximum size of a chunk. This may help with
@@ -14,10 +18,11 @@ import mypy_extensions as _mypy_extensions
 # As the function currently makes no guarantees, any such changes would
 # be backwards compatible.
 
-ChunkInfo = _mypy_extensions.TypedDict(
-    'ChunkInfo',
-    {'datasetIndices': _typing.List[int],
-     'ranges': _typing.List[_typing.List[int]]})
+DatasetChunkInfo = _mypy_extensions.TypedDict(
+    'DatasetChunkInfo',
+    {'datasetIndex': int,
+     'range': _typing.List[int]})
+ChunkInfo = _typing.List[DatasetChunkInfo]
 
 
 def _split_points(size: int, chunks: int) -> _typing.Iterator[int]:
@@ -86,3 +91,45 @@ def split_to_chunks(
                 _chunks_1d(size0, chunks0), _chunks_1d(size1, chunks1)):
             yield [{'datasetIndex': i0, 'range': c0},
                    {'datasetIndex': i1, 'range': c1}]
+
+
+def _get_dataset_indices(dataset_chunk, size):
+    index = dataset_chunk['datasetIndex']
+    return _array.array('I', (index,)) * size
+
+
+def _offset_record_indices(dataset_chunk, rec_is):
+    a, _ = dataset_chunk['range']
+    np_rec_is = _np.frombuffer(rec_is, dtype=rec_is.typecode)
+    np_rec_is += a
+
+
+def process_chunk(
+    chunk: ChunkInfo,
+    datasets: _typing.Sequence[_typechecking.Dataset],
+    similarity_f: _typechecking.SimilarityFunction,
+    threshold: _numbers.Real,
+    k: _typing.Optional[_numbers.Integral] = None
+) -> _typechecking.CandidatePairs:
+    if len(chunk) != len(datasets):
+        raise ValueError(
+            f'number of datasets does not match chunk (expected {len(chunk)}, '
+            f'got {len(datasets)})')
+    for i, dataset_chunk, dataset_records in zip(
+                _itertools.count(), chunk, datasets):
+        a, b = dataset_chunk['range']
+        if len(dataset_records) != b - a:
+            raise ValueError(
+                f'size of dataset at index {i} does not match chunk (expected '
+                f'{b - a}, got {len(dataset_records)})')
+
+    sims, (rec_is0, rec_is1) = similarity_f(datasets, threshold, k=k)
+    assert len(sims) == len(rec_is0) == len(rec_is1)
+
+    dset_is0 = _get_dataset_indices(chunk[0], len(sims))
+    _offset_record_indices(chunk[0], rec_is0)
+    
+    dset_is1 = _get_dataset_indices(chunk[1], len(sims))
+    _offset_record_indices(chunk[1], rec_is1)
+
+    return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
