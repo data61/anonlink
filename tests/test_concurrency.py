@@ -21,10 +21,12 @@ def test_chunk_size(datasets, chunk_size_aim):
                                          dataset_sizes=datasets)
     for chunk in chunks:
         size = 1
-        i0, i1 = chunk['datasetIndices']
-        for a, b in chunk['ranges']:
+        for source in chunk:
+            a, b = source['range']
             assert a <= b
             size *= b - a
+        i0 = chunk[0]['datasetIndex']
+        i1 = chunk[1]['datasetIndex']
         assert (chunk_size_aim / 4 < size
                 or 4 * chunk_size_aim > datasets[i0] * datasets[i1])
         assert size < chunk_size_aim * 4
@@ -41,8 +43,10 @@ def test_comparison_coverage(datasets, chunk_size_aim):
     chunks = concurrency.split_to_chunks(chunk_size_aim,
                                          dataset_sizes=datasets)
     for chunk in chunks:
-        i0, i1 = chunk['datasetIndices']
-        r0, r1 = chunk['ranges']
+        i0 = chunk[0]['datasetIndex']
+        i1 = chunk[1]['datasetIndex']
+        r0 = chunk[0]['range']
+        r1 = chunk[1]['range']
         for j0, j1 in itertools.product(range(*r0), range(*r1)):
             # This will raise KeyError if we have duplicates
             all_comparisons.remove((i0, i1, j0, j1))
