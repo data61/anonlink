@@ -47,13 +47,14 @@ def split_to_chunks(
 ) -> _typing.Iterable[ChunkInfo]:
     """Split datasets into chunks for parallel processing.
 
-    Resulting chunks are dictionaries with two keys: "datasetIndices"
-    and "ranges". The value for "datasetIndices" is a length 2 list of
-    the two datasets that we are comparing in this chunk. The value for
-    "ranges" is a length 2 list of ranges within those datasets. A range
-    is a length 2 list [a, b] representing range(a, b).
+    Resulting chunks are length 2 list of dictionaries. Each dictionary
+    represents one data source for the chunk: it has a 'datasetIndex'
+    key which maps to the index of the dataset as an integer, and it has
+    a 'range' key mapping to the range of records within this dataset. A
+    range is a length 2 list [a, b] representing range(a, b).
 
-    Example: {"datasetIndices": [2, 4], "ranges": [[3, 21], [18, 20]]}
+    Example: [{"datasetIndex": 2, "range": [3, 21]},
+              {"datasetIndex": 4, "range": [18, 20]}]
     means that this chunk compares (0-indexed) datasets 2 and 4. We are
     looking at elements 3-20 (inclusive) of dataset 2 and elements 18
     and 19 of dataset 4.
@@ -83,4 +84,5 @@ def split_to_chunks(
         chunks1 = round(size1 * chunk_size0 / chunk_size_aim_float) or 1
         for c0, c1 in _itertools.product(
                 _chunks_1d(size0, chunks0), _chunks_1d(size1, chunks1)):
-            yield {'datasetIndices': [i0, i1], 'ranges': [c0, c1]}
+            yield [{'datasetIndex': i0, 'range': c0},
+                   {'datasetIndex': i1, 'range': c1}]
