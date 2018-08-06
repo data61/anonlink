@@ -111,6 +111,40 @@ def process_chunk(
     threshold: _numbers.Real,
     k: _typing.Optional[_numbers.Integral] = None
 ) -> _typechecking.CandidatePairs:
+    """Find candidate pairs for the chunk.
+
+    Calls the similarity function, offsets record indices by the
+    required amount, and adds dataset index information.
+
+    :param chunk: Chunk to process, as returned by `split_to_chunks`.
+    :param datasets: A sequence of two datasets. Each dataset should
+        contain as many records as required by `chunk`. It is up to you
+        to extract the correct range from the larger dataset.
+    :param similarity_f: A function that computes a similarity matrix
+        between two sequences of hashes and finds candidates above the
+        threshold.
+    :param threshold: The similarity threshold. We accept pairs that
+        have similarity of at least this value.
+    :param k: Only permit this many candidate pairs per dataset pair per
+        record. Set to `None` to permit all pairs above with similarity
+        at least `threshold`.
+
+    :return: A 3-tuple `(similarity, dataset_i, record_i)`. `dataset_i`
+        and `record_i` are sequences of sequences. Every sequence in
+        `dataset_i` has the same length as `similarity`; also, every
+        sequence in `record_i` has the same length as `similarity`.
+        Currently `dataset_i` and `record_i` have length 2, but this may
+        be changed in the future.
+            Every valid index `i` corresponds to one candidate match.
+        `dataset[0][i]` is the index of the dataset of the first record
+        in the pair; `record[0][i]` is this record's index in its
+        dataset. `dataset_[1][i]` is the index of the dataset of the
+        second record in the pair; `record_[1][i]` is this record's
+        index in its dataset. `similarity[i]` is the pair's similarity;
+        this value will be greater than `threshold`.
+    """
+
+
     if len(chunk) != len(datasets):
         raise ValueError(
             f'number of datasets does not match chunk (expected {len(chunk)}, '
