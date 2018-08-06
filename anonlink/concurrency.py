@@ -74,7 +74,7 @@ def split_to_chunks(
     dataset_sizes_int = map(int, dataset_sizes)
     for (i0, size0), (i1, size1) in _itertools.combinations(
             enumerate(dataset_sizes_int), 2):
-        if not size0 and not size1:
+        if not size0 or not size1:
             continue
         chunks0 = round(size0 / _math.sqrt(chunk_size_aim_float)) or 1
         chunk_size0 = size0 / chunks0
