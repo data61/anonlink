@@ -11,7 +11,7 @@ DATASET_NUMS = (0, 1, 2, 3)
 DATASETS = tuple(itertools.chain.from_iterable(
     itertools.product(DATASET_SIZES, repeat=n) for n in DATASET_NUMS))
 CHUNK_SIZE_AIMS = (1, 10, 100)
-SEED = 52
+SEED = 51
 
 
 @pytest.mark.parametrize('datasets', DATASETS)
@@ -60,7 +60,7 @@ def test_comparison_coverage(datasets, chunk_size_aim):
 @pytest.mark.parametrize('k_', (None, 5))
 @pytest.mark.parametrize('threshold_', (0.5, 0.9))
 def test_process_chunk(dataset_size0, dataset_size1, k_, threshold_):
-    rng = random.Random(51)
+    rng = random.Random(SEED)
     offset0 = rng.randrange(1000)
     offset1 = rng.randrange(1000)
 
