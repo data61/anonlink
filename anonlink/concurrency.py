@@ -98,7 +98,7 @@ def _get_dataset_indices(dataset_chunk, size):
     return _array.array('I', (index,)) * size
 
 
-def _offset_record_indices(dataset_chunk, rec_is):
+def _offset_record_indices_inplace(dataset_chunk, rec_is):
     a, _ = dataset_chunk['range']
     np_rec_is = _np.frombuffer(rec_is, dtype=rec_is.typecode)
     np_rec_is += a
@@ -161,9 +161,9 @@ def process_chunk(
     assert len(sims) == len(rec_is0) == len(rec_is1)
 
     dset_is0 = _get_dataset_indices(chunk[0], len(sims))
-    _offset_record_indices(chunk[0], rec_is0)
+    _offset_record_indices_inplace(chunk[0], rec_is0)
     
     dset_is1 = _get_dataset_indices(chunk[1], len(sims))
-    _offset_record_indices(chunk[1], rec_is1)
+    _offset_record_indices_inplace(chunk[1], rec_is1)
 
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
