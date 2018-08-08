@@ -11,10 +11,6 @@ from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_accelerated']
 
-# These must match the C++ code
-_SIM_ARRAY_TYPE = 'd'
-_INDEX_ARRAY_TYPE = 'I'
-
 
 def _all_equal(iterable):
     # https://docs.python.org/3/library/itertools.html#itertools-recipes
@@ -55,9 +51,9 @@ def dice_coefficient_accelerated(
             f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
 
-    result_sims: FloatArrayType = array(_SIM_ARRAY_TYPE)
-    result_indices0: IntArrayType = array(_INDEX_ARRAY_TYPE)
-    result_indices1: IntArrayType = array(_INDEX_ARRAY_TYPE)
+    result_sims: FloatArrayType = array('d')
+    result_indices0: IntArrayType = array('I')
+    result_indices1: IntArrayType = array('I')
 
     if not filters0 or not filters1:
         # Empty result of the correct type.
@@ -116,9 +112,11 @@ def dice_coefficient_accelerated(
         result_indices0.extend(repeat(i, matches))
         result_indices1.extend(c_indices[0:matches])
 
-    np_sims = np.frombuffer(result_sims, dtype=_SIM_ARRAY_TYPE)
-    np_indices0 = np.frombuffer(result_indices0, dtype=_INDEX_ARRAY_TYPE)
-    np_indices1 = np.frombuffer(result_indices1, dtype=_INDEX_ARRAY_TYPE)
+    np_sims = np.frombuffer(result_sims, dtype=result_sims.typecode)
+    np_indices0 = np.frombuffer(result_indices0,
+                                dtype=result_indices0.typecode)
+    np_indices1 = np.frombuffer(result_indices1,
+                                dtype=result_indices1.typecode)
     
     np.negative(np_sims, out=np_sims)  # Sort in reverse.
     # Mergesort is stable. We need that for correct tiebreaking.
