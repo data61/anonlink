@@ -22,6 +22,11 @@ def dice_coefficient_python(
     architecture-specific instructions. It may be slower than an
     accelerated version.
 
+    The returned pairs are sorted in decreasing order of similarity,
+    then in increasing order of the record index in the first dataset,
+    and then in increasing oreder of the record index in the second
+    dataset.
+
     :param datasets: A length 2 sequence of datasets. A dataset is a
         sequence of bitarrays.
     :param threshold: Pairs whose similarity is above this value may be

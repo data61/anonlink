@@ -3,10 +3,10 @@ from itertools import chain, groupby, repeat
 from numbers import Real
 from typing import Optional, Sequence, Tuple
 
-import numpy as np
 from bitarray import bitarray
 
 from anonlink._entitymatcher import ffi, lib
+from anonlink.similarities._utils import sort_similarities_inplace
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_accelerated']
@@ -30,6 +30,11 @@ def dice_coefficient_accelerated(
 
     We assume all filters are the same length and that this length is a
     multiple of 64 bits.
+
+    The returned pairs are sorted in decreasing order of similarity,
+    then in increasing order of the record index in the first dataset,
+    and then in increasing oreder of the record index in the second
+    dataset.
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
         sequence of bitarrays.
@@ -112,20 +117,6 @@ def dice_coefficient_accelerated(
         result_indices0.extend(repeat(i, matches))
         result_indices1.extend(c_indices[0:matches])
 
-    np_sims = np.frombuffer(result_sims, dtype=result_sims.typecode)
-    np_indices0 = np.frombuffer(result_indices0,
-                                dtype=result_indices0.typecode)
-    np_indices1 = np.frombuffer(result_indices1,
-                                dtype=result_indices1.typecode)
-    
-    np.negative(np_sims, out=np_sims)  # Sort in reverse.
-    # Mergesort is stable. We need that for correct tiebreaking.
-    order = np.argsort(np_sims, kind='mergesort')
-    np.negative(np_sims, out=np_sims)
-
-    # This modifies the original arrays since they share a buffer.
-    np_sims[:] = np_sims[order]
-    np_indices0[:] = np_indices0[order]
-    np_indices1[:] = np_indices1[order]
+    sort_similarities_inplace(result_sims, result_indices0, result_indices1)
 
     return result_sims, (result_indices0, result_indices1)
