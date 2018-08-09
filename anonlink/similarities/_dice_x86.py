@@ -33,7 +33,7 @@ def dice_coefficient_accelerated(
 
     The returned pairs are sorted in decreasing order of similarity,
     then in increasing order of the record index in the first dataset,
-    and then in increasing oreder of the record index in the second
+    and then in increasing order of the record index in the second
     dataset.
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
