@@ -149,6 +149,13 @@ def process_chunk(
         raise ValueError(
             f'number of datasets does not match chunk (expected {len(chunk)}, '
             f'got {len(datasets)})')
+    for i, dataset_chunk in enumerate(chunk):
+        if 'datasetIndex' not in dataset_chunk:
+            raise ValueError(f"invalid chunk: expected value for "
+                             f"'datasetIndex' at index {i}")
+        if 'range' not in dataset_chunk:
+            raise ValueError(f"invalid chunk: expected value for "
+                             f"'range' at index {i}")
     for i, dataset_chunk, dataset_records in zip(
                 _itertools.count(), chunk, datasets):
         a, b = dataset_chunk['range']
@@ -156,6 +163,11 @@ def process_chunk(
             raise ValueError(
                 f'size of dataset at index {i} does not match chunk (expected '
                 f'{b - a}, got {len(dataset_records)})')
+    if len(chunk) != 2:
+        raise NotImplementedError(
+            f'only binary matching is currently supported '
+            f'(chunk has {len(chunk)} datasets)')
+
 
     sims, (rec_is0, rec_is1) = similarity_f(datasets, threshold, k=k)
     assert len(sims) == len(rec_is0) == len(rec_is1)
