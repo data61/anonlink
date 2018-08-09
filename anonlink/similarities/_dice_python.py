@@ -3,10 +3,10 @@ from itertools import repeat
 from numbers import Real
 from typing import Optional, Sequence, Tuple
 
-import numpy as np
 from bitarray import bitarray
 
 from anonlink.typechecking import FloatArrayType, IntArrayType
+from anonlink.similarities._utils import sort_similarities_inplace
 
 __all__ = ['dice_coefficient_python']
 
@@ -66,20 +66,6 @@ def dice_coefficient_python(
         result_indices0.extend(repeat(i, len(top_k)))
         result_indices1.extend(j for j, _ in top_k)
 
-    np_sims = np.frombuffer(result_sims, dtype=result_sims.typecode)
-    np_indices0 = np.frombuffer(result_indices0,
-                                dtype=result_indices0.typecode)
-    np_indices1 = np.frombuffer(result_indices1,
-                                dtype=result_indices1.typecode)
-    
-    np.negative(np_sims, out=np_sims)  # Sort in reverse.
-    # Mergesort is stable. We need that for correct tiebreaking.
-    order = np.argsort(np_sims, kind='mergesort')
-    np.negative(np_sims, out=np_sims)
-
-    # This modifies the original arrays since they share a buffer.
-    np_sims[:] = np_sims[order]
-    np_indices0[:] = np_indices0[order]
-    np_indices1[:] = np_indices1[order]
+    sort_similarities_inplace(result_sims, result_indices0, result_indices1)
     
     return result_sims, (result_indices0, result_indices1)
