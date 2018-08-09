@@ -5,8 +5,8 @@ from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
-from anonlink.typechecking import FloatArrayType, IntArrayType
 from anonlink.similarities._utils import sort_similarities_inplace
+from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_python']
 
