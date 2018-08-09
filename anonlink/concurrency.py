@@ -93,12 +93,18 @@ def split_to_chunks(
                    {'datasetIndex': i1, 'range': c1}]
 
 
-def _get_dataset_indices(dataset_chunk, size):
+def _get_dataset_indices(
+    dataset_chunk: DatasetChunkInfo,
+    size: int
+) -> _typechecking.IntArrayType:
     index = dataset_chunk['datasetIndex']
     return _array.array('I', (index,)) * size
 
 
-def _offset_record_indices_inplace(dataset_chunk, rec_is):
+def _offset_record_indices_inplace(
+    dataset_chunk: DatasetChunkInfo,
+    rec_is: _typechecking.IntArrayType
+) -> None:
     a, _ = dataset_chunk['range']
     np_rec_is = _np.frombuffer(rec_is, dtype=rec_is.typecode)
     np_rec_is += a
