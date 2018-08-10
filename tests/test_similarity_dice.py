@@ -251,3 +251,28 @@ class TestBloomFilterComparison:
         assert sims.typecode in FLOAT_ARRAY_TYPES
         assert (rec_is0.typecode in UINT_ARRAY_TYPES
                 and rec_is1.typecode in UINT_ARRAY_TYPES)
+
+    @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+    def test_order(self, sim_fun):
+        similarity = sim_fun(
+            self.filters, self.default_threshold, self.default_k)
+        sims, (rec_is0, rec_is1) = similarity
+        for i in range(len(sims) - 1):
+            sim_a, rec_i0_a, rec_i1_a = sims[i], rec_is0[i], rec_is1[i]
+            sim_b, rec_i0_b, rec_i1_b = sims[i+1], rec_is0[i+1], rec_is1[i+1]
+            if sim_a > sim_b:
+                pass  # Correctly ordered!
+            elif sim_a == sim_b:
+                if rec_i0_a < rec_i0_b:
+                    pass  # Correctly ordered!
+                elif rec_i0_a == rec_i0_b:
+                    if rec_i1_a < rec_i1_b:
+                        pass  # Correctly ordered!
+                    elif rec_i1_a == rec_i1_b:
+                        assert False, 'duplicate entry'
+                    else:
+                        assert False, 'incorrect tiebreaking on second index'
+                else:
+                    assert False, 'incorrect tiebreaking on first index'
+            else:
+                assert False, 'incorrect similarity sorting'

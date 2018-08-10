@@ -5,6 +5,7 @@ from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
+from anonlink.similarities._utils import sort_similarities_inplace
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_python']
@@ -20,6 +21,11 @@ def dice_coefficient_python(
     This version is written in Python, so it does not rely on
     architecture-specific instructions. It may be slower than an
     accelerated version.
+
+    The returned pairs are sorted in decreasing order of similarity,
+    then in increasing order of the record index in the first dataset,
+    and then in increasing order of the record index in the second
+    dataset.
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
         sequence of bitarrays.
@@ -64,5 +70,7 @@ def dice_coefficient_python(
         result_sims.extend(sim for _, sim in top_k)
         result_indices0.extend(repeat(i, len(top_k)))
         result_indices1.extend(j for j, _ in top_k)
+
+    sort_similarities_inplace(result_sims, result_indices0, result_indices1)
     
     return result_sims, (result_indices0, result_indices1)
