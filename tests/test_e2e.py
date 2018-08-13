@@ -1,3 +1,4 @@
+import math
 import os
 import unittest
 import random
@@ -32,8 +33,9 @@ class EntityHelperMixin(object):
     default_greedy_k = 5
     default_greedy_threshold = 0.95
 
-    def check_accuracy(self, mapping):
-        # Assert that there are no false matches
+    def check_accuracy(self, mapping, max_false_positives=0.02):
+        # Assert that there are _almost_ no false matches
+        false_matches = 0
         for indx1 in mapping:
             indx2 = mapping[indx1]
             self.assertLess(indx1, len(self.s1))
@@ -42,7 +44,10 @@ class EntityHelperMixin(object):
             entityA = self.s1[indx1]
             entityB = self.s2[indx2]
 
-            self.assertEqual(entityA, entityB)
+            if entityA != entityB:
+                false_matches += 1
+
+        assert false_matches <= math.ceil(len(mapping) * max_false_positives)
 
         # Check that there were approximately the expected number of matches
         self.assertLessEqual(abs((self.sample * self.proportion) - len(mapping)), 3)
@@ -92,7 +97,6 @@ class TestEntityMatchingE2E_100(EntityHelperTestMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.s1, cls.s2, cls.filters1, cls.filters2 = generate_data(cls.sample, cls.proportion)
-
 
     def test_extra(self):
         a = bitarray('11111100011101100100100111110110001100110101101111011101011100110111111110010100101110001100111101000110111101111101111100101110010111101110001101010100010110000101100101011111011101001011101000010111010100000110111111110011100010110000001111101111000010101100000100000010000100111111010011011010001000100110010001110001010010110011110101100111110110100001000111111010001110001111111111101000011010100001001100001110011001010110101010000011010010100111111001100011011011100100011101111011111111010001110010011111110100010110111001001010001010000110000101100010010100100000011001001101010111111110011100100001001101001100100100000000011111110100010100110111111110011010001110101000000001011000100101111000100001100100111011110100001000100110111011000010000001010111001110100111001111011111110101000011111110001111010000101000011110000010011010110110011100000001111101101000001100100101001010010101000100101110100010001111000000110111010100100110001111001101011000111000011111100110000100001100110101101100111101110010')
@@ -156,36 +160,37 @@ class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
         self.check_accuracy(mapping)
 
 
-class TestEntityMatchTopK(unittest.TestCase):
-    def test_cffi_k(self):
-        nl = randomnames.NameList(300)
-        s1, s2 = nl.generate_subsets(150, 0.8)
+class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
+
+    proportion = 0.8
+    sample = 150
+
+    def setUp(self):
+        self.nl = randomnames.NameList(300)
+        self.s1, self.s2 = self.nl.generate_subsets(self.sample, self.proportion)
         keys = ('test1', 'test2')
-        key_lists = generate_key_lists(keys, len(nl.schema_types))
-        f1 = tuple(bloomfilter.stream_bloom_filters(s1, key_lists, nl.SCHEMA))
-        f2 = tuple(bloomfilter.stream_bloom_filters(s2, key_lists, nl.SCHEMA))
+        self.key_lists = generate_key_lists(keys, len(self.nl.schema_types))
+
+    def test_cffi_k(self):
+
+        f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
+        f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
 
         threshold = 0.8
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
         mapping = network_flow.map_entities(similarity, threshold, method=None)
 
-        for indexA in mapping:
-            self.assertEqual(s1[indexA], s2[mapping[indexA]])
+        self.check_accuracy(mapping)
 
     def test_concurrent(self):
-        nl = randomnames.NameList(300)
-        s1, s2 = nl.generate_subsets(150, 0.8)
-        keys = ('test1', 'test2')
-        key_lists = generate_key_lists(keys, len(nl.schema_types))
-        f1 = tuple(bloomfilter.stream_bloom_filters(s1, key_lists, nl.SCHEMA))
-        f2 = tuple(bloomfilter.stream_bloom_filters(s2, key_lists, nl.SCHEMA))
+        f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
+        f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
 
         threshold = 0.8
         similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
         mapping = network_flow.map_entities(similarity, threshold, method=None)
 
-        for indexA in mapping:
-            self.assertEqual(s1[indexA], s2[mapping[indexA]])
+        self.check_accuracy(mapping)
 
 
 class TestGreedy(unittest.TestCase):
@@ -226,6 +231,7 @@ class TestGreedy(unittest.TestCase):
         for entityA in all_in_one_mapping:
             assert entityA in partial_mapping
             self.assertEqual(all_in_one_mapping[entityA], partial_mapping[entityA])
+
 
 if __name__ == '__main__':
     unittest.main()
