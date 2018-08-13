@@ -6,7 +6,6 @@ import math as _math
 import numbers as _numbers
 import typing as _typing
 
-import mypy_extensions as _mypy_extensions
 import numpy as _np
 
 import anonlink.typechecking as _typechecking
@@ -174,7 +173,7 @@ def process_chunk(
 
     dset_is0 = _get_dataset_indices(chunk[0], len(sims))
     _offset_record_indices_inplace(chunk[0], rec_is0)
-    
+
     dset_is1 = _get_dataset_indices(chunk[1], len(sims))
     _offset_record_indices_inplace(chunk[1], rec_is1)
 
