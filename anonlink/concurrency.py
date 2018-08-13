@@ -6,7 +6,6 @@ import math as _math
 import numbers as _numbers
 import typing as _typing
 
-import mypy_extensions as _mypy_extensions
 import numpy as _np
 
 import anonlink.typechecking as _typechecking
@@ -17,12 +16,6 @@ import anonlink.typechecking as _typechecking
 # eliminating page faults).
 # As the function currently makes no guarantees, any such changes would
 # be backwards compatible.
-
-DatasetChunkInfo = _mypy_extensions.TypedDict(
-    'DatasetChunkInfo',
-    {'datasetIndex': int,
-     'range': _typing.List[int]})
-ChunkInfo = _typing.List[DatasetChunkInfo]
 
 
 def _split_points(size: int, chunks: int) -> _typing.Iterator[int]:
@@ -49,7 +42,7 @@ def split_to_chunks(
     # Keyword-only for forwards compatibility: this argument may not be
     # needed once we do blocking
     dataset_sizes: _typing.Sequence[_numbers.Integral]
-) -> _typing.Iterable[ChunkInfo]:
+) -> _typing.Iterable[_typechecking.ChunkInfo]:
     """Split datasets into chunks for parallel processing.
 
     Resulting chunks are length 2 list of dictionaries. Each dictionary
@@ -94,7 +87,7 @@ def split_to_chunks(
 
 
 def _get_dataset_indices(
-    dataset_chunk: DatasetChunkInfo,
+    dataset_chunk: _typechecking.DatasetChunkInfo,
     size: int
 ) -> _typechecking.IntArrayType:
     index = dataset_chunk['datasetIndex']
@@ -102,7 +95,7 @@ def _get_dataset_indices(
 
 
 def _offset_record_indices_inplace(
-    dataset_chunk: DatasetChunkInfo,
+    dataset_chunk: _typechecking.DatasetChunkInfo,
     rec_is: _typechecking.IntArrayType
 ) -> None:
     a, _ = dataset_chunk['range']
@@ -111,7 +104,7 @@ def _offset_record_indices_inplace(
 
 
 def process_chunk(
-    chunk: ChunkInfo,
+    chunk: _typechecking.ChunkInfo,
     datasets: _typing.Sequence[_typechecking.Dataset],
     similarity_f: _typechecking.SimilarityFunction,
     threshold: _numbers.Real,
@@ -180,7 +173,7 @@ def process_chunk(
 
     dset_is0 = _get_dataset_indices(chunk[0], len(sims))
     _offset_record_indices_inplace(chunk[0], rec_is0)
-    
+
     dset_is1 = _get_dataset_indices(chunk[1], len(sims))
     _offset_record_indices_inplace(chunk[1], rec_is1)
 
