@@ -21,9 +21,11 @@ def _zip_candidates(candidates):
 
 
 def _compare_matching(result, truth):
-    result = set(map(frozenset, result))
-    truth = set(map(frozenset, truth))
-    assert result == truth
+    result_set = set(map(frozenset, result))
+    assert len(result) == len(result_set)
+    truth_set = set(map(frozenset, truth))
+    assert len(truth) == len(truth_set)
+    assert result_set == truth_set
 
 
 def test_greedy_twoparty():

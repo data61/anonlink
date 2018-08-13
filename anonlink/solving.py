@@ -137,5 +137,8 @@ def greedy_solve(
 
         raise RuntimeError('non-exhaustive cases')
                 
-    # Return all nontrivial groups
-    return tuple(group for group in matches.values() if len(group) > 1)
+    # Return all nontrivial groups without duplication
+    deduplicated_groups = {id(group): group
+                           for group in matches.values()
+                           if len(group) > 1}
+    return tuple(deduplicated_groups.values())
