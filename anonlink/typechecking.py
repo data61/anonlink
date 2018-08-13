@@ -32,3 +32,9 @@ SimilarityFunction = _typing.Callable[
      _mypy_extensions.DefaultNamedArg(_typing.Optional[_numbers.Integral],
                                       'k')],
     _typing.Tuple[FloatArrayType, _typing.Sequence[IntArrayType]]]
+
+DatasetChunkInfo = _mypy_extensions.TypedDict(
+    'DatasetChunkInfo',
+    {'datasetIndex': int,
+     'range': _typing.List[int]})
+ChunkInfo = _typing.List[DatasetChunkInfo]
