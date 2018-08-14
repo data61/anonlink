@@ -13,7 +13,7 @@ GITHUB_TEST_CONTEXT = "jenkins/test"
 GITHUB_RELEASE_CONTEXT = "jenkins/release"
 
 def configs = [
-    [os: 'linux', pythons: ['python3.4', 'python3.5', 'python3.6'], compilers: ['clang', 'gcc']],
+    [os: 'linux', pythons: ['python3.6'], compilers: ['clang', 'gcc']],
     [os: 'osx', pythons: ['python3.6', 'python3.7'], compilers: ['clang']]
 ]
 
@@ -123,7 +123,7 @@ node('GPU 1') {
   stage('Release') {
     try {
       commit.setInProgressStatus(GITHUB_RELEASE_CONTEXT);
-      build('python3.5', 'gcc', 'GPU 1', true)
+      build('python3.6', 'gcc', 'GPU 1', true)
       commit.setSuccessStatus(GITHUB_RELEASE_CONTEXT)
     } catch (Exception e) {
       commit.setFailStatus("Release failed", GITHUB_RELEASE_CONTEXT);

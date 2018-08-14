@@ -5,15 +5,17 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 requirements = [
-        "bitarray==0.8.1",
-        "networkx==1.11",
+        "bitarray>=0.8.1",
+        "networkx>=1.11,<=2",
         "cffi>=1.7",
-        "clkhash>=0.10"
+        "clkhash>=0.11",
+        "numpy>=1.14",
+        "mypy-extensions>=0.3"
     ]
 
 setup(
     name="anonlink",
-    version='0.8.2',
+    version='0.9.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
@@ -23,7 +25,7 @@ setup(
         '_cffi_build', '_cffi_build/*',
         'tests'
     ]),
-    package_data={'anonlink': ['data/*.csv', '_cffi_build']},
+    package_data={'anonlink': ['_cffi_build']},
 
     ext_package="anonlink",
     classifiers=[
@@ -34,9 +36,8 @@ setup(
         "Operating System :: POSIX",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Security :: Cryptography",
