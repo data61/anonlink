@@ -35,7 +35,7 @@ class EntityHelperMixin(object):
 
     def check_accuracy(self, mapping, max_false_positives=0.02):
         # Assert that there are _almost_ no false matches
-        false_matches = 0
+        false_matches, true_matches = 0, 0
         for indx1 in mapping:
             indx2 = mapping[indx1]
             self.assertLess(indx1, len(self.s1))
@@ -46,11 +46,15 @@ class EntityHelperMixin(object):
 
             if entityA != entityB:
                 false_matches += 1
+            else:
+                true_matches += 1
 
-        assert false_matches <= math.ceil(len(mapping) * max_false_positives)
+        num_matches = len(mapping)
+        allowed_false_matches = math.ceil(num_matches * max_false_positives)
+        assert num_matches <= true_matches + allowed_false_matches
 
         # Check that there were approximately the expected number of matches
-        self.assertLessEqual(abs((self.sample * self.proportion) - len(mapping)), 3)
+        self.assertLessEqual(abs((self.sample * self.proportion) - num_matches), allowed_false_matches)
 
 
 class EntityHelperTestMixin(EntityHelperMixin):
@@ -176,7 +180,7 @@ class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
         f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
         f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
 
-        threshold = 0.8
+        threshold = 0.9
         similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
         mapping = network_flow.map_entities(similarity, threshold, method=None)
 
@@ -186,7 +190,7 @@ class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
         f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
         f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
 
-        threshold = 0.8
+        threshold = 0.9
         similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
         mapping = network_flow.map_entities(similarity, threshold, method=None)
 
