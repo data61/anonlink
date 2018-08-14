@@ -1,9 +1,12 @@
 0.9.0
 =====
 
-This release contains a major overhaul of Anonlink’s API.
+This release contains a major overhaul of Anonlink’s API and introduces support for multi-party linkage.
 
-The changes are all additive, so the previous API continues to work. That API has now been deprecated and will be removed in a future release.
+The changes are all additive, so the previous API continues to work. That API has now been deprecated and will be removed in a future release. The deprecation timeline is:
+- v0.9.0: old API deprecated
+- v0.10.0: use of old API raises a warning
+- v0.11.0: remove old API
 
 Major changes
 -------------
@@ -26,7 +29,7 @@ Minor changes
 - Remove support for Python 3.5 and below.
 - Update Clkhash dependency to 0.11.
 - Minor documentation and style in ``anonlink.concurrency``.
-- Provide a convenience function for generating a valid candidate pairs from a chunk.
+- Provide a convenience function for generating valid candidate pairs from a chunk.
 - Change the format of a chunk and move the type definition to ``anonlink.typechecking``.
 
 New modules
