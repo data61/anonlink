@@ -275,14 +275,17 @@ def _records_in_file(
 def compute_merged_length(
     files_in: _typing.Iterable[_typing.BinaryIO]
 ) -> int:
-    """Compute the number of bytes wrtten by ``merge_streams``.
+    """Compute the number of bytes written by ``merge_streams``.
 
     No data is actually written.
 
-    Note: If you're passing the same file objects to ``merge_streams``,
-    make sure to .seek(0).
+    Note: This function seeks to the end of the file. Before passing the
+    same file objects to ``merge_streams``, you need to .seek(0). This
+    requirement may limit this function's utility if the files don't
+    permit seeking backwards.
 
-    :param files_in: Iterable of files to read from.
+    :param files_in: Iterable of files to read from. These files must be
+        seekable.
     """
     if not files_in:
         raise ValueError('no files provided')
@@ -309,7 +312,7 @@ def compute_merged_length(
 def compute_dump_length(
     candidate_pairs: _typechecking.CandidatePairs,
 ) -> int:
-    """Compute the number of bytes wrtten by ``dump_candidate_pairs``.
+    """Compute the number of bytes written by ``dump_candidate_pairs``.
 
     :param files_in: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
