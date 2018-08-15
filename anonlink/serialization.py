@@ -280,9 +280,9 @@ def compute_merged_length(
     No data is actually written.
 
     Note: This function seeks to the end of the file. Before passing the
-    same file objects to ``merge_streams``, you need to .seek(0). This
-    requirement may limit this function's utility if the files don't
-    permit seeking backwards.
+    same file objects to ``merge_streams``, you need to ``.seek(0)``.
+    This requirement may limit this function's utility if the files
+    don't permit seeking backwards.
 
     :param files_in: Iterable of files to read from. These files must be
         seekable.
