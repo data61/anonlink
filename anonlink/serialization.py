@@ -217,7 +217,7 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
 
 
 def merge_streams(
-    files_in: _typing.Sequence[_typing.BinaryIO],
+    files_in: _typing.Iterable[_typing.BinaryIO],
     f_out: _typing.BinaryIO
 ) -> None:
     """Merge multiple files with serialised candidate pairs.
