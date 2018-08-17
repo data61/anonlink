@@ -117,15 +117,20 @@ def _entries_iterable(
         buffer = f.read(entry_struct.size)
 
 
-def _load_to_iterable(
+def _make_buffered(
     f: _typing.BinaryIO
-) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
+) -> _typing.BinaryIO:
     # Make sure that f.read(n) returns exactly n bytes.
     if not isinstance(f, _io.BufferedIOBase):
         f = _io.BufferedReader(f)  # type: ignore
         # Mypy complains that f is not guaranteed to be RawIOBase.
         # That's true but BufferedReader doesn't explicitly check this.
+    return f
 
+
+def _load_header_and_check_version(
+    f: _typing.BinaryIO  # Must be buffered
+) -> _typing.Tuple[int, int, int]:
     header_bytes = f.read(_HEADER_STRUCT.size)
     if len(header_bytes) != _HEADER_STRUCT.size:
         raise ValueError('ran out of input')
@@ -133,6 +138,14 @@ def _load_to_iterable(
         _HEADER_STRUCT.unpack(header_bytes))
     if version != 1:
         raise ValueError('unsupported version of serialized file')
+    return sim_t_size, dset_i_t_size, rec_i_t_size
+
+
+def _load_to_iterable(
+    f: _typing.BinaryIO
+) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
+    f = _make_buffered(f)
+    sim_t_size, dset_i_t_size, rec_i_t_size = _load_header_and_check_version(f)
 
     # This may throw ValueError if the specified format isn't supported
     # on this platform.
@@ -279,3 +292,87 @@ def merge_streams(
     """
     bytes_iter = merge_streams_iter(files_in)
     _write_bytes_iter(f_out, bytes_iter)
+
+
+def _records_in_file(
+    f: _typing.BinaryIO,
+    sim_t_size: int,
+    dset_i_size: int,
+    rec_i_t_size: int
+) -> int:
+    f.seek(0, 2)
+    length = f.tell()
+
+    # This assumes we've checked that the header is there.
+    length -= _HEADER_STRUCT.size
+    entry_struct = _entry_struct(sim_t_size, dset_i_size, rec_i_t_size)
+
+    entries, remainder = divmod(length, entry_struct.size)
+    if remainder:
+        raise ValueError('invalid file: number of entries is non-integer')
+    return entries
+
+
+def compute_merged_length(
+    files_in: _typing.Iterable[_typing.BinaryIO]
+) -> int:
+    """Compute the number of bytes written by ``merge_streams``.
+
+    No data is actually written.
+
+    Note: This function seeks to the end of the file. Before passing the
+    same file objects to ``merge_streams``, you need to ``.seek(0)``.
+    This requirement may limit this function's utility if the files
+    don't permit seeking backwards.
+
+    :param files_in: Iterable of files to read from. These files must be
+        seekable.
+    """
+    if not files_in:
+        raise ValueError('no files provided')
+
+    files_in = tuple(map(_make_buffered, files_in))
+
+    # This also checks the version and raises if incompatible.
+    sizes = map(_load_header_and_check_version, files_in)
+    sim_t_sizes, dset_i_t_sizes, rec_i_t_sizes = zip(*sizes)
+
+    # Find size of each entry. We always choose the biggest type.
+    sim_t_size = max(sim_t_sizes)
+    dset_i_t_size = max(dset_i_t_sizes)
+    rec_i_t_size = max(rec_i_t_sizes)
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
+    entry_struct_size = entry_struct.size
+
+    entries = sum(map(_records_in_file,
+                      files_in, sim_t_sizes, dset_i_t_sizes, rec_i_t_sizes))
+
+    return _HEADER_STRUCT.size + entry_struct_size * entries
+
+
+def compute_dump_length(
+    candidate_pairs: _typechecking.CandidatePairs,
+) -> int:
+    """Compute the number of bytes written by ``dump_candidate_pairs``.
+
+    :param files_in: Candidate pairs, as returned by a similarity
+        function or `load_candidate_pairs`.
+    """
+    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
+    entries = len(sims)
+    assert entries == len(dset_is0)
+    assert entries == len(dset_is1)
+    assert entries == len(rec_is0)
+    assert entries == len(rec_is1)
+
+    sim_t_size = sims.itemsize
+    dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
+    rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
+    
+    assert sim_t_size in _ARRAY_FLOAT_LEN_TO_FMT
+    assert dset_i_t_size in _ARRAY_UINT_LEN_TO_FMT
+    assert rec_i_t_size in _ARRAY_UINT_LEN_TO_FMT
+
+    entry_struct_size = _entry_struct(
+        sim_t_size, dset_i_t_size, rec_i_t_size).size
+    return _HEADER_STRUCT.size + entry_struct_size * entries
