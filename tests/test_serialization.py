@@ -1,4 +1,5 @@
 import array
+import collections
 import contextlib
 import io
 import itertools
@@ -113,11 +114,31 @@ def new_file_function(request, tmpdir_path):
     raise ValueError('invalid param')
 
 
+def consume(iterator):
+    # https://docs.python.org/3/library/itertools.html#itertools-recipes
+    "Consume iterator entirely."
+    # Use functions that consume iterators at C speed.
+    # Feed the entire iterator into a zero-length deque.
+    collections.deque(iterator, maxlen=0)
+
+
+# Hack so we can test the functions returning an iterable of bytes
+# without redoing all the tests... First write to file, then simply test
+# like the functions that dump straight to files.
+def dump_iter_to_file(candidate_pairs, f):
+    consume(map(f.write,
+                serialization.dump_candidate_pairs_iter(candidate_pairs)))
+def merge_iter_to_file(files_in, f_out):
+    consume(map(f_out.write, serialization.merge_streams_iter(files_in)))
+
+
+@pytest.mark.parametrize('dump_function', [serialization.dump_candidate_pairs,
+                                           dump_iter_to_file])
 class TestDumpCandidatePairs:
-    def test_general(self, cands_bytes_pair, new_file_function):
+    def test_general(self, cands_bytes_pair, new_file_function, dump_function):
         candidate_pairs, bytes_, *_ = cands_bytes_pair
         with new_file_function() as f:
-            serialization.dump_candidate_pairs(candidate_pairs, f)
+            dump_function(candidate_pairs, f)
             f.seek(0)
             assert f.read() == bytes_
 
@@ -235,12 +256,14 @@ class TestLoadCandidatePairs:
                 with pytest.raises(ValueError):
                     serialization.load_candidate_pairs(f)
 
-
+@pytest.mark.parametrize('merge_function', [serialization.merge_streams,
+                                            merge_iter_to_file])
 class TestMergeStreams:
     @pytest.mark.parametrize('split', (1, 2, 5))
     def test_general(self,
                      cands_bytes_pair, new_file_function,
-                     split):
+                     split,
+                     merge_function):
         (_, _, all_pairs_list,
          (sim_size, dset_i_size, rec_i_size, _)) = cands_bytes_pair
         pairs_lists = tuple([] for _ in range(split))
@@ -259,19 +282,19 @@ class TestMergeStreams:
                 f.seek(0)
 
             f_out = stack.enter_context(new_file_function())
-            serialization.merge_streams(files, f_out)
+            merge_function(files, f_out)
             f_out.seek(0)
             assert f_out.read() == pairs_list_to_bytes(
                 all_pairs_list, sim_size, dset_i_size, rec_i_size)
 
-    def test_no_files(self, new_file_function):
+    def test_no_files(self, new_file_function, merge_function):
         with new_file_function() as f:
             with pytest.raises(ValueError):
-                serialization.merge_streams([], f)
+                merge_function([], f)
 
     @pytest.mark.parametrize('length', (0, 5))
     @pytest.mark.parametrize('split', (1, 2, 5))
-    def test_sizes(self, new_file_function, length, split):
+    def test_sizes(self, new_file_function, length, split, merge_function):
         rng = random.Random(RANDOM_SEED)
         sim_sizes = tuple(rng.choice(FLOAT_SIZES) for _ in range(split))
         dset_i_sizes = tuple(rng.choice(UINT_SIZES) for _ in range(split))
@@ -293,7 +316,7 @@ class TestMergeStreams:
                 f.seek(0)
 
             f_out = stack.enter_context(new_file_function())
-            serialization.merge_streams(files, f_out)
+            merge_function(files, f_out)
             f_out.seek(1)
             assert int.from_bytes(f_out.read(1), 'little') == max(sim_sizes)
             assert int.from_bytes(f_out.read(1), 'little') == max(dset_i_sizes)
@@ -304,7 +327,8 @@ class TestMergeStreams:
     @pytest.mark.parametrize('rec_i_size', UINT_SIZES)
     def test_tiebreaking(self,
                          new_file_function,
-                         sim_size, dset_i_size, rec_i_size):
+                         sim_size, dset_i_size, rec_i_size,
+                         merge_function):
         # This order is relied on in the test. Make sure that after
         # flattening these are still sorted.
         pairs_zip = (((0.91, 0, 2, 6, 2),
@@ -333,7 +357,7 @@ class TestMergeStreams:
                 f1.seek(0)
 
                 with new_file_function() as f_out:
-                    serialization.merge_streams([f0, f1], f_out)
+                    merge_function([f0, f1], f_out)
                     f_out.seek(0)
                     bytes_out = f_out.read()
 
@@ -348,7 +372,8 @@ class TestMergeStreams:
     def test_incorrect_version(
             self,
             new_file_function,
-            length, version):
+            length, version,
+            merge_function):
         for invalid_file_i in range(DEFAULT_FILES_NUM):
             with contextlib.ExitStack() as stack:
                 files = tuple(stack.enter_context(new_file_function())
@@ -363,13 +388,14 @@ class TestMergeStreams:
                     f.seek(0)
                 with new_file_function() as f_out:
                     with pytest.raises(ValueError):
-                        serialization.merge_streams(files, f_out)
+                        merge_function(files, f_out)
 
     @pytest.mark.parametrize('length', (0, 5))
     def test_unsupported_sizes(
             self,
             new_file_function,
-            length):
+            length,
+            merge_function):
         for invalid_file_i, size_pos in itertools.product(
                 range(DEFAULT_FILES_NUM), range(1, 4)):
             with contextlib.ExitStack() as stack:
@@ -387,9 +413,9 @@ class TestMergeStreams:
                     f.seek(0)
                 with new_file_function() as f_out:
                     with pytest.raises(ValueError):
-                        serialization.merge_streams(files, f_out)
+                        merge_function(files, f_out)
 
-    def test_empty_file(self, new_file_function):
+    def test_empty_file(self, new_file_function, merge_function):
         for invalid_file_i in range(DEFAULT_FILES_NUM):
             with contextlib.ExitStack() as stack:
                 files = tuple(stack.enter_context(new_file_function())
@@ -406,9 +432,9 @@ class TestMergeStreams:
                         f.seek(0)
                 with new_file_function() as f_out:
                     with pytest.raises(ValueError):
-                        serialization.merge_streams(files, f_out)
+                        merge_function(files, f_out)
 
-    def test_incomplete_header(self, new_file_function):
+    def test_incomplete_header(self, new_file_function, merge_function):
         for invalid_file_i, header_len in itertools.product(
                 range(DEFAULT_FILES_NUM), range(1, 4)):
             with contextlib.ExitStack() as stack:
@@ -427,10 +453,14 @@ class TestMergeStreams:
                     f.seek(0)
                 with new_file_function() as f_out:
                     with pytest.raises(ValueError):
-                        serialization.merge_streams(files, f_out)
+                        merge_function(files, f_out)
 
     @pytest.mark.parametrize('length', (0, 5))
-    def test_pairs_incomplete_entry(self, new_file_function, length):
+    def test_pairs_incomplete_entry(
+            self,
+            new_file_function,
+            length,
+            merge_function):
         for invalid_file_i in range(DEFAULT_FILES_NUM):
             with contextlib.ExitStack() as stack:
                 files = tuple(stack.enter_context(new_file_function())
@@ -450,19 +480,33 @@ class TestMergeStreams:
                     files[invalid_file_i].truncate()
                     files[invalid_file_i].seek(0)
                     with pytest.raises(ValueError):
-                        serialization.merge_streams(files, f_out)
+                        merge_function(files, f_out)
 
 
+@pytest.mark.parametrize('dump_function', [serialization.dump_candidate_pairs,
+                                           dump_iter_to_file])
 class TestIntegration:
-    def test_dump_load(self, cands_bytes_pair, new_file_function):
+    def test_dump_load(
+            self,
+            cands_bytes_pair,
+            new_file_function,
+            dump_function):
         candidate_pairs, *_ = cands_bytes_pair
         with new_file_function() as f:
-            serialization.dump_candidate_pairs(candidate_pairs, f)
+            dump_function(candidate_pairs, f)
             f.seek(0)
             assert serialization.load_candidate_pairs(f) == candidate_pairs
 
     @pytest.mark.parametrize('split', (1, 2, 5))
-    def test_merge(self, cands_bytes_pair, new_file_function, split):
+    @pytest.mark.parametrize('merge_function', [serialization.merge_streams,
+                                                merge_iter_to_file])
+    def test_merge(
+            self,
+            cands_bytes_pair,
+            new_file_function,
+            split,
+            dump_function,
+            merge_function):
         (sorted_pairs_list, _, all_pairs_list,
          (sim_size, dset_i_size, rec_i_size, _)) = cands_bytes_pair
         pairs_lists = tuple([] for _ in range(split))
@@ -477,10 +521,10 @@ class TestIntegration:
             for f, pairs_list in zip(files, pairs_lists):
                 candidate_pairs = pairs_list_to_candidate_pairs(
                         pairs_list, sim_size, dset_i_size, rec_i_size)
-                serialization.dump_candidate_pairs(candidate_pairs, f)
+                dump_function(candidate_pairs, f)
                 f.seek(0)
             with new_file_function() as f_out:
-                serialization.merge_streams(files, f_out)
+                merge_function(files, f_out)
                 f_out.seek(0)
                 assert (sorted_pairs_list
                         == serialization.load_candidate_pairs(f_out))

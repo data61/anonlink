@@ -7,6 +7,7 @@ compatibility will be attempted, but not guaranteed.
 import array as _array
 import heapq as _heapq
 import io as _io
+import itertools as _itertools
 import struct as _struct
 import typing as _typing
 
@@ -81,21 +82,27 @@ def _entry_struct(
     return _struct.Struct(f"<{sim_t}2{dset_i_t}2{rec_i_t}")
     
 
-def _dump_from_iterable(
-    f: _typing.BinaryIO,
+def _bytes_iter_from_iterable(
     sim_t_size: int,
     dset_i_t_size: int,
     rec_i_t_size: int,
     iterable: _CandidatePairIter
-) -> None:
-    # Fail without writing if the parameters are incorrect.
+) -> _typing.Iterable[bytes]:
+    # Fail without yielding if the parameters are incorrect.
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
     
-    # Write header.
-    f.write(_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size))
-    
-    for entry in iterable:
-        f.write(entry_struct.pack(*entry))
+    yield _HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size)
+    yield from _itertools.starmap(entry_struct.pack, iterable)
+
+
+def _write_bytes_iter(
+    f: _typing.BinaryIO,
+    bytes_iter: _typing.Iterable[bytes]
+) -> None:
+    # Caution! Assumes that all bytes in bytes_iter are nonempty!
+    # Consume iterable at C speed. `f.write` returns >0 if we are
+    # writing >0 bytes. Hence, `all` exhausts the iterator.
+    all(map(f.write, bytes_iter))
 
 
 def _entries_iterable(
@@ -148,13 +155,13 @@ def _load_to_iterable(
             sim_t_size, dset_i_t_size, rec_i_t_size)
 
 
-def dump_candidate_pairs(
-    candidate_pairs: _typechecking.CandidatePairs,
-    f: _typing.BinaryIO
-) -> None:
-    """Dump candidate pairs to file.
+def dump_candidate_pairs_iter(
+    candidate_pairs: _typechecking.CandidatePairs
+) -> _typing.Iterable[bytes]:
+    """Dump candidate pairs as an iterable of bytes objects.
 
-    :param f: Binary buffer to write to.
+    No guarantees are made about the size of those bytes objects.
+
     :param candidate_pairs: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
     """
@@ -171,8 +178,22 @@ def dump_candidate_pairs(
     dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
     rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
 
-    _dump_from_iterable(
-        f, sim_t_size, dset_i_t_size, rec_i_t_size, iterable)
+    return _bytes_iter_from_iterable(
+        sim_t_size, dset_i_t_size, rec_i_t_size, iterable)
+
+
+def dump_candidate_pairs(
+    candidate_pairs: _typechecking.CandidatePairs,
+    f: _typing.BinaryIO
+) -> None:
+    """Dump candidate pairs to file.
+
+    :param f: Binary buffer to write to.
+    :param candidate_pairs: Candidate pairs, as returned by a similarity
+        function or `load_candidate_pairs`.
+    """
+    bytes_iter = dump_candidate_pairs_iter(candidate_pairs)
+    _write_bytes_iter(f, bytes_iter)
 
 
 def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
@@ -216,11 +237,10 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
 
 
-def merge_streams(
-    files_in: _typing.Iterable[_typing.BinaryIO],
-    f_out: _typing.BinaryIO
-) -> None:
-    """Merge multiple files with serialised candidate pairs.
+def merge_streams_iter(
+    files_in: _typing.Iterable[_typing.BinaryIO]
+) -> _typing.Iterable[bytes]:
+    """Merge multiple files with candidate pairs to iterable of bytes.
 
     This function preserves the candidate pairs' sorted order. It avoids
     loading everything into memory.
@@ -231,8 +251,7 @@ def merge_streams(
     Note that you cannot simply concatenate two files to obtain a valid
     candidate pairs dump.
 
-    :param files_in: Iterable of files to read from.
-    :param f_out: Binary buffer write the merged candidate pairs to.
+    :param files_in: Sequence of files to read from.
     """
     if not files_in:
         raise ValueError('no files provided')
@@ -248,9 +267,31 @@ def merge_streams(
     # indices and then with record indices, in increasing order.
     sorted_iterable = _heapq.merge(*file_iterables,
                                    key=lambda x: (-x[0],) + x[1:])
-    _dump_from_iterable(f_out,
-                        sim_t_size, dset_i_t_size, rec_i_t_size,
-                        sorted_iterable)
+    return _bytes_iter_from_iterable(
+        sim_t_size, dset_i_t_size, rec_i_t_size,
+        sorted_iterable)
+
+
+def merge_streams(
+    files_in: _typing.Iterable[_typing.BinaryIO],
+    f_out: _typing.BinaryIO
+) -> None:
+    """Merge multiple files with serialised candidate pairs.
+
+    This function preserves the candidate pairs' sorted order. It avoids
+    loading everything into memory.
+
+    The field sizes in the resulting file will be chosen so no
+    information is lost.
+     
+    Note that you cannot simply concatenate two files to obtain a valid
+    candidate pairs dump.
+
+    :param files_in: Sequence of files to read from.
+    :param f_out: Binary buffer write the merged candidate pairs to.
+    """
+    bytes_iter = merge_streams_iter(files_in)
+    _write_bytes_iter(f_out, bytes_iter)
 
 
 def _records_in_file(
