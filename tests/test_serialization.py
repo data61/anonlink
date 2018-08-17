@@ -115,6 +115,7 @@ def new_file_function(request, tmpdir_path):
 
 
 def consume(iterator):
+    # https://docs.python.org/3/library/itertools.html#itertools-recipes
     "Consume iterator entirely."
     # Use functions that consume iterators at C speed.
     # Feed the entire iterator into a zero-length deque.

@@ -88,10 +88,9 @@ def _bytes_iter_from_iterable(
     rec_i_t_size: int,
     iterable: _CandidatePairIter
 ) -> _typing.Iterable[bytes]:
-    # Fail without writing if the parameters are incorrect.
+    # Fail without yielding if the parameters are incorrect.
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
     
-    # Write header.
     yield _HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size)
     yield from _itertools.starmap(entry_struct.pack, iterable)
 
