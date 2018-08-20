@@ -8,6 +8,7 @@ import array as _array
 import heapq as _heapq
 import io as _io
 import itertools as _itertools
+import operator as _operator
 import struct as _struct
 import typing as _typing
 
@@ -90,9 +91,9 @@ def _bytes_iter_from_iterable(
 ) -> _typing.Iterable[bytes]:
     # Fail without yielding if the parameters are incorrect.
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
-    
-    yield _HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size)
-    yield from _itertools.starmap(entry_struct.pack, iterable)
+    return _itertools.chain(
+        (_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size),),
+        _itertools.starmap(entry_struct.pack, iterable))
 
 
 def _write_bytes_iter(
@@ -109,12 +110,12 @@ def _entries_iterable(
     f: _typing.BinaryIO,
     entry_struct: _struct.Struct
 ) -> _CandidatePairIter:
-    buffer = f.read(entry_struct.size)
-    while buffer:
-        if len(buffer) != entry_struct.size:
-            raise ValueError('ran out of input')
-        yield _typing.cast(_CandidatePair, entry_struct.unpack(buffer))
-        buffer = f.read(entry_struct.size)
+    buffers = map(f.read, _itertools.repeat(entry_struct.size))
+    nonempty_buffers = _itertools.takewhile(bool, buffers)
+    try:
+        yield from _typing.cast(_CandidatePairIter, map(entry_struct.unpack, nonempty_buffers))
+    except _struct.error:
+        raise ValueError('ran out of input') from None
 
 
 def _make_buffered(
@@ -228,12 +229,21 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     dset_is1: _typechecking.IntArrayType = _array.array(dset_i_t)
     rec_is0: _typechecking.IntArrayType = _array.array(rec_i_t)
     rec_is1: _typechecking.IntArrayType = _array.array(rec_i_t)
-    for sim, dset_i0, dset_i1, rec_i0, rec_i1 in iterable:
-        sims.append(sim)
-        dset_is0.append(dset_i0)
-        dset_is1.append(dset_i1)
-        rec_is0.append(rec_i0)
-        rec_is1.append(rec_i1)
+    arrays = sims, dset_is0, dset_is1, rec_is0, rec_is1
+
+    iterable_tee = _itertools.tee(iterable, len(arrays))
+
+    # Rely on side side-effecting function passed to append.
+    side_effecting_iters = (
+        map(arr.append,  # type: ignore  # This is too hard for Mypy.
+            map(_operator.itemgetter(i), iterable_tee[i]))
+        for i, arr in enumerate(arrays))
+
+    # zip so the side-effecting iterators are in lock-step. This means
+    # that itertools.tee will only cache one tuple at a time. all
+    # consumes the iterators.
+    all(zip(*side_effecting_iters))
+
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
 
 
