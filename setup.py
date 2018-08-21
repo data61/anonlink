@@ -15,7 +15,7 @@ requirements = [
 
 setup(
     name="anonlink",
-    version='0.9.0',
+    version='0.9.1-dev',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
@@ -29,6 +29,7 @@ setup(
 
     ext_package="anonlink",
     classifiers=[
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
@@ -39,7 +40,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
+        "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Security :: Cryptography",
     ],
 
