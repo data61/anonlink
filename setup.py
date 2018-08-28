@@ -13,10 +13,15 @@ requirements = [
         "mypy-extensions>=0.3"
     ]
 
+with open('README.rst', 'r', encoding='utf-8') as f:
+    readme = f.read()
+
 setup(
     name="anonlink",
     version='0.9.1-dev',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
+    long_description=readme,
+    long_description_content_type='text/x-rst',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
     setup_requires=['cffi>=1.7'],
