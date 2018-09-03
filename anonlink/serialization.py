@@ -101,7 +101,7 @@ def _write_bytes_iter(
 ) -> int:
     # Relies on the side effects of `f.write`. `f.write` returns the
     # number of bytes written. `sum` exhausts the iterator.
-    sum(map(f.write, bytes_iter))
+    return sum(map(f.write, bytes_iter))
 
 
 def _entries_iterable(
@@ -151,7 +151,8 @@ def _load_to_iterable(
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
 
     return (_entries_iterable(f, entry_struct),
-            sim_t_size, dset_i_t_size, rec_i_t_size)
+            sim_t_size, dset_i_t_size, rec_i_t_size,
+            entry_struct.size)
 
 
 def _file_size(entry_struct, entries):
@@ -213,10 +214,11 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     """Load candidate pairs from file.
 
     :param f: Binary buffer to read from.
+
     :return: Candidate pairs, compatible with the type returned from a
         similarity function.
     """
-    iterable, sim_t_size, dset_i_t_size, rec_i_t_size = _load_to_iterable(f)
+    iterable, sim_t_size, dset_i_t_size, rec_i_t_size, _ = _load_to_iterable(f)
 
     try:
         sim_t = _ARRAY_FLOAT_LEN_TO_FMT[sim_t_size]
@@ -252,8 +254,17 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
 
 
+def _number_entries(file_size, entry_size):
+    entries, remainder = divmod(file_size - _HEADER_STRUCT.size, entry_size)
+    if remainder:
+        raise ValueError('invalid file: number of entries is non-integer')
+    return entries 
+
+
 def merge_streams_iter(
-    files_in: _typing.Iterable[_typing.BinaryIO]
+    files_in: _typing.Iterable[_typing.BinaryIO],
+    *,
+    sizes: _typing.Optional[_typing.Iterable[int]] = None
 ) -> _typing.Iterable[bytes]:
     """Merge multiple files with candidate pairs to iterable of bytes.
 
@@ -267,24 +278,42 @@ def merge_streams_iter(
     candidate pairs dump.
 
     :param files_in: Sequence of files to read from.
+    :param sizes: Optional iterable of file sizes. Permits us to compute
+        the number of bytes in the returned iterator.
+
+    :return: 2-tuple containing an iterable of bytes objects and 
+        (optionally if the `sizes` parameter was provided) the length of
+        the merged file as an integer.
     """
     if not files_in:
         raise ValueError('no files provided')
 
-    file_iterables, *sizes = zip(*map(_load_to_iterable, files_in))
-    file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size = sizes
+    file_iterables, *field_sizes = zip(*map(_load_to_iterable, files_in))
+    file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size, file_entry_size \
+        = field_sizes
 
     sim_t_size = max(file_sim_t_size)
     dset_i_t_size = max(file_dset_i_t_size)
     rec_i_t_size = max(file_rec_i_t_size)
     
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
+
     # Sort in decreasing order of similarities. Tiebreak with dataset
     # indices and then with record indices, in increasing order.
     sorted_iterable = _heapq.merge(*file_iterables,
                                    key=lambda x: (-x[0],) + x[1:])
-    return _bytes_iter_from_iterable(
+    bytes_iter = _bytes_iter_from_iterable(
         sim_t_size, dset_i_t_size, rec_i_t_size,
+        entry_struct,
         sorted_iterable)
+
+    if sizes is not None:
+        entries_num = sum(map(_number_entries, sizes, file_entry_size))
+        file_size = _file_size(entry_struct, entries_num)
+    else:
+        file_size = None
+
+    return bytes_iter, file_size
 
 
 def merge_streams(
@@ -304,62 +333,8 @@ def merge_streams(
 
     :param files_in: Sequence of files to read from.
     :param f_out: Binary buffer write the merged candidate pairs to.
+
+    :return: Number of bytes written.
     """
-    bytes_iter = merge_streams_iter(files_in)
-    _write_bytes_iter(f_out, bytes_iter)
-
-
-def _records_in_file(
-    f: _typing.BinaryIO,
-    sim_t_size: int,
-    dset_i_size: int,
-    rec_i_t_size: int
-) -> int:
-    f.seek(0, 2)
-    length = f.tell()
-
-    # This assumes we've checked that the header is there.
-    length -= _HEADER_STRUCT.size
-    entry_struct = _entry_struct(sim_t_size, dset_i_size, rec_i_t_size)
-
-    entries, remainder = divmod(length, entry_struct.size)
-    if remainder:
-        raise ValueError('invalid file: number of entries is non-integer')
-    return entries
-
-
-def compute_merged_length(
-    files_in: _typing.Iterable[_typing.BinaryIO]
-) -> int:
-    """Compute the number of bytes written by ``merge_streams``.
-
-    No data is actually written.
-
-    Note: This function seeks to the end of the file. Before passing the
-    same file objects to ``merge_streams``, you need to ``.seek(0)``.
-    This requirement may limit this function's utility if the files
-    don't permit seeking backwards.
-
-    :param files_in: Iterable of files to read from. These files must be
-        seekable.
-    """
-    if not files_in:
-        raise ValueError('no files provided')
-
-    files_in = tuple(map(_make_buffered, files_in))
-
-    # This also checks the version and raises if incompatible.
-    sizes = map(_load_header_and_check_version, files_in)
-    sim_t_sizes, dset_i_t_sizes, rec_i_t_sizes = zip(*sizes)
-
-    # Find size of each entry. We always choose the biggest type.
-    sim_t_size = max(sim_t_sizes)
-    dset_i_t_size = max(dset_i_t_sizes)
-    rec_i_t_size = max(rec_i_t_sizes)
-    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
-    entry_struct_size = entry_struct.size
-
-    entries = sum(map(_records_in_file,
-                      files_in, sim_t_sizes, dset_i_t_sizes, rec_i_t_sizes))
-
-    return _HEADER_STRUCT.size + entry_struct_size * entries
+    bytes_iter, _ = merge_streams_iter(files_in)
+    return _write_bytes_iter(f_out, bytes_iter)
