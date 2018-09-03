@@ -1,5 +1,7 @@
+import inspect
 from itertools import repeat
 import logging
+import warnings
 
 from anonlink._entitymatcher import ffi, lib
 
@@ -9,6 +11,17 @@ from operator import itemgetter
 from . import bloommatcher as bm
 
 log = logging.getLogger('anonlink.entitymatch')
+
+
+def _fname():
+    return inspect.currentframe().f_back.f_back.f_code.co_name
+def _deprecation(use_instead=None):
+    msg = (f'anonlink.entitymatch.{_fname()} has been deprecated ')
+    if use_instead is not None:
+        msg += f'(use anonlink.{use_instead} instead)'
+    else:
+        msg += 'without replacement'
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
 
 def python_filter_similarity(filters1, filters2, k, threshold):
@@ -22,6 +35,7 @@ def python_filter_similarity(filters1, filters2, k, threshold):
         - the similarity score between 0 and 1 of the k matches above threshold
         - The index in filters2 of the best match
     """
+    _deprecation('similarities.dice_coefficient_python')
     result = []
     for i, f1 in enumerate(filters1):
         def dicecoeff(x):
@@ -41,6 +55,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     bits.
 
     """
+    _deprecation('similarities.dice_coefficient_accelerated')
     length_f1 = len(filters1)
     length_f2 = len(filters2)
 
@@ -112,6 +127,7 @@ def greedy_solver(sparse_similarity_matrix):
 
     :param sparse_similarity_matrix: Iterable of tuples: (indx_a, similarity_score, indx_b)
     """
+    _deprecation('solving.greedy_solve')
     mapping = {}
 
     # Indices of filters which have been claimed
@@ -136,6 +152,7 @@ def calculate_mapping_greedy(filters1, filters2, k, threshold):
 
     :returns A mapping dictionary of index in filters1 to index in filters2.
     """
+    _deprecation()
 
     log.info('Solving with greedy solver')
 
@@ -169,6 +186,7 @@ def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=Fal
             - the similarity score between 0 and 1 of the best match
             - The index in filters2 of the best match
     """
+    _deprecation('similarities.dice_coefficient')
     if not filters1 or not filters2:
         raise ValueError('empty input')
     # use C++ version by default
