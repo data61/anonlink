@@ -243,18 +243,11 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     rec_is1: _typechecking.IntArrayType = _array.array(rec_i_t)
     arrays = sims, dset_is0, dset_is1, rec_is0, rec_is1
 
-    iterable_tee = _itertools.tee(iterable, len(arrays))
-
     # Rely on side side-effecting function passed to append.
-    side_effecting_iters = (
-        map(arr.append,  # type: ignore  # This is too hard for Mypy.
-            map(_operator.itemgetter(i), iterable_tee[i]))
-        for i, arr in enumerate(arrays))
-
-    # zip so the side-effecting iterators are in lock-step. This means
-    # that itertools.tee will only cache one tuple at a time. all
-    # consumes the iterators.
-    all(zip(*side_effecting_iters))
+    # any exhausts the iterator since array.append returns None.
+    any(map(_array.array.append,  # type: ignore  # Just give up, Mypy.
+            _itertools.cycle(arrays),
+            _itertools.chain.from_iterable(iterable)))
 
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
 
