@@ -87,10 +87,9 @@ def _bytes_iter_from_iterable(
     sim_t_size: int,
     dset_i_t_size: int,
     rec_i_t_size: int,
+    entry_struct: _struct.Struct,
     iterable: _CandidatePairIter
 ) -> _typing.Iterable[bytes]:
-    # Fail without yielding if the parameters are incorrect.
-    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
     return _itertools.chain(
         (_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size),),
         _itertools.starmap(entry_struct.pack, iterable))
@@ -99,11 +98,10 @@ def _bytes_iter_from_iterable(
 def _write_bytes_iter(
     f: _typing.BinaryIO,
     bytes_iter: _typing.Iterable[bytes]
-) -> None:
-    # Caution! Assumes that all bytes in bytes_iter are nonempty!
-    # Consume iterable at C speed. `f.write` returns >0 if we are
-    # writing >0 bytes. Hence, `all` exhausts the iterator.
-    all(map(f.write, bytes_iter))
+) -> int:
+    # Relies on the side effects of `f.write`. `f.write` returns the
+    # number of bytes written. `sum` exhausts the iterator.
+    sum(map(f.write, bytes_iter))
 
 
 def _entries_iterable(
@@ -156,6 +154,10 @@ def _load_to_iterable(
             sim_t_size, dset_i_t_size, rec_i_t_size)
 
 
+def _file_size(entry_struct, entries):
+    return _HEADER_STRUCT.size + entry_struct.size * entries
+
+
 def dump_candidate_pairs_iter(
     candidate_pairs: _typechecking.CandidatePairs
 ) -> _typing.Iterable[bytes]:
@@ -165,22 +167,30 @@ def dump_candidate_pairs_iter(
 
     :param candidate_pairs: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
+
+    :return: 2-tuple containing an iterable of bytes objects and the
+        length of the dump as an integer.
     """
     sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
-    assert (len(sims)
+    entries = len(sims)
+    assert (entries
             == len(dset_is0) == len(dset_is1)
             == len(rec_is0) == len(rec_is1))
-    assert sims.itemsize in _ARRAY_FLOAT_LEN_TO_FMT
-    assert all(a.itemsize in _ARRAY_UINT_LEN_TO_FMT
-               for a in (dset_is0, dset_is1, rec_is0, rec_is1))
 
-    iterable = zip(sims, dset_is0, dset_is1, rec_is0, rec_is1)
     sim_t_size = sims.itemsize
     dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
     rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
 
-    return _bytes_iter_from_iterable(
-        sim_t_size, dset_i_t_size, rec_i_t_size, iterable)
+    iterable = zip(sims, dset_is0, dset_is1, rec_is0, rec_is1)
+    bytes_iter = _bytes_iter_from_iterable(
+        sim_t_size, dset_i_t_size, rec_i_t_size,
+        entry_struct,
+        iterable)
+
+    file_size = _file_size(entry_struct, entries)
+
+    return bytes_iter, file_size
 
 
 def dump_candidate_pairs(
@@ -192,9 +202,11 @@ def dump_candidate_pairs(
     :param f: Binary buffer to write to.
     :param candidate_pairs: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
+
+    :return: Number of bytes written.
     """
-    bytes_iter = dump_candidate_pairs_iter(candidate_pairs)
-    _write_bytes_iter(f, bytes_iter)
+    bytes_iter, _ = dump_candidate_pairs_iter(candidate_pairs)
+    return _write_bytes_iter(f, bytes_iter)
 
 
 def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
@@ -357,32 +369,4 @@ def compute_merged_length(
     entries = sum(map(_records_in_file,
                       files_in, sim_t_sizes, dset_i_t_sizes, rec_i_t_sizes))
 
-    return _HEADER_STRUCT.size + entry_struct_size * entries
-
-
-def compute_dump_length(
-    candidate_pairs: _typechecking.CandidatePairs,
-) -> int:
-    """Compute the number of bytes written by ``dump_candidate_pairs``.
-
-    :param files_in: Candidate pairs, as returned by a similarity
-        function or `load_candidate_pairs`.
-    """
-    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
-    entries = len(sims)
-    assert entries == len(dset_is0)
-    assert entries == len(dset_is1)
-    assert entries == len(rec_is0)
-    assert entries == len(rec_is1)
-
-    sim_t_size = sims.itemsize
-    dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
-    rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
-    
-    assert sim_t_size in _ARRAY_FLOAT_LEN_TO_FMT
-    assert dset_i_t_size in _ARRAY_UINT_LEN_TO_FMT
-    assert rec_i_t_size in _ARRAY_UINT_LEN_TO_FMT
-
-    entry_struct_size = _entry_struct(
-        sim_t_size, dset_i_t_size, rec_i_t_size).size
     return _HEADER_STRUCT.size + entry_struct_size * entries
