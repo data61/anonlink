@@ -39,6 +39,7 @@ def calculate_filter_similarity(filters1, filters2, k, threshold):
     :param threshold:
     :return:
     """
+
     results = []
     chunk_size = int(20000000 / len(filters2))
 
