@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e -x
 
+yum install -y atlas-devel
+
 # Compile wheels
 for PYBIN in /opt/python/cp37-cp37m/bin; do
     "${PYBIN}/pip" install -r /io/requirements.txt
