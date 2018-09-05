@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e -x
 
-# Install any system packages required by our library
-#yum install -y <package-name>
-
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install -r /io/dev-requirements.txt
