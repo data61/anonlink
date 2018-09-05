@@ -6,11 +6,14 @@ from anonlink._entitymatcher import ffi, lib
 import sys
 from operator import itemgetter
 
+import anonlink._deprecation
 from . import bloommatcher as bm
 
+deprecated = anonlink._deprecation.make_decorator(__name__)
 log = logging.getLogger('anonlink.entitymatch')
 
 
+@deprecated(replacement='similarities.dice_coefficient_python')
 def python_filter_similarity(filters1, filters2, k, threshold):
     """Pure python method for determining Bloom Filter similarity
 
@@ -34,6 +37,7 @@ def python_filter_similarity(filters1, filters2, k, threshold):
     return result
 
 
+@deprecated(replacement='similarities.dice_coefficient_accelerated')
 def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     """Accelerated method for determining Bloom Filter similarity.
 
@@ -106,6 +110,7 @@ def cffi_filter_similarity_k(filters1, filters2, k, threshold):
     return result
 
 
+@deprecated(replacement='solving.greedy_solve')
 def greedy_solver(sparse_similarity_matrix):
     """
     For optimal results consider sorting input by score for each row.
@@ -125,6 +130,7 @@ def greedy_solver(sparse_similarity_matrix):
     return mapping
 
 
+@deprecated
 def calculate_mapping_greedy(filters1, filters2, k, threshold):
     """
     Brute-force one-shot solver.
@@ -143,6 +149,7 @@ def calculate_mapping_greedy(filters1, filters2, k, threshold):
     return greedy_solver(sparse_matrix)
 
 
+@deprecated(replacement='similarities.dice_coefficient')
 def calculate_filter_similarity(filters1, filters2, k, threshold, use_python=False):
     """Computes a sparse similarity matrix with:
         - size no larger than k * len(filters1)

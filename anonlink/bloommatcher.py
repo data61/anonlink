@@ -1,8 +1,12 @@
+import anonlink._deprecation
 from anonlink._entitymatcher import ffi, lib
 
 __author__ = 'Stephen Hardy, Brian Thorne'
 
+deprecated = anonlink._deprecation.make_decorator(__name__)
 
+
+@deprecated(replacement='similarities.dice_coefficient_python')
 def dicecoeff_pure_python(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
@@ -23,6 +27,7 @@ def dicecoeff_pure_python(e1, e2):
         return 2.0 * overlap_count / combined_count
 
 
+@deprecated(replacement='similarities.dice_coefficient_accelerated')
 def dicecoeff_native(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
@@ -38,6 +43,7 @@ def dicecoeff_native(e1, e2):
     return lib.dice_coeff(e1array, e2array, len(e1array))
 
 
+@deprecated(replacement='similarities.dice_coefficient')
 def dicecoeff(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns
@@ -50,6 +56,7 @@ def dicecoeff(e1, e2):
         return dicecoeff_pure_python(e1, e2)
 
 
+@deprecated
 def dicecoeff_precount(e1, e2, count):
     """
     Dice coefficient measures the similarity of two bit patterns
@@ -64,6 +71,7 @@ def dicecoeff_precount(e1, e2, count):
     return 2*(e1 & e2).count()/count
 
 
+@deprecated
 def tanimoto(e1, e2):
     """
     Tanimoto coefficient measures the similarity of two bit patterns.
@@ -75,6 +83,7 @@ def tanimoto(e1, e2):
     return (e1 & e2).count() / float((e1 | e2).count())
 
 
+@deprecated
 def tanimoto_precount(e1, e2, count):
     """
     Tanimoto coefficient measures the similarity of two bit patterns
