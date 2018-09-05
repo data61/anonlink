@@ -1,6 +1,3 @@
-import inspect
-import warnings
-
 import anonlink._deprecation
 from anonlink._entitymatcher import ffi, lib
 

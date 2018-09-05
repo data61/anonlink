@@ -5,7 +5,6 @@ Concurrent implementations.
 """
 
 import concurrent.futures
-import warnings
 
 import anonlink._deprecation
 import anonlink.entitymatch

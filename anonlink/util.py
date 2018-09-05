@@ -1,9 +1,7 @@
 #!/usr/bin/env python3.4
 
-import inspect
 import os
 import random
-import warnings
 from bitarray import bitarray
 from timeit import default_timer as timer
 

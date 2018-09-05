@@ -4,10 +4,7 @@ Solves pairwise matches for the entire network at once.
 Given a sparse, weighted, bipartite graph determine the matching.
 """
 
-import inspect
 import logging
-import warnings
-
 import networkx as nx
 from networkx.algorithms import bipartite
 

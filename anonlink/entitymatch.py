@@ -1,7 +1,5 @@
-import inspect
 from itertools import repeat
 import logging
-import warnings
 
 from anonlink._entitymatcher import ffi, lib
 
