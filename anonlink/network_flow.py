@@ -11,16 +11,13 @@ import warnings
 import networkx as nx
 from networkx.algorithms import bipartite
 
+import anonlink._deprecation
+
+deprecated = anonlink._deprecation.make_decorator(__name__)
 log = logging.getLogger('anonlink.networkflow')
 
-def _fname():
-    return inspect.currentframe().f_back.f_back.f_code.co_name
-def _deprecation():
-    msg = (f'anonlink.network_flow.{_fname()} has been deprecated without '
-           f'replacement')
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
-
+@deprecated
 def calculate_network(similarity, cutoff):
     """Given an adjacency matrix of edge weights, apply a
     threshold to the connections and construct a graph.
@@ -29,7 +26,6 @@ def calculate_network(similarity, cutoff):
     :param cutoff: The threshold for including a connection
     :return: The resulting networkx graph.
     """
-    _deprecation()
     G = nx.DiGraph()
     logging.debug('Applying threshold to network')
     for (idx1, score, idx2) in similarity:
@@ -53,6 +49,7 @@ def _to_int_map(network, find_pair):
     return entityMap
 
 
+@deprecated
 def calculate_entity_mapping(G, method=None):
     """Given the networkx graph, calculate a dictionary mapping
     each row node to the most highly similar column node.
@@ -71,7 +68,6 @@ def calculate_entity_mapping(G, method=None):
     :return: A dictionary mapping of row index to column index. If no mate
     is found, the node isn't included.
     """
-    _deprecation()
 
     if method == 'bipartite':
         log.info('Solving entity matches with bipartite maximum matching solver')
@@ -122,6 +118,7 @@ def calculate_entity_mapping(G, method=None):
     return entity_map
 
 
+@deprecated
 def map_entities(weights, threshold, method=None):
     """Calculate a dictionary mapping using similarity scores.
 
@@ -134,7 +131,6 @@ def map_entities(weights, threshold, method=None):
         - 'weighted' - the `networkx.max_weight_matching` (slowest but most accurate
           with close matches)
     """
-    _deprecation()
 
     network = calculate_network(weights, threshold)
     return calculate_entity_mapping(network, method)

@@ -1,22 +1,15 @@
 import inspect
 import warnings
 
+import anonlink._deprecation
 from anonlink._entitymatcher import ffi, lib
 
 __author__ = 'Stephen Hardy, Brian Thorne'
 
-
-def _fname():
-    return inspect.currentframe().f_back.f_back.f_code.co_name
-def _deprecation(use_instead=None):
-    msg = (f'anonlink.bloommatcher.{_fname()} has been deprecated ')
-    if use_instead is not None:
-        msg += f'(use anonlink.{use_instead} instead)'
-    else:
-        msg += 'without replacement'
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
+deprecated = anonlink._deprecation.make_decorator(__name__)
 
 
+@deprecated(replacement='similarities.dice_coefficient_python')
 def dicecoeff_pure_python(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
@@ -27,7 +20,6 @@ def dicecoeff_pure_python(e1, e2):
     :param e2: bitarray of same length as e1
     :return: real 0-1 similarity measure
     """
-    _deprecation('similarities.dice_coefficient_python')
     count1 = e1.count()
     count2 = e2.count()
     combined_count = count1 + count2
@@ -38,6 +30,7 @@ def dicecoeff_pure_python(e1, e2):
         return 2.0 * overlap_count / combined_count
 
 
+@deprecated(replacement='similarities.dice_coefficient_accelerated')
 def dicecoeff_native(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns.
@@ -48,25 +41,25 @@ def dicecoeff_native(e1, e2):
     :param e2: bitarray of same length as e1
     :return: real 0-1 similarity measure
     """
-    _deprecation('similarities.dice_coefficient_accelerated')
     e1array = ffi.new("char[]", e1.tobytes())
     e2array = ffi.new("char[]", e2.tobytes())
     return lib.dice_coeff(e1array, e2array, len(e1array))
 
 
+@deprecated(replacement='similarities.dice_coefficient')
 def dicecoeff(e1, e2):
     """
     Dice coefficient measures the similarity of two bit patterns
 
     :return: real 0-1 similarity measure
     """
-    _deprecation('similarities.dice_coefficient')
     if e1.length() == e2.length() and (e1.length()/8) % 8 == 0:
         return dicecoeff_native(e1, e2)
     else:
         return dicecoeff_pure_python(e1, e2)
 
 
+@deprecated
 def dicecoeff_precount(e1, e2, count):
     """
     Dice coefficient measures the similarity of two bit patterns
@@ -76,12 +69,12 @@ def dicecoeff_precount(e1, e2, count):
     :param count: float bitcount1 + bitcount2
     :return: real 0-1 similarity measure
     """
-    _deprecation()
     if count == 0:
         return 0
     return 2*(e1 & e2).count()/count
 
 
+@deprecated
 def tanimoto(e1, e2):
     """
     Tanimoto coefficient measures the similarity of two bit patterns.
@@ -90,10 +83,10 @@ def tanimoto(e1, e2):
 
     :return: real 0-1 similarity measure
     """
-    _deprecation()
     return (e1 & e2).count() / float((e1 | e2).count())
 
 
+@deprecated
 def tanimoto_precount(e1, e2, count):
     """
     Tanimoto coefficient measures the similarity of two bit patterns
@@ -103,6 +96,5 @@ def tanimoto_precount(e1, e2, count):
     :param count: float bitcount1 + bitcount2
     :return: real 0-1 similarity measure
     """
-    _deprecation()
     a = (e1 & e2).count()
     return a / float(count - a)

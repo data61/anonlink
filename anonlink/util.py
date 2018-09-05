@@ -7,29 +7,21 @@ import warnings
 from bitarray import bitarray
 from timeit import default_timer as timer
 
+import anonlink._deprecation
 from anonlink._entitymatcher import ffi, lib
 
-def _fname():
-    return inspect.currentframe().f_back.f_back.f_code.co_name
-def _deprecation(use_instead=None):
-    msg = (f'anonlink.util.{_fname()} has been '
-           f'deprecated ')
-    if use_instead is not None:
-        msg += f'(use anonlink.{use_instead} instead)'
-    else:
-        msg += 'without replacement'
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
+deprecated = anonlink._deprecation.make_decorator(__name__)
 
 
+@deprecated
 def generate_bitarray(length):
-    _deprecation()
     a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
     a.frombytes(os.urandom(length//8))
     return a
 
 
+@deprecated
 def generate_clks(n):
-    _deprecation()
     res = []
     for i in range(n):
         ba = generate_bitarray(1024)
@@ -37,6 +29,7 @@ def generate_clks(n):
     return res
 
 
+@deprecated
 def popcount_vector(bitarrays, use_python=True):
     """Return a list containing the popcounts of the elements of
     bitarrays, and the time (in seconds) it took. If use_python is
@@ -48,7 +41,6 @@ def popcount_vector(bitarrays, use_python=True):
     it is currently more expensive to call our C implementation
     than just calling bitarray.count()
     """
-    _deprecation()
     # Use Python
     if use_python:
         start = timer()
@@ -67,8 +59,8 @@ def popcount_vector(bitarrays, use_python=True):
     return [c_popcounts[i] for i in range(n)], ms * 1e-3
 
 
+@deprecated(replacement='concurrency.split_to_chunks')
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    _deprecation('concurrency.split_to_chunks')
     for i in range(0, len(l), n):
         yield l[i:i + n]
