@@ -142,7 +142,7 @@ def _load_header_and_check_version(
 
 def _load_to_iterable(
     f: _typing.BinaryIO
-) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
+) -> _typing.Tuple[_CandidatePairIter, int, int, int, int]:
     f = _make_buffered(f)
     sim_t_size, dset_i_t_size, rec_i_t_size = _load_header_and_check_version(f)
 
@@ -161,7 +161,7 @@ def _file_size(entry_struct, entries):
 
 def dump_candidate_pairs_iter(
     candidate_pairs: _typechecking.CandidatePairs
-) -> _typing.Iterable[bytes]:
+) -> _typing.Tuple[_typing.Iterable[bytes], int]:
     """Dump candidate pairs as an iterable of bytes objects.
 
     No guarantees are made about the size of those bytes objects.
@@ -197,7 +197,7 @@ def dump_candidate_pairs_iter(
 def dump_candidate_pairs(
     candidate_pairs: _typechecking.CandidatePairs,
     f: _typing.BinaryIO
-) -> None:
+) -> int:
     """Dump candidate pairs to file.
 
     :param f: Binary buffer to write to.
@@ -265,7 +265,7 @@ def merge_streams_iter(
     files_in: _typing.Iterable[_typing.BinaryIO],
     *,
     sizes: _typing.Optional[_typing.Iterable[int]] = None
-) -> _typing.Iterable[bytes]:
+) -> _typing.Tuple[_typing.Iterable[bytes], int]:
     """Merge multiple files with candidate pairs to iterable of bytes.
 
     This function preserves the candidate pairs' sorted order. It avoids
@@ -319,7 +319,7 @@ def merge_streams_iter(
 def merge_streams(
     files_in: _typing.Iterable[_typing.BinaryIO],
     f_out: _typing.BinaryIO
-) -> None:
+) -> int:
     """Merge multiple files with serialised candidate pairs.
 
     This function preserves the candidate pairs' sorted order. It avoids
