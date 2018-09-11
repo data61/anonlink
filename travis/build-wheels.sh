@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e -x
-
+# Script is assumed to be running inside a 64bit manylinux container
+# See https://github.com/pypa/manylinux
 yum install -y atlas-devel
 
 # Compile wheels
