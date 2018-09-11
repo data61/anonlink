@@ -4,11 +4,11 @@ set -e -x
 yum install -y atlas-devel
 
 # Compile wheels
-for PYBIN in /opt/python/cp37-cp37m/bin; do
-    "${PYBIN}/pip" install -r /io/requirements.txt
-    "${PYBIN}/pip" install -e /io/
-    "${PYBIN}/pip" wheel /io/ -w wheelhouse/
-done
+export PYBIN="/opt/python/cp37-cp37m/bin"
+
+"${PYBIN}/pip" install -r /io/requirements.txt
+"${PYBIN}/pip" install -e /io/
+"${PYBIN}/pip" wheel /io/ -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/anonlink-*.whl; do
@@ -16,7 +16,5 @@ for whl in wheelhouse/anonlink-*.whl; do
 done
 
 # Install packages and test
-for PYBIN in /opt/python/cp37-cp37m/bin/; do
-    "${PYBIN}/pip" install anonlink --no-index -f /io/wheelhouse
-    (cd "$HOME"; "${PYBIN}/pytest" /io/tests)
-done
+"${PYBIN}/pip" install anonlink --no-index -f /io/wheelhouse
+(cd "$HOME"; "${PYBIN}/pytest" /io/tests)
