@@ -21,7 +21,7 @@ jobs:
       sudo: required
       python: '3.6'
       services:
-      - docker
+        - docker
       env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
       install: docker pull $DOCKER_IMAGE
       script:
