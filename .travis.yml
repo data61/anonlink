@@ -1,4 +1,5 @@
 language: python
+sudo: false
 
 python:
   - '3.6'
@@ -30,6 +31,7 @@ jobs:
 
 install:
   - travis_retry pip install pytest pytest-cov
+  - if [ -n "$USE_ASV" ]; then pip install asv; fi
   - travis_retry pip install -r requirements.txt
   - travis_retry python setup.py sdist bdist_wheel
   - travis_retry pip install -e .
