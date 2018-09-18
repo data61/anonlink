@@ -3,14 +3,20 @@
 #include "_multiparty_solving_inner.h"
 
 struct RecordHasher {
+    std::hash<int> hasher;
     size_t operator()(const Record &record) const {
-        return (std::hash<int>()(record.dset_i) << 1) ^ std::hash<int>()(record.rec_i);
+        size_t hash1 = hasher(record.dset_i);
+        size_t hash2 = hasher(record.rec_i);
+
+        // https://www.boost.org/doc/libs/1_35_0/doc/html/boost/hash_combine_id241013.html
+        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
     }
 };
 
 
 
 class GroupsStore {
+// Keep track of groups. This is like a low-effort Disjoint Sets data structure.
 private:
     typedef std::unordered_map<Record, Group*, RecordHasher> InnerStore;
     InnerStore inner_store;
@@ -83,6 +89,8 @@ public:
     }
     
     std::vector<Group *> retrieve_nontrivial_groups() {
+        // Caution!
+        // This frees a bunch of groups. Only call once otherwise done with this data structure.
         std::unordered_set<Group *> all_groups;
         for (const auto &item : this->inner_store) {
             all_groups.insert(item.second);
@@ -102,6 +110,10 @@ public:
 };
 
 class LinksStore {
+// Store number of edges encountered between two groups. It is convenient to represent groups as
+// Group* since every conceptual group belongs to exactly one such vector. This saves us having a
+// separate hash table. (We don't dereference these pointers here.)
+
 private:
     typedef std::unordered_map<Group*, size_t> LinksStoreInnerInner;
     typedef std::unordered_map<Group*, LinksStoreInnerInner> LinksStoreInner;
@@ -132,8 +144,12 @@ public:
         LinksStoreInnerInner &absorber_store = this->links_store_inner[absorber];
         LinksStoreInnerInner &absorbee_store = this->links_store_inner[absorbee];
         
+        // Merging two groups.
+        // They no longer need to keep track of common links.
         absorber_store.erase(absorbee);
         absorbee_store.erase(absorber);
+
+        // Move all the links from absorbee to absorber. Same with links referencing absorbee.
         for (const auto &link_count : absorbee_store) {
             Group *link = link_count.first;
             assert (link);
@@ -146,6 +162,8 @@ public:
             set_or_increment(mp_match, absorber, count);
             mp_match.erase(absorbee);
         }
+
+        // Cleanup.
         this->links_store_inner.erase(absorbee);
         if (absorber_store.empty()) {
             this->links_store_inner.erase(absorber);
@@ -156,13 +174,17 @@ public:
 
 
 void none_grouped(GroupsStore &groups_store, Record i0, Record i1) {
+    // Neither is in a group, so let's make one.
     groups_store.make_group(i0, i1);
 }
 
 void one_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *group, Record i) {
     if (group->size() == 1) {
+        // We have two singletons (one has a group of itself, one doesn't), so we can merge them.
         groups_store.add_to_group(group, i);
     } else {
+        // The group has at least 2 elements. We've only matched with one so far (or else we'd
+        // already have a group of size at least one), so we can't merge.
         Group *group_i = groups_store.make_group(i);
         links_store.increment(group, group_i);
     }
@@ -181,6 +203,7 @@ void two_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *grou
     size_t group_0_size = group0->size();
     size_t group_1_size = group1->size();
     if (overlap == group_0_size * group_1_size) {
+        // Optimise by enlarging the bigger group.
         if (group_0_size < group_1_size) {
             two_grouped_merge(groups_store, links_store, group1, group0);
         } else {
@@ -197,7 +220,11 @@ greedy_solve_inner(
                    unsigned int rec_is1[],
                    size_t n
                    ) {
+    // Keep track of groups that have already been formed.
     GroupsStore groups_store;
+
+    // Keep track of links between records that we've encountered. We only merge two groups if
+    // we've encountered links between all their records.
     LinksStore links_store;
 
     for (size_t i = 0; i < n; ++i) {

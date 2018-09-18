@@ -15,3 +15,4 @@ cdef extern from "_multiparty_solving_inner.h":
         unsigned int[],
         size_t n
     ) nogil except +
+    # `except +` asks Cython to propagate C++ exceptions to Python land
