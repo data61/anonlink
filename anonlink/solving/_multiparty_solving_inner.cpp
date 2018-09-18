@@ -108,20 +108,6 @@ private:
     
     LinksStoreInner links_store_inner;
     
-    size_t links_noassert(Group *group0, Group *group1) const {
-        auto outer_iterator = this->links_store_inner.find(group0);
-        if (outer_iterator == this->links_store_inner.end()) {
-            return 0;
-        } else {
-            auto inner_iterator = outer_iterator->second.find(group1);
-            if (inner_iterator == outer_iterator->second.end()) {
-                return 0;
-            } else {
-                return inner_iterator->second;
-            }
-        }
-    }
-    
     inline size_t set_or_increment(Group *group0, Group *group1, size_t n) {
         return this->links_store_inner[group0].try_emplace(group1, 0).first->second += n;
     }

@@ -5,15 +5,21 @@ from cython.operator cimport dereference as deref
 from anonlink.solving._multiparty_solving_inner cimport (
     Record, Group, greedy_solve_inner)
 
+
 def greedy_solve(candidates):
     sims_arr, dset_is_arrs, rec_is_arrs = candidates
+    if len(dset_is_arrs) != len(rec_is_arrs):
+        raise ValueError('inconsistent shape of index arrays')
+    if len(dset_is_arrs) != 2:
+        raise NotImplementedError('only binary solving is supported')
 
     dset_is0_arr, dset_is1_arr = dset_is_arrs
     rec_is0_arr, rec_is1_arr = rec_is_arrs
-
     cdef size_t n = <size_t>len(sims_arr)
-    assert (n == <size_t>len(dset_is0_arr) == <size_t>len(dset_is1_arr)
-              == <size_t>len(rec_is0_arr) == <size_t>len(rec_is1_arr))
+    if not (n
+            == len(dset_is0_arr) == len(dset_is1_arr)
+            == len(rec_is0_arr) == len(rec_is1_arr)):
+        raise ValueError('inconsistent shape of index arrays')
 
     cdef unsigned int[::1] dset_is0 = dset_is0_arr
     cdef unsigned int[::1] dset_is1 = dset_is1_arr
