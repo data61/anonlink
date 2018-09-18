@@ -1,15 +1,12 @@
 from libcpp.vector cimport vector
+
 from cython.operator cimport dereference as deref
+
 from anonlink.solving._multiparty_solving_inner cimport (
     Record, Group, greedy_solve_inner)
 
-import typing as _typing
-import anonlink.typechecking as _typechecking
 
-
-def greedy_solve(
-    candidates: _typechecking.CandidatePairs
-) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
+def greedy_solve(candidates):
     """Select matches from candidate pairs using the greedy algorithm.
 
     We assign each record to exactly one 'group' of records that are
