@@ -9,6 +9,9 @@ python:
   - 'nightly'
   - 'pypy3'
 
+env:
+  - INCLUDE_10K=
+
 matrix:
   allow_failures:
     - python: '3.7-dev'
@@ -22,4 +25,4 @@ install:
   - travis_retry pip install -e .
 
 script:
-  - pytest --cov=anonlink
+  - pytest --cov=anonlink -W ignore::DeprecationWarning
