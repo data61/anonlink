@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unordered_map>
 #include <unordered_set>
 #include "_multiparty_solving_inner.h"
