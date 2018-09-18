@@ -20,8 +20,8 @@ extensions = [Extension(
     sources=["anonlink/solving/_multiparty_solving.pyx",
              "anonlink/solving/_multiparty_solving_inner.cpp"],
     language="c++",
-    extra_compile_args=["-std=c++17"],
-    extra_link_args=["-std=c++17"]
+    extra_compile_args=["-std=c++11"],
+    extra_link_args=["-std=c++11"]
     )]
 
 with open('README.rst', 'r', encoding='utf-8') as f:

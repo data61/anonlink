@@ -121,11 +121,11 @@ private:
     LinksStoreInner links_store_inner;
     
     inline size_t set_or_increment(Group *group0, Group *group1, size_t n) {
-        return this->links_store_inner[group0].try_emplace(group1, 0).first->second += n;
+        return this->links_store_inner[group0].emplace(group1, 0).first->second += n;
     }
     
     inline size_t set_or_increment(LinksStoreInnerInner &group0_store, Group *group1, size_t n) {
-        return group0_store.try_emplace(group1, 0).first->second += n;
+        return group0_store.emplace(group1, 0).first->second += n;
     }
     
 public:
