@@ -7,3 +7,4 @@ clkhash==0.11.0
 numpy==1.14.3
 mypy-extensions==0.3.0
 hypothesis==3.69.2
+Cython==0.28.5
