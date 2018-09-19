@@ -4,13 +4,9 @@
 #include "_multiparty_solving_inner.h"
 
 struct RecordHasher {
-    std::hash<int> hasher;
+    std::hash<unsigned long long> hasher;
     size_t operator()(const Record &record) const {
-        size_t hash1 = hasher(record.dset_i);
-        size_t hash2 = hasher(record.rec_i);
-
-        // https://www.boost.org/doc/libs/1_35_0/doc/html/boost/hash_combine_id241013.html
-        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+        return hasher((unsigned long long)record.dset_i << 32 | record.rec_i);
     }
 };
 
