@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <cassert>
 #include <unordered_map>
 #include <unordered_set>
 #include "_multiparty_solving_inner.h"
+
+namespace {
 
 struct RecordHasher {
     std::hash<unsigned long long> hasher;
@@ -20,14 +23,22 @@ private:
     
 #ifndef NDEBUG
     bool in_group(Record record) const {
-        return this->inner_store.count(record);
+        return inner_store.count(record);
     }
-#endif /* NDEBUG */
+
+    bool group_consistent(Group *group) {
+        return std::all_of(
+            group->cbegin(), group->cend(),
+            [this, group](Record r) {
+                return inner_store.at(r) == group;
+            });
+    }
+#endif /* !NDEBUG */
     
 public:
     Group *get_group(Record record) const {
-        auto res_iterator = this->inner_store.find(record);
-        if (res_iterator == this->inner_store.end()) {
+        auto res_iterator = inner_store.find(record);
+        if (res_iterator == inner_store.end()) {
             return nullptr;
         } else {
             Group *retval = res_iterator->second;
@@ -37,49 +48,39 @@ public:
     }
     
     Group *make_group(Record record) {
-        assert(!this->in_group(record));
+        assert(!in_group(record));
         Group *group = new Group {record};
-        this->inner_store[record] = group;
+        inner_store[record] = group;
         return group;
     }
     
     Group *make_group(Record record0, Record record1) {
-        assert(!this->in_group(record0));
-        assert(!this->in_group(record1));
+        assert(!in_group(record0));
+        assert(!in_group(record1));
         Group *group = new Group {record0, record1};
-        this->inner_store[record0] = group;
-        this->inner_store[record1] = group;
+        inner_store[record0] = group;
+        inner_store[record1] = group;
         return group;
     }
-    
+
     Group *add_to_group(Group *group, Record record) {
-        assert(!this->in_group(record));
+        assert(!in_group(record));
         assert(group);
-        assert(std::all_of(group->cbegin(),
-                           group->cend(),
-                           [this, group](Record r) { return this->inner_store.at(r) == group; }));
+        assert(group_consistent(group));
         group->push_back(record);
-        this->inner_store[record] = group;
+        inner_store[record] = group;
         return group;
     }
     
     Group *merge_into(Group * __restrict__ absorber, Group * __restrict__ absorbee) {
         assert(absorber);
         assert(absorbee);
-        assert(std::all_of(absorber->cbegin(),
-                           absorber->cend(),
-                           [this, absorber](Record r) {
-                               return this->inner_store.at(r) == absorber;
-                           }));
-        assert(std::all_of(absorbee->cbegin(),
-                           absorbee->cend(),
-                           [this, absorbee](Record r) {
-                               return this->inner_store.at(r) == absorbee;
-                           }));
+        assert(group_consistent(absorber));
+        assert(group_consistent(absorbee));
         absorber->reserve(absorber->size() + absorbee->size());
         absorber->insert(absorber->end(), absorbee->cbegin(), absorbee->cend());
         for (const auto &item : *absorbee) {
-            this->inner_store[item] = absorber;
+            inner_store[item] = absorber;
         }
         delete absorbee;
         return absorber;
@@ -89,7 +90,7 @@ public:
         // Caution!
         // This frees a bunch of groups. Only call once otherwise done with this data structure.
         std::unordered_set<Group *> all_groups;
-        for (const auto &item : this->inner_store) {
+        for (const auto &item : inner_store) {
             all_groups.insert(item.second);
         }
         
@@ -117,11 +118,14 @@ private:
     
     LinksStoreInner links_store_inner;
     
-    inline size_t set_or_increment(Group *group0, Group *group1, size_t n) {
-        return this->links_store_inner[group0].emplace(group1, 0).first->second += n;
+    size_t set_or_increment(Group *group0, Group *group1, size_t n) {
+        std::pair<LinksStoreInnerInner::iterator, bool> emplace_res
+             = links_store_inner[group0].emplace(group1, 0);
+        LinksStoreInnerInner::iterator &count_iterator = emplace_res.first;
+        return count_iterator->second += n;
     }
     
-    inline size_t set_or_increment(LinksStoreInnerInner &group0_store, Group *group1, size_t n) {
+    size_t set_or_increment(LinksStoreInnerInner &group0_store, Group *group1, size_t n) {
         return group0_store.emplace(group1, 0).first->second += n;
     }
     
@@ -129,8 +133,8 @@ public:
     size_t increment(Group *group0, Group *group1) {
         assert(group0);
         assert(group1);
-        size_t retval1 = this->set_or_increment(group0, group1, 1);
-        size_t retval2 = this->set_or_increment(group1, group0, 1);
+        size_t retval1 = set_or_increment(group0, group1, 1);
+        size_t retval2 = set_or_increment(group1, group0, 1);
         assert(retval1 == retval2);
         return retval1;
     }
@@ -138,8 +142,8 @@ public:
     void merge_into(Group *absorber, Group *absorbee) {
         assert(absorber);
         assert(absorbee);
-        LinksStoreInnerInner &absorber_store = this->links_store_inner[absorber];
-        LinksStoreInnerInner &absorbee_store = this->links_store_inner[absorbee];
+        LinksStoreInnerInner &absorber_store = links_store_inner[absorber];
+        LinksStoreInnerInner &absorbee_store = links_store_inner[absorbee];
         
         // Merging two groups.
         // They no longer need to keep track of common links.
@@ -153,17 +157,17 @@ public:
             size_t count = link_count.second;
             assert (count);
             
-            this->set_or_increment(absorber, link, count);
+            set_or_increment(absorber, link, count);
             
-            LinksStoreInnerInner &mp_match = this->links_store_inner[link];
+            LinksStoreInnerInner &mp_match = links_store_inner[link];
             set_or_increment(mp_match, absorber, count);
             mp_match.erase(absorbee);
         }
 
         // Cleanup.
-        this->links_store_inner.erase(absorbee);
+        links_store_inner.erase(absorbee);
         if (absorber_store.empty()) {
-            this->links_store_inner.erase(absorber);
+            links_store_inner.erase(absorber);
         }
     }
     
@@ -207,6 +211,8 @@ void two_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *grou
             two_grouped_merge(groups_store, links_store, group0, group1);
         }
     }
+}
+
 }
 
 std::vector<Group *>
