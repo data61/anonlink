@@ -299,6 +299,7 @@ greedy_solve_inner(
         Record i0(dset_is0[i], rec_is0[i]);
         Record i1(dset_is1[i], rec_is1[i]);
 
+        // These will be nullptr if the corresponding records don't already belong do a group.
         Group *group_i0 = groups_store.get_group(i0);
         Group *group_i1 = groups_store.get_group(i1);
         
