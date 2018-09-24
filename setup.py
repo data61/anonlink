@@ -21,7 +21,8 @@ extensions = [Extension(
              "anonlink/solving/_multiparty_solving_inner.cpp"],
     language="c++",
     extra_compile_args=["-std=c++11"],
-    extra_link_args=["-std=c++11"]
+    extra_link_args=["-std=c++11"],
+    define_macros=[('NDEBUG', None)]
     )]
 
 with open('README.rst', 'r', encoding='utf-8') as f:

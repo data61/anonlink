@@ -7,9 +7,10 @@
 namespace {
 
 struct RecordHasher {
-    std::hash<unsigned long long> hasher;
+    std::hash<uint64_t> hasher;
     size_t operator()(const Record &record) const {
-        return hasher((unsigned long long)record.dset_i << 32 | record.rec_i);
+        return hasher(static_cast<uint64_t>(record.dset_i) << 32
+                      ^ static_cast<uint64_t>(record.rec_i));
     }
 };
 
