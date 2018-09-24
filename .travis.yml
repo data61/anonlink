@@ -25,4 +25,4 @@ install:
   - travis_retry pip install -e .
 
 script:
-  - pytest --cov=anonlink
+  - pytest --cov=anonlink -W ignore:DeprecationWarning

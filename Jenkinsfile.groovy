@@ -45,7 +45,7 @@ def build(python_version, compiler, label, release = false) {
 
     PythonVirtualEnvironment venv = prepareVirtualEnvironment(python_version, clkhashPackageName, compiler)
     try {
-      venv.runChosenCommand("pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml")
+      venv.runChosenCommand("pytest --cov=anonlink --junit-xml=testoutput.xml --cov-report=xml:coverage.xml -W ignore:DeprecationWarning")
       if (release) {
         // This will be the official release
         archiveArtifacts artifacts: "dist/anonlink-*.whl"
