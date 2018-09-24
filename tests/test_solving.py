@@ -5,7 +5,8 @@ from collections import Counter
 import pytest
 from hypothesis import given, strategies
 
-from anonlink.solving import greedy_solve
+from anonlink.solving import (greedy_solve, greedy_solve_python,
+                              greedy_solve_native)
 
 def _zip_candidates(candidates):
     candidates = tuple(candidates)
@@ -245,3 +246,29 @@ def test_greedy_2p(candidate_pairs):
         assert ((i, j) in matches
                 or match_similarities.get(i, float('-inf')) >= sim
                 or match_similarities.get(j, float('-inf')) >= sim)
+
+
+@given(candidate_pairs_2p)
+def test_python_native_match_2p(candidate_pairs):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_python = greedy_solve_python(candidates)
+    solution_native = greedy_solve_native(candidates)
+
+    # We don't care about the order
+    solution_python = frozenset(map(frozenset, solution_python))
+    solution_native = frozenset(map(frozenset, solution_native))
+
+    assert solution_python == solution_native
+
+
+@given(candidate_pairs_np)
+def test_python_native_match_np(candidate_pairs):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_python = greedy_solve_python(candidates)
+    solution_native = greedy_solve_native(candidates)
+
+    # We don't care about the order
+    solution_python = frozenset(map(frozenset, solution_python))
+    solution_native = frozenset(map(frozenset, solution_native))
+
+    assert solution_python == solution_native
