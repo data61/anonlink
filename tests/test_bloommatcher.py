@@ -74,7 +74,6 @@ class TestBloomMatcher(unittest.TestCase):
 
         self.assertEqual(result, 0.0)
 
-@pytest.mark.skip
 @pytest.mark.parametrize("L", bitarray_utils.key_lengths)
 def test_dicecoeff(L):
     """
