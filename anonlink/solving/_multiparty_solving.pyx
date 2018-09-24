@@ -6,7 +6,7 @@ from anonlink.solving._multiparty_solving_inner cimport (
     Record, Group, greedy_solve_inner)
 
 
-def greedy_solve(candidates):
+def greedy_solve_native(candidates):
     """Select matches from candidate pairs using the greedy algorithm.
 
     We assign each record to exactly one 'group' of records that are
