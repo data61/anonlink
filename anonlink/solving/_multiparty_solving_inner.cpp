@@ -14,31 +14,36 @@ struct RecordHasher {
 };
 
 
-
 class GroupsStore {
-// Keep track of groups. This is like a low-effort Disjoint Sets data structure.
+// A group is a set of records. GroupsStore stores all records as members of disjoint sets.
+
 private:
-    typedef std::unordered_map<Record, Group*, RecordHasher> InnerStore;
-    InnerStore inner_store;
+    // Map from a record to the group containing it.
+    std::unordered_map<Record, Group*, RecordHasher> record_group_map;
     
 #ifndef NDEBUG
     bool in_group(Record record) const {
-        return inner_store.count(record);
+        // Check if the record belongs to some group.
+        return record_group_map.count(record);
     }
 
     bool group_consistent(Group *group) {
+        // Ensure that for all r in group, record_group_map[r] == group.
         return std::all_of(
             group->cbegin(), group->cend(),
             [this, group](Record r) {
-                return inner_store.at(r) == group;
+                return record_group_map.at(r) == group;
             });
     }
 #endif /* !NDEBUG */
     
 public:
     Group *get_group(Record record) const {
-        auto res_iterator = inner_store.find(record);
-        if (res_iterator == inner_store.end()) {
+        // Get the group that a record belongs to.
+        // Return nullptr if it does not belong to any group.
+        
+        auto res_iterator = record_group_map.find(record);
+        if (res_iterator == record_group_map.end()) {
             return nullptr;
         } else {
             Group *retval = res_iterator->second;
@@ -48,52 +53,79 @@ public:
     }
     
     Group *make_group(Record record) {
+        // Makes a new group containing only one record. Stores it. Returns the group.
+        
         assert(!in_group(record));
+        
         Group *group = new Group {record};
-        inner_store[record] = group;
+        record_group_map[record] = group;
         return group;
     }
     
     Group *make_group(Record record0, Record record1) {
+        // Makes a new group containing two records. Stores it. Returns the group.
+        
         assert(!in_group(record0));
         assert(!in_group(record1));
+        assert(record0 != record1);
+        
         Group *group = new Group {record0, record1};
-        inner_store[record0] = group;
-        inner_store[record1] = group;
+        record_group_map[record0] = group;
+        record_group_map[record1] = group;
         return group;
     }
 
     Group *add_to_group(Group *group, Record record) {
+        // Adds a record to an existing group. Stores the reference. Returns the group.
+        
         assert(!in_group(record));
         assert(group);
         assert(group_consistent(group));
+
         group->push_back(record);
-        inner_store[record] = group;
+        record_group_map[record] = group;
         return group;
     }
     
     Group *merge_into(Group * __restrict__ absorber, Group * __restrict__ absorbee) {
+        // Merges two existing groups. The records in absorbee are moved into absorber.
+        // The absorbee is freed and should no longer be dereferenced.
+        // Returns the merged group (the absorber).
+
         assert(absorber);
         assert(absorbee);
+        assert(absorbee != absorber);
         assert(group_consistent(absorber));
         assert(group_consistent(absorbee));
+
+        // Move records over.
         absorber->reserve(absorber->size() + absorbee->size());
         absorber->insert(absorber->end(), absorbee->cbegin(), absorbee->cend());
+
+        // Ensure that all records point at the merged group.
         for (const auto &item : *absorbee) {
-            inner_store[item] = absorber;
+            record_group_map[item] = absorber;
         }
+
         delete absorbee;
         return absorber;
     }
     
     std::vector<Group *> retrieve_nontrivial_groups() {
-        // Caution!
-        // This frees a bunch of groups. Only call once otherwise done with this data structure.
+        // CAUTION!
+        // This frees a bunch of groups and leaves the GroupsStore in an inconsistent state.
+        // Only call once otherwise done with this data structure.
+
+        // Returns groups of size>1 as a vector. Frees all the others.
+
+        // Make set of all unique groups.
         std::unordered_set<Group *> all_groups;
-        for (const auto &item : inner_store) {
-            all_groups.insert(item.second);
+        for (const auto &item : record_group_map) {
+            Group * const group = item.second;
+            all_groups.insert(group);
         }
         
+        // Store groups of size > 1. Delete the rest.
         std::vector<Group *> retval;
         for (const auto &group : all_groups) {
             if (group->size() > 1) {
@@ -107,67 +139,89 @@ public:
     }
 };
 
-class LinksStore {
-// Store number of edges encountered between two groups. It is convenient to represent groups as
-// Group* since every conceptual group belongs to exactly one such vector. This saves us having a
-// separate hash table. (We don't dereference these pointers here.)
+template <class T>
+class EdgesMatrix {
+// Recall that two groups are merged iff every pair of records has been encountered as a candidate
+// pair. This data structure is a symmetric sparse matrix that stores the number of edges
+// encountered between two groups. It supports two operations:
+// 1. increment the number of edges between two groups by one and return the new number
+// 2. merge a column into another column (and also merge the corresponding rows); this is used when
+//    we are merging two groups together.
 
 private:
-    typedef std::unordered_map<Group*, size_t> LinksStoreInnerInner;
-    typedef std::unordered_map<Group*, LinksStoreInnerInner> LinksStoreInner;
+    typedef unsigned long long CountType;
+
+    typedef std::unordered_map<T, CountType> Column;
+    typedef std::unordered_map<T, Column> SparseMatrix;
     
-    LinksStoreInner links_store_inner;
+    SparseMatrix sparse_matrix;
     
-    size_t set_or_increment(Group *group0, Group *group1, size_t n) {
-        std::pair<LinksStoreInnerInner::iterator, bool> emplace_res
-             = links_store_inner[group0].emplace(group1, 0);
-        LinksStoreInnerInner::iterator &count_iterator = emplace_res.first;
-        return count_iterator->second += n;
+    CountType set_or_increment(T key0, T key1, CountType n) {
+        // Increment entry at column key0, row key1 by n if it exists. Set to n if it doesn't.
+        
+        // This makes a new object at sparse_matrix[key0] if one doesn't already exist.
+        Column &column = sparse_matrix[key0];
+        return set_or_increment(column, key1, n);
     }
     
-    size_t set_or_increment(LinksStoreInnerInner &group0_store, Group *group1, size_t n) {
-        return group0_store.emplace(group1, 0).first->second += n;
+    CountType set_or_increment(Column &key0_column, T key1, CountType n) {
+        // Increment entry at key0_column, row key1 by n if it exists. Set to n if it doesn't.
+
+        // Set entry to 0 if it doesn't exist and get the reference.
+        std::pair<typename Column::iterator, bool> emplace_res
+            = key0_column.emplace(key1, 0);
+        typename Column::iterator &count_iterator = emplace_res.first;
+        CountType &entry_ref = count_iterator->second;
+
+        // Increment the entry by n in place.
+        entry_ref += n;
+        
+        return entry_ref;
     }
     
 public:
-    size_t increment(Group *group0, Group *group1) {
-        assert(group0);
-        assert(group1);
-        size_t retval1 = set_or_increment(group0, group1, 1);
-        size_t retval2 = set_or_increment(group1, group0, 1);
-        assert(retval1 == retval2);
-        return retval1;
+    CountType increment(T key0, T key1) {
+        // Call set_or_increment twice for symmetry.
+        CountType retval0 = set_or_increment(key0, key1, 1);
+        CountType retval1 = set_or_increment(key1, key0, 1);
+        
+        assert(retval0 == retval1); // Assert symmetric.
+        
+        return retval0;
     }
     
-    void merge_into(Group *absorber, Group *absorbee) {
-        assert(absorber);
-        assert(absorbee);
-        LinksStoreInnerInner &absorber_store = links_store_inner[absorber];
-        LinksStoreInnerInner &absorbee_store = links_store_inner[absorbee];
+    void merge_into(T absorber_key, T absorbee_key) {
+        assert(absorber_key != absorbee_key);
+        Column &absorber_store = sparse_matrix[absorber_key];
+        Column &absorbee_store = sparse_matrix[absorbee_key];
         
         // Merging two groups.
-        // They no longer need to keep track of common links.
-        absorber_store.erase(absorbee);
-        absorbee_store.erase(absorber);
+        // matrix[absorbee][absorber] and matrix[absorbee][absorber] are no longer needed.
+        absorber_store.erase(absorbee_key);
+        absorbee_store.erase(absorber_key);
 
-        // Move all the links from absorbee to absorber. Same with links referencing absorbee.
-        for (const auto &link_count : absorbee_store) {
-            Group *link = link_count.first;
-            assert (link);
-            size_t count = link_count.second;
-            assert (count);
+        // Move all the edges from absorbee to absorber. Same with edges referencing absorbee.
+        for (const auto &edge_count : absorbee_store) {
+            T edge = edge_count.first;
+            assert(edge);
+            CountType count = edge_count.second;
+            assert(count);
             
-            set_or_increment(absorber, link, count);
+            // Move edge count from absorbee to absorber.
+            set_or_increment(absorber_key, edge, count);
             
-            LinksStoreInnerInner &mp_match = links_store_inner[link];
-            set_or_increment(mp_match, absorber, count);
-            mp_match.erase(absorbee);
+            // Edge count (from some third group) referencing absorbee will now reference absorber.
+            Column &mp_match = sparse_matrix[edge];
+            set_or_increment(mp_match, absorber_key, count);
+            mp_match.erase(absorbee_key);
         }
 
-        // Cleanup.
-        links_store_inner.erase(absorbee);
+        // Column no longer needed.
+        sparse_matrix.erase(absorbee_key);
+
+        // Possible cleanup.
         if (absorber_store.empty()) {
-            links_store_inner.erase(absorber);
+            sparse_matrix.erase(absorber_key);
         }
     }
     
@@ -179,7 +233,10 @@ void none_grouped(GroupsStore &groups_store, Record i0, Record i1) {
     groups_store.make_group(i0, i1);
 }
 
-void one_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *group, Record i) {
+void one_grouped(GroupsStore &groups_store,
+                 EdgesMatrix<Group *> &edges_store,
+                 Group *group,
+                 Record i) {
     if (group->size() == 1) {
         // We have two singletons (one has a group of itself, one doesn't), so we can merge them.
         groups_store.add_to_group(group, i);
@@ -187,33 +244,41 @@ void one_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *grou
         // The group has at least 2 elements. We've only matched with one so far (or else we'd
         // already have a group of size at least one), so we can't merge.
         Group *group_i = groups_store.make_group(i);
-        links_store.increment(group, group_i);
+        edges_store.increment(group, group_i);
     }
 }
 
 void two_grouped_merge(GroupsStore &groups_store,
-                       LinksStore &links_store,
+                       EdgesMatrix<Group *> &edges_store,
                        Group *absorber,
                        Group *absorbee) {
+    // Merge the two groups.
+    // Merge the two sets of records.
     groups_store.merge_into(absorber, absorbee);
-    links_store.merge_into(absorber, absorbee);
+    // Merge the relevant columns/rows of the sparse edges matrix.
+    edges_store.merge_into(absorber, absorbee);
 }
 
-void two_grouped(GroupsStore &groups_store, LinksStore &links_store, Group *group0, Group *group1) {
-    size_t overlap = links_store.increment(group0, group1);
-    size_t group_0_size = group0->size();
-    size_t group_1_size = group1->size();
+void two_grouped(GroupsStore &groups_store,
+                 EdgesMatrix<Group *> &edges_store,
+                 Group *group0,
+                 Group *group1) {
+    auto overlap = edges_store.increment(group0, group1);
+    auto group_0_size = group0->size();
+    auto group_1_size = group1->size();
+    // The below is equivalent to: for every pair of records in the Cartesian product of group 0 and
+    // group 1, we've encountered an edge.
     if (overlap == group_0_size * group_1_size) {
         // Optimise by enlarging the bigger group.
         if (group_0_size < group_1_size) {
-            two_grouped_merge(groups_store, links_store, group1, group0);
+            two_grouped_merge(groups_store, edges_store, group1, group0);
         } else {
-            two_grouped_merge(groups_store, links_store, group0, group1);
+            two_grouped_merge(groups_store, edges_store, group0, group1);
         }
     }
 }
 
-}
+} /* namespace */
 
 std::vector<Group *>
 greedy_solve_inner(
@@ -226,9 +291,9 @@ greedy_solve_inner(
     // Keep track of groups that have already been formed.
     GroupsStore groups_store;
 
-    // Keep track of links between records that we've encountered. We only merge two groups if
-    // we've encountered links between all their records.
-    LinksStore links_store;
+    // Keep track of edges between records that we've encountered. We only merge two groups if
+    // we've encountered edges between all their records.
+    EdgesMatrix<Group *> edges_store;
 
     for (size_t i = 0; i < n; ++i) {
         Record i0(dset_is0[i], rec_is0[i]);
@@ -239,13 +304,13 @@ greedy_solve_inner(
         
         if (group_i0) {
             if (group_i1) {
-                two_grouped(groups_store, links_store, group_i0, group_i1);
+                two_grouped(groups_store, edges_store, group_i0, group_i1);
             } else {
-                one_grouped(groups_store, links_store, group_i0, i1);
+                one_grouped(groups_store, edges_store, group_i0, i1);
             }
         } else {
             if (group_i1) {
-                one_grouped(groups_store, links_store, group_i1, i0);
+                one_grouped(groups_store, edges_store, group_i1, i0);
             } else {
                 none_grouped(groups_store, i0, i1);
             }
