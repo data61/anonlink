@@ -1,3 +1,19 @@
+0.10.0
+======
+
+Major changes:
+-------------
+- Adds ability to serialise similarities into an iterable of bytes, instead of into a stream.
+  - Similarly, files with serialised similarities can now be serialised into an iterable of bytes.
+
+Minor changes:
+-------------
+- Some flaky tests were adjusted to allow occasional mismatches.
+- Minor changes to type annotations.
+- The greedy solver is now tested with Hypothesis.
+- Use of the old API generates ``DeprecationWarning``.
+- Similarity serialisation functions that write to file return the number of bytes written.
+
 0.9.0
 =====
 
