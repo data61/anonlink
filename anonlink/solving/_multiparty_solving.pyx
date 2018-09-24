@@ -48,7 +48,6 @@ def greedy_solve(candidates):
     cdef unsigned int[::1] rec_is0 = rec_is0_arr
     cdef unsigned int[::1] rec_is1 = rec_is1_arr
 
-    cdef vector[Group *] cpp_result
     if n:
         with nogil:
             cpp_result = greedy_solve_inner(
@@ -58,9 +57,11 @@ def greedy_solve(candidates):
                 &rec_is1[0],
                 n)
 
+        # Save groups of size > 1.
         result = tuple(tuple((record.dset_i, record.rec_i)
                              for record in deref(group))
-                       for group in cpp_result)
+                       for group in cpp_result if deref(group).size() > 1)
+        # Free all the memory!
         for group in cpp_result:
             del group
         return result

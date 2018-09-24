@@ -1,4 +1,5 @@
 from libcpp.vector cimport vector
+from libcpp.unordered_set cimport unordered_set
 
 
 cdef extern from "_multiparty_solving_inner.h":
@@ -8,7 +9,7 @@ cdef extern from "_multiparty_solving_inner.h":
 
     ctypedef vector[Record] Group
 
-    vector[Group *] greedy_solve_inner(
+    unordered_set[Group *] greedy_solve_inner(
         unsigned int[],
         unsigned int[],
         unsigned int[],

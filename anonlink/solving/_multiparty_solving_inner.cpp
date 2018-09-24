@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <unordered_map>
-#include <unordered_set>
+#include <vector>
 #include "_multiparty_solving_inner.h"
 
 namespace {
@@ -111,31 +111,17 @@ public:
         return absorber;
     }
     
-    std::vector<Group *> retrieve_nontrivial_groups() {
-        // CAUTION!
-        // This frees a bunch of groups and leaves the GroupsStore in an inconsistent state.
-        // Only call once otherwise done with this data structure.
-
-        // Returns groups of size>1 as a vector. Frees all the others.
+    std::unordered_set<Group *> get_groups() {
+        // Returns the set of unique groups.
 
         // Make set of all unique groups.
-        std::unordered_set<Group *> all_groups;
+        std::unordered_set<Group *> unique_groups;
         for (const auto &item : record_group_map) {
             Group * const group = item.second;
-            all_groups.insert(group);
+            unique_groups.insert(group);
         }
-        
-        // Store groups of size > 1. Delete the rest.
-        std::vector<Group *> retval;
-        for (const auto &group : all_groups) {
-            if (group->size() > 1) {
-                retval.push_back(group);
-            } else {
-                delete group;
-            }
-        }
-        
-        return retval;
+
+        return unique_groups;
     }
 };
 
@@ -263,6 +249,10 @@ void two_grouped(GroupsStore &groups_store,
                  EdgesMatrix<Group *> &edges_store,
                  Group *group0,
                  Group *group1) {
+    if (group0 == group1) {
+        return; // Already grouped together. Nothing to do.
+    }
+
     auto overlap = edges_store.increment(group0, group1);
     auto group_0_size = group0->size();
     auto group_1_size = group1->size();
@@ -280,7 +270,7 @@ void two_grouped(GroupsStore &groups_store,
 
 } /* namespace */
 
-std::vector<Group *>
+std::unordered_set<Group *>
 greedy_solve_inner(
                    unsigned int dset_is0[],
                    unsigned int dset_is1[],
@@ -298,6 +288,10 @@ greedy_solve_inner(
     for (size_t i = 0; i < n; ++i) {
         Record i0(dset_is0[i], rec_is0[i]);
         Record i1(dset_is1[i], rec_is1[i]);
+
+        if (i0 == i1) {
+            continue; // Record trivially grouped with itself. Nothing to do.
+        }
 
         // These will be nullptr if the corresponding records don't already belong do a group.
         Group *group_i0 = groups_store.get_group(i0);
@@ -318,5 +312,5 @@ greedy_solve_inner(
         }
     }
 
-    return groups_store.retrieve_nontrivial_groups();
+    return groups_store.get_groups();
 }

@@ -1,8 +1,7 @@
 #ifndef _multiparty_solving_inner_h
 #define _multiparty_solving_inner_h
 
-#include <vector>
-
+#include <unordered_set>
 
 struct Record {
     unsigned int dset_i;
@@ -18,7 +17,7 @@ struct Record {
 typedef std::vector<Record> Group;
 
 
-std::vector<Group *>
+std::unordered_set<Group *>
 greedy_solve_inner(
     unsigned int dset_is0[],
     unsigned int dset_is1[],
