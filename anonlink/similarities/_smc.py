@@ -6,31 +6,34 @@ from typing import (Counter, DefaultDict, Iterable,
 
 from bitarray import bitarray
 
+from anonlink import _deprecation
 from anonlink.typechecking import Dataset, FloatArrayType, IntArrayType
 
-__all__ = ['hamming_similarity']
+__all__ = ['hamming_similarity', 'simple_matching_coefficient']
 
 _Similarity = Tuple[float, int, int]
 
+_deprecated_decorator = _deprecation.make_decorator('similarities')
 
-def _hamming_sim(clk1: bitarray, clk2: bitarray) -> float:
+
+def _smc_sim(clk1: bitarray, clk2: bitarray) -> float:
     n = len(clk1)
     return (n - (clk1 ^ clk2).count()) / n
 
 
-def _hamming_sims_gt_threshold(
+def _smc_sims_gt_threshold(
     datasets: Sequence[Dataset[bitarray]],
     threshold: float
 ) -> Iterable[_Similarity]:
     dset0, dset1 = datasets
     for i0, clk0 in enumerate(dset0):
         for i1, clk1 in enumerate(dset1):
-            sim = _hamming_sim(clk0, clk1)
+            sim = _smc_sim(clk0, clk1)
             if sim >= threshold:
                 yield sim, i0, i1
 
 
-def _hamming_similarity_k(
+def _smc_similarity_k(
     datasets: Sequence[Dataset[bitarray]],
     threshold: float,
     k: int
@@ -39,7 +42,7 @@ def _hamming_similarity_k(
     candidates: Tuple[DefaultDict[int, List[_Similarity]], ...] \
         = tuple(collections.defaultdict(list) for _ in datasets)
 
-    for sim, i0, i1 in _hamming_sims_gt_threshold(datasets, threshold):
+    for sim, i0, i1 in _smc_sims_gt_threshold(datasets, threshold):
         c = sim, i0, i1
         candidates[0][i0].append(c)
         candidates[1][i1].append(c)
@@ -65,7 +68,7 @@ def _hamming_similarity_k(
     return sims, (indices0, indices1)
 
 
-def _hamming_similarity_no_k(
+def _smc_similarity_no_k(
     datasets: Sequence[Dataset[bitarray]],
     threshold: float
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
@@ -74,7 +77,7 @@ def _hamming_similarity_no_k(
     indices1: IntArrayType = array('I')
     
     for sim, i0, i1 in sorted(
-            _hamming_sims_gt_threshold(datasets, threshold),
+            _smc_sims_gt_threshold(datasets, threshold),
             key=lambda x: (-x[0], *x[1:])):
         sims.append(sim)
         indices0.append(i0)
@@ -83,14 +86,14 @@ def _hamming_similarity_no_k(
     return sims, (indices0, indices1)
 
 
-def hamming_similarity(
+def simple_matching_coefficient(
     datasets: Sequence[Dataset[bitarray]],
     threshold: float,
     k: Optional[int]
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
-    """Find Hamming similarities of CLKs.
+    """Find Simple Matching Coefficients (SMCs) of CLKs.
 
-    A Hamming similarity of two binary strings is defined as
+    The SMC of two binary strings is defined as
     1 - (Hamming distance) / (string length).
 
     :param datasets: A length 2 sequence of datasets. A dataset is a
@@ -109,12 +112,22 @@ def hamming_similarity(
         raise NotImplementedError(msg)
 
     if k is None:
-        sims, indices = _hamming_similarity_no_k(datasets, threshold)
+        sims, indices = _smc_similarity_no_k(datasets, threshold)
     else:
-        sims, indices = _hamming_similarity_k(datasets, threshold, k)
+        sims, indices = _smc_similarity_k(datasets, threshold, k)
 
     # Quick sanity checks
     assert len(indices) == 2
     assert len(sims) == len(indices[0]) == len(indices[1])
 
     return sims, indices
+
+
+@_deprecated_decorator(replacement='similarities.simple_matching_coefficient')
+def hamming_similarity(
+    datasets: Sequence[Dataset[bitarray]],
+    threshold: float,
+    k: Optional[int]
+) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
+    return simple_matching_coefficient(datasets, threshold, k)
+hamming_similarity.__doc__ = simple_matching_coefficient.__doc__
