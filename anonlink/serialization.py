@@ -7,6 +7,8 @@ compatibility will be attempted, but not guaranteed.
 import array as _array
 import heapq as _heapq
 import io as _io
+import itertools as _itertools
+import operator as _operator
 import struct as _struct
 import typing as _typing
 
@@ -81,44 +83,53 @@ def _entry_struct(
     return _struct.Struct(f"<{sim_t}2{dset_i_t}2{rec_i_t}")
     
 
-def _dump_from_iterable(
-    f: _typing.BinaryIO,
+def _bytes_iter_from_iterable(
     sim_t_size: int,
     dset_i_t_size: int,
     rec_i_t_size: int,
+    entry_struct: _struct.Struct,
     iterable: _CandidatePairIter
-) -> None:
-    # Fail without writing if the parameters are incorrect.
-    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
-    
-    # Write header.
-    f.write(_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size))
-    
-    for entry in iterable:
-        f.write(entry_struct.pack(*entry))
+) -> _typing.Iterable[bytes]:
+    return _itertools.chain(
+        (_HEADER_STRUCT.pack(1, sim_t_size, dset_i_t_size, rec_i_t_size),),
+        _itertools.starmap(entry_struct.pack, iterable))
+
+
+def _write_bytes_iter(
+    f: _typing.BinaryIO,
+    bytes_iter: _typing.Iterable[bytes]
+) -> int:
+    # Relies on the side effects of `f.write`. `f.write` returns the
+    # number of bytes written. `sum` exhausts the iterator.
+    return sum(map(f.write, bytes_iter))
 
 
 def _entries_iterable(
     f: _typing.BinaryIO,
     entry_struct: _struct.Struct
 ) -> _CandidatePairIter:
-    buffer = f.read(entry_struct.size)
-    while buffer:
-        if len(buffer) != entry_struct.size:
-            raise ValueError('ran out of input')
-        yield _typing.cast(_CandidatePair, entry_struct.unpack(buffer))
-        buffer = f.read(entry_struct.size)
+    buffers = map(f.read, _itertools.repeat(entry_struct.size))
+    nonempty_buffers = _itertools.takewhile(bool, buffers)
+    try:
+        yield from _typing.cast(_CandidatePairIter, map(entry_struct.unpack, nonempty_buffers))
+    except _struct.error:
+        raise ValueError('ran out of input') from None
 
 
-def _load_to_iterable(
+def _make_buffered(
     f: _typing.BinaryIO
-) -> _typing.Tuple[_CandidatePairIter, int, int, int]:
+) -> _typing.BinaryIO:
     # Make sure that f.read(n) returns exactly n bytes.
     if not isinstance(f, _io.BufferedIOBase):
         f = _io.BufferedReader(f)  # type: ignore
         # Mypy complains that f is not guaranteed to be RawIOBase.
         # That's true but BufferedReader doesn't explicitly check this.
+    return f
 
+
+def _load_header_and_check_version(
+    f: _typing.BinaryIO  # Must be buffered
+) -> _typing.Tuple[int, int, int]:
     header_bytes = f.read(_HEADER_STRUCT.size)
     if len(header_bytes) != _HEADER_STRUCT.size:
         raise ValueError('ran out of input')
@@ -126,50 +137,88 @@ def _load_to_iterable(
         _HEADER_STRUCT.unpack(header_bytes))
     if version != 1:
         raise ValueError('unsupported version of serialized file')
+    return sim_t_size, dset_i_t_size, rec_i_t_size
+
+
+def _load_to_iterable(
+    f: _typing.BinaryIO
+) -> _typing.Tuple[_CandidatePairIter, int, int, int, int]:
+    f = _make_buffered(f)
+    sim_t_size, dset_i_t_size, rec_i_t_size = _load_header_and_check_version(f)
 
     # This may throw ValueError if the specified format isn't supported
     # on this platform.
     entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
 
     return (_entries_iterable(f, entry_struct),
-            sim_t_size, dset_i_t_size, rec_i_t_size)
+            sim_t_size, dset_i_t_size, rec_i_t_size,
+            entry_struct.size)
+
+
+def _file_size(entry_struct, entries):
+    return _HEADER_STRUCT.size + entry_struct.size * entries
+
+
+def dump_candidate_pairs_iter(
+    candidate_pairs: _typechecking.CandidatePairs
+) -> _typing.Tuple[_typing.Iterable[bytes], int]:
+    """Dump candidate pairs as an iterable of bytes objects.
+
+    No guarantees are made about the size of those bytes objects.
+
+    :param candidate_pairs: Candidate pairs, as returned by a similarity
+        function or `load_candidate_pairs`.
+
+    :return: 2-tuple containing an iterable of bytes objects and the
+        length of the dump as an integer.
+    """
+    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
+    entries = len(sims)
+    assert (entries
+            == len(dset_is0) == len(dset_is1)
+            == len(rec_is0) == len(rec_is1))
+
+    sim_t_size = sims.itemsize
+    dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
+    rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
+
+    iterable = zip(sims, dset_is0, dset_is1, rec_is0, rec_is1)
+    bytes_iter = _bytes_iter_from_iterable(
+        sim_t_size, dset_i_t_size, rec_i_t_size,
+        entry_struct,
+        iterable)
+
+    file_size = _file_size(entry_struct, entries)
+
+    return bytes_iter, file_size
 
 
 def dump_candidate_pairs(
     candidate_pairs: _typechecking.CandidatePairs,
     f: _typing.BinaryIO
-) -> None:
+) -> int:
     """Dump candidate pairs to file.
 
     :param f: Binary buffer to write to.
     :param candidate_pairs: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
+
+    :return: Number of bytes written.
     """
-    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
-    assert (len(sims)
-            == len(dset_is0) == len(dset_is1)
-            == len(rec_is0) == len(rec_is1))
-    assert sims.itemsize in _ARRAY_FLOAT_LEN_TO_FMT
-    assert all(a.itemsize in _ARRAY_UINT_LEN_TO_FMT
-               for a in (dset_is0, dset_is1, rec_is0, rec_is1))
-
-    iterable = zip(sims, dset_is0, dset_is1, rec_is0, rec_is1)
-    sim_t_size = sims.itemsize
-    dset_i_t_size = max(dset_is0.itemsize, dset_is1.itemsize)
-    rec_i_t_size = max(rec_is0.itemsize, rec_is1.itemsize)
-
-    _dump_from_iterable(
-        f, sim_t_size, dset_i_t_size, rec_i_t_size, iterable)
+    bytes_iter, _ = dump_candidate_pairs_iter(candidate_pairs)
+    return _write_bytes_iter(f, bytes_iter)
 
 
 def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     """Load candidate pairs from file.
 
     :param f: Binary buffer to read from.
+
     :return: Candidate pairs, compatible with the type returned from a
         similarity function.
     """
-    iterable, sim_t_size, dset_i_t_size, rec_i_t_size = _load_to_iterable(f)
+    iterable, sim_t_size, dset_i_t_size, rec_i_t_size, _ = _load_to_iterable(f)
 
     try:
         sim_t = _ARRAY_FLOAT_LEN_TO_FMT[sim_t_size]
@@ -194,19 +243,83 @@ def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     dset_is1: _typechecking.IntArrayType = _array.array(dset_i_t)
     rec_is0: _typechecking.IntArrayType = _array.array(rec_i_t)
     rec_is1: _typechecking.IntArrayType = _array.array(rec_i_t)
-    for sim, dset_i0, dset_i1, rec_i0, rec_i1 in iterable:
-        sims.append(sim)
-        dset_is0.append(dset_i0)
-        dset_is1.append(dset_i1)
-        rec_is0.append(rec_i0)
-        rec_is1.append(rec_i1)
+    arrays = sims, dset_is0, dset_is1, rec_is0, rec_is1
+
+    # Rely on side side-effecting function passed to append.
+    # any exhausts the iterator since array.append returns None.
+    any(map(_array.array.append,  # type: ignore  # Just give up, Mypy.
+            _itertools.cycle(arrays),
+            _itertools.chain.from_iterable(iterable)))
+
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
+
+
+def _number_entries(file_size, entry_size):
+    entries, remainder = divmod(file_size - _HEADER_STRUCT.size, entry_size)
+    if remainder:
+        raise ValueError('invalid file: number of entries is non-integer')
+    return entries 
+
+
+def merge_streams_iter(
+    files_in: _typing.Iterable[_typing.BinaryIO],
+    *,
+    sizes: _typing.Optional[_typing.Iterable[int]] = None
+) -> _typing.Tuple[_typing.Iterable[bytes], int]:
+    """Merge multiple files with candidate pairs to iterable of bytes.
+
+    This function preserves the candidate pairs' sorted order. It avoids
+    loading everything into memory.
+
+    The field sizes in the resulting file will be chosen so no
+    information is lost.
+     
+    Note that you cannot simply concatenate two files to obtain a valid
+    candidate pairs dump.
+
+    :param files_in: Sequence of files to read from.
+    :param sizes: Optional iterable of file sizes. Permits us to compute
+        the number of bytes in the returned iterator.
+
+    :return: 2-tuple containing an iterable of bytes objects and 
+        (optionally if the `sizes` parameter was provided) the length of
+        the merged file as an integer.
+    """
+    if not files_in:
+        raise ValueError('no files provided')
+
+    file_iterables, *field_sizes = zip(*map(_load_to_iterable, files_in))
+    file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size, file_entry_size \
+        = field_sizes
+
+    sim_t_size = max(file_sim_t_size)
+    dset_i_t_size = max(file_dset_i_t_size)
+    rec_i_t_size = max(file_rec_i_t_size)
+    
+    entry_struct = _entry_struct(sim_t_size, dset_i_t_size, rec_i_t_size)
+
+    # Sort in decreasing order of similarities. Tiebreak with dataset
+    # indices and then with record indices, in increasing order.
+    sorted_iterable = _heapq.merge(*file_iterables,
+                                   key=lambda x: (-x[0],) + x[1:])
+    bytes_iter = _bytes_iter_from_iterable(
+        sim_t_size, dset_i_t_size, rec_i_t_size,
+        entry_struct,
+        sorted_iterable)
+
+    if sizes is not None:
+        entries_num = sum(map(_number_entries, sizes, file_entry_size))
+        file_size = _file_size(entry_struct, entries_num)
+    else:
+        file_size = None
+
+    return bytes_iter, file_size
 
 
 def merge_streams(
     files_in: _typing.Iterable[_typing.BinaryIO],
     f_out: _typing.BinaryIO
-) -> None:
+) -> int:
     """Merge multiple files with serialised candidate pairs.
 
     This function preserves the candidate pairs' sorted order. It avoids
@@ -218,23 +331,10 @@ def merge_streams(
     Note that you cannot simply concatenate two files to obtain a valid
     candidate pairs dump.
 
-    :param f_out: Binary buffer write the merged candidate pairs to.
     :param files_in: Sequence of files to read from.
+    :param f_out: Binary buffer write the merged candidate pairs to.
+
+    :return: Number of bytes written.
     """
-    if not files_in:
-        raise ValueError('no files provided')
-
-    file_iterables, *sizes = zip(*map(_load_to_iterable, files_in))
-    file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size = sizes
-
-    sim_t_size = max(file_sim_t_size)
-    dset_i_t_size = max(file_dset_i_t_size)
-    rec_i_t_size = max(file_rec_i_t_size)
-    
-    # Sort in decreasing order of similarities. Tiebreak with dataset
-    # indices and then with record indices, in increasing order.
-    sorted_iterable = _heapq.merge(*file_iterables,
-                                   key=lambda x: (-x[0],) + x[1:])
-    _dump_from_iterable(f_out,
-                        sim_t_size, dset_i_t_size, rec_i_t_size,
-                        sorted_iterable)
+    bytes_iter, _ = merge_streams_iter(files_in)
+    return _write_bytes_iter(f_out, bytes_iter)

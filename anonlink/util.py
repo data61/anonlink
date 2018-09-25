@@ -5,15 +5,20 @@ import random
 from bitarray import bitarray
 from timeit import default_timer as timer
 
+import anonlink._deprecation
 from anonlink._entitymatcher import ffi, lib
 
+deprecated = anonlink._deprecation.make_decorator(__name__)
 
+
+@deprecated
 def generate_bitarray(length):
     a = bitarray(endian=['little', 'big'][random.randint(0, 1)])
     a.frombytes(os.urandom(length//8))
     return a
 
 
+@deprecated
 def generate_clks(n):
     res = []
     for i in range(n):
@@ -22,6 +27,7 @@ def generate_clks(n):
     return res
 
 
+@deprecated
 def popcount_vector(bitarrays, use_python=True):
     """Return a list containing the popcounts of the elements of
     bitarrays, and the time (in seconds) it took. If use_python is
@@ -51,6 +57,7 @@ def popcount_vector(bitarrays, use_python=True):
     return [c_popcounts[i] for i in range(n)], ms * 1e-3
 
 
+@deprecated(replacement='concurrency.split_to_chunks')
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):

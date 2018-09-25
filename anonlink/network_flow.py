@@ -8,9 +8,13 @@ import logging
 import networkx as nx
 from networkx.algorithms import bipartite
 
+import anonlink._deprecation
+
+deprecated = anonlink._deprecation.make_decorator(__name__)
 log = logging.getLogger('anonlink.networkflow')
 
 
+@deprecated
 def calculate_network(similarity, cutoff):
     """Given an adjacency matrix of edge weights, apply a
     threshold to the connections and construct a graph.
@@ -42,6 +46,7 @@ def _to_int_map(network, find_pair):
     return entityMap
 
 
+@deprecated
 def calculate_entity_mapping(G, method=None):
     """Given the networkx graph, calculate a dictionary mapping
     each row node to the most highly similar column node.
@@ -110,6 +115,7 @@ def calculate_entity_mapping(G, method=None):
     return entity_map
 
 
+@deprecated
 def map_entities(weights, threshold, method=None):
     """Calculate a dictionary mapping using similarity scores.
 

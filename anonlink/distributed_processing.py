@@ -5,10 +5,15 @@ Concurrent implementations.
 """
 
 import concurrent.futures
+
+import anonlink._deprecation
 import anonlink.entitymatch
 from anonlink.util import chunks
 
+deprecated = anonlink._deprecation.make_decorator(__name__)
 
+
+@deprecated(replacement='concurrency.process_chunk')
 def calc_chunk_result(chunk_number, chunk, filters2, k, threshold):
     chunk_results = anonlink.entitymatch.calculate_filter_similarity(chunk, filters2, k, threshold)
 
@@ -22,6 +27,7 @@ def calc_chunk_result(chunk_number, chunk, filters2, k, threshold):
     return partial_sparse_result
 
 
+@deprecated
 def calculate_filter_similarity(filters1, filters2, k, threshold):
     """
     Example way of computing similarity scores in parallel.
