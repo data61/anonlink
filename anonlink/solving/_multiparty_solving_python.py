@@ -1,10 +1,3 @@
-"""Solvers.
-
-Solvers accept candidate pairs and return a concrete matching. In other
-words, they accept a similarity for every candidate pair and turn it
-into a boolean for every candidate pair.
-"""
-
 import collections as _collections
 import itertools as _itertools
 import typing as _typing
@@ -12,7 +5,7 @@ import typing as _typing
 import anonlink.typechecking as _typechecking
 
 
-def greedy_solve(
+def greedy_solve_python(
     candidates: _typechecking.CandidatePairs
 ) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
     """ Select matches from candidate pairs using the greedy algorithm.
@@ -67,12 +60,18 @@ def greedy_solve(
         i0 = dset_i0, rec_i0
         i1 = dset_i1, rec_i1
 
+        if i0 == i1:
+            continue
+
         if i0 in matches and i1 in matches:
             # Both records are assigned to a group.
             i0_matches = matches[i0]
             i1_matches = matches[i1]
             i0_mid = id(i0_matches)
             i1_mid = id(i1_matches)
+
+            if i0_mid == i1_mid:
+                continue
 
             # Check if mergeable. matchable_pairs[i0_mid][i1_mid] is the
             # number of pairs they have in common not including the
@@ -141,4 +140,4 @@ def greedy_solve(
     deduplicated_groups = {id(group): group
                            for group in matches.values()
                            if len(group) > 1}
-    return tuple(deduplicated_groups.values())
+    return tuple(map(tuple, deduplicated_groups.values()))
