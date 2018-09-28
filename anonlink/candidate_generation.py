@@ -13,7 +13,14 @@ _CandidatePair = _typing.Tuple[float, int, int, int, int]
 _CandidatePairIterable = _typing.Iterable[_CandidatePair]
 
 
-def _to_candidate_pairs(sims, rec_is0, rec_is1, i0, i1, block):
+def _to_candidate_pairs(
+    sims: _typing.Iterable[float],
+    rec_is0: _typing.Iterable[int],
+    rec_is1: _typing.Iterable[int],
+    i0: int,
+    i1: int,
+    block: _typing.Sequence[_typing.Sequence[int]]
+) -> _CandidatePairIterable:
     return ((sim, i0, i1, block[i0][rec_i0], block[i1][rec_i1])
             for sim, rec_i0, rec_i1 in zip(sims, rec_is0, rec_is1))
 
