@@ -113,7 +113,7 @@ def find_candidate_pairs(
         at least `threshold`.
     :param blocking_f: A function returning all block IDs for a record.
         Two records are compared iff they have at least one block ID in
-        common.
+        common. Support for this is experimental and subject to change.
 
     :return: A 3-tuple `(similarity, dataset_i, record_i)`. `dataset_i`
         and `record_i` are sequences of sequences. Every sequence in
