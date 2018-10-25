@@ -105,7 +105,7 @@ def test_matches_nonmatches_hist(candidate_pairs, bins):
     assert sorted(bin_boundaries) == list(bin_boundaries)
 
     for matches_num, nonmatches_num, bin_boundary_left, bin_boundary_right in \
-            zip(matches_nums, nonmatches_nums,
+            zip(matches_nums[:-1], nonmatches_nums[:-1],
                 bin_boundaries[:-2], bin_boundaries[1:-1]):
         candidate_pairs_left = apply_threshold(candidate_pairs,
                                                bin_boundary_left)
@@ -119,4 +119,17 @@ def test_matches_nonmatches_hist(candidate_pairs, bins):
         nonmatches_num_true = all_num_true - matches_num_true
         assert matches_num == matches_num_true
         assert nonmatches_num == nonmatches_num_true
+
+    # The last one is special. The interval is closed.
+    matches_num = matches_nums[-1]
+    nonmatches_num = nonmatches_nums[-1]
+    bin_boundary_left = bin_boundaries[-2]
+    candidate_pairs_left = apply_threshold(candidate_pairs,
+                                           bin_boundary_left)
+    all_num_true = len(candidate_pairs_left[0])
+    matches_left = len(anonlink.solving.greedy_solve(candidate_pairs_left))
+    matches_num_true = matches_left
+    nonmatches_num_true = all_num_true - matches_num_true
+    assert matches_num == matches_num_true
+    assert nonmatches_num == nonmatches_num_true
 
