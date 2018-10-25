@@ -9,6 +9,7 @@ from anonlink import network_flow
 from anonlink import serialization
 from anonlink import similarities
 from anonlink import solving
+from anonlink import stats
 from anonlink import typechecking
 
 __version__ = pkg_resources.get_distribution('anonlink').version
