@@ -104,9 +104,9 @@ def test_matches_nonmatches_hist(candidate_pairs, bins):
     assert len(set(bin_boundaries)) == len(bin_boundaries)
     assert sorted(bin_boundaries) == list(bin_boundaries)
 
-    for matches_num, nonmatches_num, bin_boundary_left, bin_boundary_right in \
-            zip(matches_nums[:-1], nonmatches_nums[:-1],
-                bin_boundaries[:-2], bin_boundaries[1:-1]):
+    for matches_num, nonmatches_num, bin_boundary_left, bin_boundary_right \
+            in zip(matches_nums[:-1], nonmatches_nums[:-1],
+                   bin_boundaries[:-2], bin_boundaries[1:-1]):
         candidate_pairs_left = apply_threshold(candidate_pairs,
                                                bin_boundary_left)
         candidate_pairs_right = apply_threshold(candidate_pairs,
