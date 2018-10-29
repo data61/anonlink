@@ -5,7 +5,8 @@ from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
-from anonlink.similarities._utils import sort_similarities_inplace
+from anonlink.similarities._utils import (sort_similarities_inplace,
+                                          to_bitarrays)
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_python']
@@ -45,6 +46,8 @@ def dice_coefficient_python(
         raise NotImplementedError(
             f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
+    filters0 = to_bitarrays(filters0)
+    filters1 = to_bitarrays(filters1)
 
     result_sims: FloatArrayType = array('d')
     result_indices0: IntArrayType = array('I')

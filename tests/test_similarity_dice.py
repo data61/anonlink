@@ -4,6 +4,7 @@ import pytest
 from bitarray import bitarray
 from clkhash import bloomfilter, randomnames, schema
 from clkhash.key_derivation import generate_key_lists
+from hypothesis import given, strategies
 
 from anonlink import similarities
 
@@ -225,7 +226,7 @@ class TestBloomFilterComparison:
 
         datasets = [[bitarray('01001011') * 8], []]
         sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
+        assert len(sims) == len(rec_is0) == len(rec_is1) == 0#
         assert sims.typecode in FLOAT_ARRAY_TYPES
         assert (rec_is0.typecode in UINT_ARRAY_TYPES
                 and rec_is1.typecode in UINT_ARRAY_TYPES)
@@ -276,3 +277,29 @@ class TestBloomFilterComparison:
                     assert False, 'incorrect tiebreaking on first index'
             else:
                 assert False, 'incorrect similarity sorting'
+
+
+def _to_bitarray(bytes_):
+    ba = bitarray()
+    ba.frombytes(bytes_)
+    return ba
+
+
+@given(strategies.data(), strategies.floats(min_value=0, max_value=1))
+@pytest.mark.parametrize('sim_fun', SIM_FUNS)
+def test_bytes_bitarray_agree(sim_fun, data, threshold):
+    bytes_length = data.draw(strategies.integers(
+        min_value=0,
+        max_value=1024  # Let's not get too carried away...
+    ))
+    bytes_length *= 8  # TODO: remove this line when we deal with #163
+    filters0_bytes = data.draw(strategies.lists(strategies.binary(
+        min_size=bytes_length, max_size=bytes_length)))
+    filters1_bytes = data.draw(strategies.lists(strategies.binary(
+        min_size=bytes_length, max_size=bytes_length)))
+
+    filters0_ba = tuple(map(_to_bitarray, filters0_bytes))
+    filters1_ba = tuple(map(_to_bitarray, filters1_bytes))
+
+    assert (sim_fun([filters0_bytes, filters1_bytes], threshold)
+            == sim_fun([filters0_ba, filters1_ba], threshold))
