@@ -226,7 +226,7 @@ class TestBloomFilterComparison:
 
         datasets = [[bitarray('01001011') * 8], []]
         sims, (rec_is0, rec_is1) = sim_fun(datasets, threshold, k=k) 
-        assert len(sims) == len(rec_is0) == len(rec_is1) == 0#
+        assert len(sims) == len(rec_is0) == len(rec_is1) == 0
         assert sims.typecode in FLOAT_ARRAY_TYPES
         assert (rec_is0.typecode in UINT_ARRAY_TYPES
                 and rec_is1.typecode in UINT_ARRAY_TYPES)
