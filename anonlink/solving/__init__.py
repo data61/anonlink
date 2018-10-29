@@ -13,3 +13,25 @@ except ImportError:
     greedy_solve = greedy_solve_python
 else:
     greedy_solve = greedy_solve_native
+
+
+def pairs_from_groups(groups):
+    """Make an iterable of pairs (i, j) from an iterable of groups.
+
+    The set of pairs representation is often more convenient for
+    bipartite matching problems.
+
+    To make a mapping, use ``dict(pairs_from_groups(groups))``.
+
+    :param groups: An iterable of groups.
+    :return: An iterable of pairs (i, j), where i is the record index in
+        the first dataset, and j is the record index in the second
+        dataset.
+    """
+    for group in map(sorted, groups):
+        if len(group) == 2:
+            (dset_i0, rec_i0), (dset_i1, rec_i1) = group
+            if dset_i0 == 0 and dset_i1 == 1:
+                yield rec_i0, rec_i1
+                continue
+        raise ValueError('non-bipartite problems are unsupported')
