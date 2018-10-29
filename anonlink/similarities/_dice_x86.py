@@ -6,7 +6,8 @@ from typing import Optional, Sequence, Tuple
 from bitarray import bitarray
 
 from anonlink._entitymatcher import ffi, lib
-from anonlink.similarities._utils import sort_similarities_inplace
+from anonlink.similarities._utils import (sort_similarities_inplace,
+                                          to_bitarrays)
 from anonlink.typechecking import FloatArrayType, IntArrayType
 
 __all__ = ['dice_coefficient_accelerated']
@@ -55,6 +56,8 @@ def dice_coefficient_accelerated(
         raise NotImplementedError(
             f'too many datasets (expected 2, got {n_datasets})')
     filters0, filters1 = datasets
+    filters0 = to_bitarrays(filters0)
+    filters1 = to_bitarrays(filters1)
 
     result_sims: FloatArrayType = array('d')
     result_indices0: IntArrayType = array('I')
@@ -76,8 +79,9 @@ def dice_coefficient_accelerated(
         raise ValueError('inconsistent filter length')
     filter_bits = len(filters0[0])
     if filter_bits % 64:
-        msg = (f'only filters whose length is a multiple of 64 are currently '
-               f'supported (got filter with length ({filter_bits})')
+        msg = (f'only filters whose length in bits is a multiple of 64 '
+               f'are currently supported (got filter with length '
+               f'{filter_bits})')
         raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
 
