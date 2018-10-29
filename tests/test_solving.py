@@ -3,10 +3,10 @@ from array import array
 from collections import Counter
 
 import pytest
-from hypothesis import given, strategies
+from hypothesis import given, reject, strategies
 
 from anonlink.solving import (greedy_solve, greedy_solve_python,
-                              greedy_solve_native)
+                              greedy_solve_native, pairs_from_groups)
 
 def _zip_candidates(candidates):
     candidates = tuple(candidates)
@@ -272,3 +272,29 @@ def test_python_native_match_np(candidate_pairs):
     solution_native = frozenset(map(frozenset, solution_native))
 
     assert solution_python == solution_native
+
+
+def _all_indices_unique(groups):
+    seen0 = set()
+    seen1 = set()
+    for group in groups:
+        (dset_i0, rec_i0), (dset_i1, rec_i1) = group
+        assert dset_i0 == 0
+        assert dset_i1 == 1
+        if rec_i0 in seen0 or rec_i1 in seen1:
+            return False
+        seen0.add(rec_i0)
+        seen1.add(rec_i1)
+    return True
+
+
+groups_space_2p = strategies.lists(index_pair_2p).filter(_all_indices_unique)
+
+
+def _groups_from_pairs(pairs):
+    return [((0, i), (1, j)) for i, j in pairs]
+
+
+@given(groups_space_2p)
+def test_pairs_from_groups(groups):
+    assert groups == _groups_from_pairs(pairs_from_groups(groups))
