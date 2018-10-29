@@ -21,6 +21,8 @@ def pairs_from_groups(groups):
     The set of pairs representation is often more convenient for
     bipartite matching problems.
 
+    To make a mapping, use ``dict(pairs_from_groups(groups))``.
+
     :param groups: An iterable of groups.
     :return: An iterable of pairs (i, j), where i is the record index in
         the first dataset, and j is the record index in the second
