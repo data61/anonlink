@@ -1,6 +1,7 @@
 import array
 
 import hypothesis
+import pytest
 
 import anonlink
 
@@ -133,3 +134,20 @@ def test_matches_nonmatches_hist(candidate_pairs, bins):
     assert matches_num == matches_num_true
     assert nonmatches_num == nonmatches_num_true
 
+
+@hypothesis.given(candidate_pairs_2p,
+                  hypothesis.strategies.integers(min_value=1))
+def test_nonmatch_index_score(candidate_pairs, n):
+    matches = set(anonlink.solving.pairs_from_groups(
+        anonlink.solving.greedy_solve(candidate_pairs)))
+
+    m = 0
+    _, _, rec_is = candidate_pairs
+    for i, pair in enumerate(zip(*rec_is)):
+        m += pair not in matches
+        if n == m:
+            assert i == anonlink.stats.nonmatch_index_score(candidate_pairs, n)
+            break
+    else:
+        with pytest.raises(ValueError):
+            anonlink.stats.nonmatch_index_score(candidate_pairs, n)
