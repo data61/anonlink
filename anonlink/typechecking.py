@@ -1,7 +1,6 @@
 """Types for typechecking. Aimed at Mypy."""
 
 import array as _array
-import numbers as _numbers
 import typing as _typing
 
 import mypy_extensions as _mypy_extensions
@@ -28,9 +27,8 @@ BlockingFunction = _typing.Callable[
 
 SimilarityFunction = _typing.Callable[
     [_typing.Sequence[Dataset],
-     _numbers.Real,
-     _mypy_extensions.DefaultNamedArg(_typing.Optional[_numbers.Integral],
-                                      'k')],
+     float,
+     _mypy_extensions.DefaultNamedArg(_typing.Optional[int], 'k')],
     _typing.Tuple[FloatArrayType, _typing.Sequence[IntArrayType]]]
 
 DatasetChunkInfo = _mypy_extensions.TypedDict(
@@ -38,3 +36,6 @@ DatasetChunkInfo = _mypy_extensions.TypedDict(
     {'datasetIndex': int,
      'range': _typing.List[int]})
 ChunkInfo = _typing.List[DatasetChunkInfo]
+
+DatasetAndRecordIndex = _typing.Tuple[int, int]
+MatchGroups = _typing.Sequence[_typing.Sequence[DatasetAndRecordIndex]]

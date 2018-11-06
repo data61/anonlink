@@ -11,7 +11,6 @@ they share at least one bucket.
 """
 
 import itertools as _itertools
-import numbers as _numbers
 import random as _random
 import typing as _typing
 
@@ -183,8 +182,8 @@ def bit_blocking(
 
 
 def continuous_blocking(
-    radius: _numbers.Real,
-    source: _typing.Sequence[_typing.Sequence[_numbers.Real]]
+    radius: float,
+    source: _typing.Sequence[_typing.Sequence[float]]
 ) -> _typechecking.BlockingFunction[_typechecking.Record]:
     """Block on continuous variables.
 

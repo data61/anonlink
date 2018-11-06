@@ -3,7 +3,6 @@
 import array as _array
 import itertools as _itertools
 import math as _math
-import numbers as _numbers
 import typing as _typing
 
 import numpy as _np
@@ -37,11 +36,11 @@ def _chunks_1d(
 
 
 def split_to_chunks(
-    chunk_size_aim: _numbers.Real,
+    chunk_size_aim: float,
     *,
     # Keyword-only for forwards compatibility: this argument may not be
     # needed once we do blocking
-    dataset_sizes: _typing.Sequence[_numbers.Integral]
+    dataset_sizes: _typing.Sequence[int]
 ) -> _typing.Iterable[_typechecking.ChunkInfo]:
     """Split datasets into chunks for parallel processing.
 
@@ -107,8 +106,8 @@ def process_chunk(
     chunk: _typechecking.ChunkInfo,
     datasets: _typing.Sequence[_typechecking.Dataset],
     similarity_f: _typechecking.SimilarityFunction,
-    threshold: _numbers.Real,
-    k: _typing.Optional[_numbers.Integral] = None
+    threshold: float,
+    k: _typing.Optional[int] = None
 ) -> _typechecking.CandidatePairs:
     """Find candidate pairs for the chunk.
 

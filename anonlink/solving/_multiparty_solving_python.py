@@ -7,7 +7,7 @@ import anonlink.typechecking as _typechecking
 
 def greedy_solve_python(
     candidates: _typechecking.CandidatePairs
-) -> _typing.Sequence[_typing.Sequence[_typing.Tuple[int, int]]]:
+) -> _typechecking.MatchGroups:
     """ Select matches from candidate pairs using the greedy algorithm.
 
     We assign each record to exactly one 'group' of records that are
