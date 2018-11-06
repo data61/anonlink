@@ -1,19 +1,24 @@
+import typing as _typing
+
 import numpy as _np
 
+import typechecking as _typechecking
 
-def _similarities_as_nparray(candidate_pairs):
+
+def _similarities_as_nparray(candidate_pairs: _typechecking.CandidatePairs):
     sims, _, _ = candidate_pairs
     return _np.frombuffer(sims, dtype=sims.typecode)
 
 
-def _check_bipartite(candidate_pairs):
+def _check_bipartite(candidate_pairs: _typechecking.CandidatePairs) -> bool:
     _, (dset_is0, dset_is1), _ = candidate_pairs
     np_dset_is0 = _np.frombuffer(dset_is0, dtype=dset_is0.typecode)
     np_dset_is1 = _np.frombuffer(dset_is1, dtype=dset_is1.typecode)
     return (np_dset_is0 == 0).all() and (np_dset_is1 == 1).all()
 
 
-def similarities_hist(candidate_pairs, bins=100):
+def similarities_hist(candidate_pairs: _typechecking.CandidatePairs,
+                      bins: int = 100):
     """Compute a histogram of the similarity scores in candidate pairs.
 
     This function is experimental and subject to change without warning.
@@ -29,7 +34,10 @@ def similarities_hist(candidate_pairs, bins=100):
                          bins=bins)
 
 
-def _semiopen_hist_matches_nonmatches(candidate_pairs, steps=100):
+def _semiopen_hist_matches_nonmatches(
+    candidate_pairs: _typechecking.CandidatePairs,
+    steps: int = 100
+):
     # Run the 2-party greedy solver.
     if not _check_bipartite(candidate_pairs):
         raise ValueError('only 2-party matching is supported')
@@ -40,8 +48,8 @@ def _semiopen_hist_matches_nonmatches(candidate_pairs, steps=100):
         range(thresholds.shape[0] - 1, -1, -1), thresholds[::-1])
 
     sims, _, (rec_is0, rec_is1) = candidate_pairs
-    matched0 = set()
-    matched1 = set()
+    matched0: _typing.Set[int] = set()
+    matched1: _typing.Set[int] = set()
     num_matches = _np.zeros_like(thresholds, dtype=int)
     num_nonmatches = _np.zeros_like(thresholds, dtype=int)
     try:
@@ -63,7 +71,10 @@ def _semiopen_hist_matches_nonmatches(candidate_pairs, steps=100):
     return num_matches, num_nonmatches, thresholds
 
 
-def matches_nonmatches_hist(candidate_pairs, bins=100):
+def matches_nonmatches_hist(
+    candidate_pairs: _typechecking.CandidatePairs,
+    bins: int = 100
+):
     """Compute a histogram of possible matches and definite nonmatches.
 
     This function is experimental and subject to change without warning.
@@ -94,7 +105,10 @@ def matches_nonmatches_hist(candidate_pairs, bins=100):
     return num_matches, num_nonmatches, thresholds
 
 
-def cumul_number_matches_vs_threshold(candidate_pairs, steps=100):
+def cumul_number_matches_vs_threshold(
+    candidate_pairs: _typechecking.CandidatePairs,
+    steps: int = 100
+):
     """Compute the number of matches for each threshold.
 
     This function is experimental and subject to change without warning.
