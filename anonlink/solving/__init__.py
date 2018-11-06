@@ -7,7 +7,7 @@ into a boolean for every candidate pair.
 
 import typing as _typing
 
-import typechecking as _typechecking
+import anonlink.typechecking as _typechecking
 
 from anonlink.solving._multiparty_solving_python import greedy_solve_python
 try:

@@ -2,7 +2,7 @@ import typing as _typing
 
 import numpy as _np
 
-import typechecking as _typechecking
+import anonlink.typechecking as _typechecking
 
 
 def _similarities_as_nparray(candidate_pairs: _typechecking.CandidatePairs):
