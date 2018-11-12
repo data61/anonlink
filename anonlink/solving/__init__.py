@@ -9,13 +9,17 @@ import typing as _typing
 
 import anonlink.typechecking as _typechecking
 
-from anonlink.solving._multiparty_solving_python import greedy_solve_python
+from anonlink.solving._multiparty_solving_python import (
+    greedy_solve_python, probabilistic_greedy_solve_python)
 try:
-    from anonlink.solving._multiparty_solving import greedy_solve_native
+    from anonlink.solving._multiparty_solving import (
+        greedy_solve_native, probabilistic_greedy_solve_native)
 except ImportError:
     greedy_solve = greedy_solve_python
+    probabilistic_greedy_solve = probabilistic_greedy_solve_python
 else:
     greedy_solve = greedy_solve_native
+    probabilistic_greedy_solve = probabilistic_greedy_solve_native
 
 
 def pairs_from_groups(

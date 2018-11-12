@@ -170,7 +170,7 @@ public:
     CountType increment(T key0, T key1) {
         // Call set_or_increment twice for symmetry.
         CountType retval0 = set_or_increment(key0, key1, 1);
-        CountType retval1 = set_or_increment(key1, key0, 1);
+        CountType retval1[[maybe_unused]] = set_or_increment(key1, key0, 1);
         
         assert(retval0 == retval1); // Assert symmetric.
         
@@ -215,18 +215,45 @@ public:
 };
 
 
-void none_grouped(GroupsStore &groups_store, Record i0, Record i1) {
-    // Neither is in a group, so let's make one.
-    groups_store.make_group(i0, i1);
+// Check if there exists a datset that has more than one element in the two groups.
+// If so, and if we assume that the two datasets are deduplicated, then we cannot merge the groups.
+bool check_no_duplicates(Record i0, Record i1) {
+    return i0.dset_i != i1.dset_i;
+}
+bool check_no_duplicates(Record i0, Group *group1) {
+    return std::all_of(group1->cbegin(), group1->cend(),
+                       [i0](Record r) {
+                           return check_no_duplicates(i0, r);
+                       });
+}
+bool check_no_duplicates(Group *group0, Group *group1) {
+    return std::all_of(group0->cbegin(), group0->cend(),
+                       [group1](Record r) {
+                           return check_no_duplicates(r, group1);
+                       });
+}
+
+
+void none_grouped(GroupsStore &groups_store, Record i0, Record i1, bool deduplicated) {
+    if (!deduplicated || check_no_duplicates(i0, i1)) {
+        // Neither is in a group, so let's make one.
+        groups_store.make_group(i0, i1);
+    }
+    // If they are duplicates from the same datasets, then they will never be in the same group, so
+    // there is no point making singleton groups for them.
 }
 
 void one_grouped(GroupsStore &groups_store,
                  EdgesMatrix<Group *> &edges_store,
                  Group *group,
-                 Record i) {
-    if (group->size() == 1) {
-        // We have two singletons (one has a group of itself, one doesn't), so we can merge them.
-        groups_store.add_to_group(group, i);
+                 Record i,
+                 double merge_threshold,
+                 bool deduplicated) {
+    if (1 / static_cast<double>(group->size()) >= merge_threshold) {
+        if (!deduplicated || check_no_duplicates(i, group)) {
+            // We have two singletons (one has a group of itself, one doesn't), so we can merge.
+            groups_store.add_to_group(group, i);
+        }
     } else {
         // The group has at least 2 elements. We've only matched with one so far (or else we'd
         // already have a group of size at least one), so we can't merge.
@@ -249,7 +276,9 @@ void two_grouped_merge(GroupsStore &groups_store,
 void two_grouped(GroupsStore &groups_store,
                  EdgesMatrix<Group *> &edges_store,
                  Group *group0,
-                 Group *group1) {
+                 Group *group1,
+                 double merge_threshold,
+                 bool deduplicated) {
     if (group0 == group1) {
         return; // Already grouped together. Nothing to do.
     }
@@ -259,12 +288,15 @@ void two_grouped(GroupsStore &groups_store,
     auto group_1_size = group1->size();
     // The below is equivalent to: for every pair of records in the Cartesian product of group 0 and
     // group 1, we've encountered an edge.
-    if (overlap == group_0_size * group_1_size) {
-        // Optimise by enlarging the bigger group.
-        if (group_0_size < group_1_size) {
-            two_grouped_merge(groups_store, edges_store, group1, group0);
-        } else {
-            two_grouped_merge(groups_store, edges_store, group0, group1);
+    if (static_cast<double>(overlap) / static_cast<double>(group_0_size * group_1_size)
+            >= merge_threshold) {
+        if (!deduplicated || check_no_duplicates(group0, group1)) {
+            // Optimise by enlarging the bigger group.
+            if (group_0_size < group_1_size) {
+                two_grouped_merge(groups_store, edges_store, group1, group0);
+            } else {
+                two_grouped_merge(groups_store, edges_store, group0, group1);
+            }
         }
     }
 }
@@ -272,13 +304,13 @@ void two_grouped(GroupsStore &groups_store,
 } /* namespace */
 
 std::unordered_set<Group *>
-greedy_solve_inner(
-                   unsigned int dset_is0[],
+greedy_solve_inner(unsigned int dset_is0[],
                    unsigned int dset_is1[],
                    unsigned int rec_is0[],
                    unsigned int rec_is1[],
-                   size_t n
-                   ) {
+                   size_t n,
+                   double merge_threshold,
+                   bool deduplicated) {
     // Keep track of groups that have already been formed.
     GroupsStore groups_store;
 
@@ -300,15 +332,21 @@ greedy_solve_inner(
         
         if (group_i0) {
             if (group_i1) {
-                two_grouped(groups_store, edges_store, group_i0, group_i1);
+                two_grouped(groups_store, edges_store,
+                            group_i0, group_i1,
+                            merge_threshold, deduplicated);
             } else {
-                one_grouped(groups_store, edges_store, group_i0, i1);
+                one_grouped(groups_store, edges_store,
+                            group_i0, i1,
+                            merge_threshold, deduplicated);
             }
         } else {
             if (group_i1) {
-                one_grouped(groups_store, edges_store, group_i1, i0);
+                one_grouped(groups_store, edges_store,
+                            group_i1, i0,
+                            merge_threshold, deduplicated);
             } else {
-                none_grouped(groups_store, i0, i1);
+                none_grouped(groups_store, i0, i1, deduplicated);
             }
         }
     }

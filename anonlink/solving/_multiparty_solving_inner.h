@@ -23,6 +23,8 @@ greedy_solve_inner(
     unsigned int dset_is1[],
     unsigned int rec_is0[],
     unsigned int rec_is1[],
-    size_t n);
+    size_t n,
+    double merge_threshold,
+    bool deduplicated);
 
 #endif /* _multiparty_solving_inner_h */

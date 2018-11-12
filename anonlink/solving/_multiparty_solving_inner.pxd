@@ -1,3 +1,4 @@
+from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
 
@@ -14,6 +15,8 @@ cdef extern from "_multiparty_solving_inner.h":
         unsigned int[],
         unsigned int[],
         unsigned int[],
-        size_t n
+        size_t,
+        double,
+        bool
     ) nogil except +
     # `except +` asks Cython to propagate C++ exceptions to Python land
