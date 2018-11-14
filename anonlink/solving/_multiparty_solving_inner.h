@@ -14,6 +14,10 @@ struct Record {
     }
 };
 
+
+// These are only ever made inside the GroupsStore class in _multiparty_solving_inner.
+// They are always created with at least one element. Elements are never deleted. Thus, they are
+// always nonempty.
 typedef std::vector<Record> Group;
 
 

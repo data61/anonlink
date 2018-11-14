@@ -49,6 +49,7 @@ public:
         } else {
             Group *retval = res_iterator->second;
             assert(retval);
+            assert(retval->size());
             return retval;
         }
     }
@@ -82,6 +83,7 @@ public:
         assert(!in_group(record));
         assert(group);
         assert(group_consistent(group));
+        assert(group->size());
 
         group->push_back(record);
         record_group_map[record] = group;
@@ -98,6 +100,8 @@ public:
         assert(absorbee != absorber);
         assert(group_consistent(absorber));
         assert(group_consistent(absorbee));
+        assert(absorber->size());
+        assert(absorbee->size());
 
         // Move records over.
         absorber->reserve(absorber->size() + absorbee->size());
@@ -119,6 +123,7 @@ public:
         std::unordered_set<Group *> unique_groups;
         for (const auto &item : record_group_map) {
             Group * const group = item.second;
+            assert(group->size());
             unique_groups.insert(group);
         }
 
@@ -249,7 +254,7 @@ void one_grouped(GroupsStore &groups_store,
                  Record i,
                  double merge_threshold,
                  bool deduplicated) {
-    if (1 / static_cast<double>(group->size()) >= merge_threshold) {
+    if (1.0 >= merge_threshold * group->size()) {
         if (!deduplicated || check_no_duplicates(i, group)) {
             // We have two singletons (one has a group of itself, one doesn't), so we can merge.
             groups_store.add_to_group(group, i);
@@ -283,13 +288,12 @@ void two_grouped(GroupsStore &groups_store,
         return; // Already grouped together. Nothing to do.
     }
 
-    auto overlap = edges_store.increment(group0, group1);
+    double overlap = edges_store.increment(group0, group1);
     auto group_0_size = group0->size();
     auto group_1_size = group1->size();
     // The below is equivalent to: for every pair of records in the Cartesian product of group 0 and
     // group 1, we've encountered an edge.
-    if (static_cast<double>(overlap) / static_cast<double>(group_0_size * group_1_size)
-            >= merge_threshold) {
+    if (overlap >= merge_threshold * group_0_size * group_1_size) {
         if (!deduplicated || check_no_duplicates(group0, group1)) {
             // Optimise by enlarging the bigger group.
             if (group_0_size < group_1_size) {
@@ -331,7 +335,9 @@ greedy_solve_inner(unsigned int dset_is0[],
         Group *group_i1 = groups_store.get_group(i1);
         
         if (group_i0) {
+            assert(group_i0->size());
             if (group_i1) {
+                assert(group_i1->size());
                 two_grouped(groups_store, edges_store,
                             group_i0, group_i1,
                             merge_threshold, deduplicated);
@@ -342,6 +348,7 @@ greedy_solve_inner(unsigned int dset_is0[],
             }
         } else {
             if (group_i1) {
+                assert(group_i1->size());
                 one_grouped(groups_store, edges_store,
                             group_i1, i0,
                             merge_threshold, deduplicated);

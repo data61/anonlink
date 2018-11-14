@@ -116,12 +116,12 @@ def probabilistic_greedy_solve_python(
             # of pairs is len(i0_matches) * len(i1_matches)). When this
             # is the number of matchable pairs, then every pair is
             # matchable.
-            agreement = ((matchable_pairs[i0_mid][i1_mid] + 1)
-                         / (len(i0_matches) * len(i1_matches)))
+            overlap = matchable_pairs[i0_mid][i1_mid] + 1
+            total_pairs = len(i0_matches) * len(i1_matches)
             duplicates_ok = (not deduplicated or all(m0 != m1
                                                      for m0, _ in i0_matches
                                                      for m1, _ in i1_matches))
-            if agreement >= merge_threshold and duplicates_ok:
+            if overlap >= merge_threshold * total_pairs and duplicates_ok:
                 # Optimise by always extending the bigger group.
                 if len(i0_matches) < len(i1_matches):
                     i0, i1 = i1, i0
@@ -155,10 +155,11 @@ def probabilistic_greedy_solve_python(
             # i0 is in a group, but i1 is not.
             # See if we may assign i0 to that group.
             i0_matches = matches[i0]
-            agreement = 1 / len(i0_matches)
+            overlap = 1
+            total_pairs = len(i0_matches)
             duplicates_ok = not deduplicated or all(m0 != i1[0]
                                                     for m0, _ in i0_matches)
-            if agreement >= merge_threshold and duplicates_ok:
+            if overlap >= merge_threshold * total_pairs and duplicates_ok:
                 # i0 is a group of 1, so trivially we can merge.
                 i0_matches.append(i1)
                 matches[i1] = i0_matches

@@ -87,7 +87,7 @@ def probabilistic_greedy_solve_native(
     cdef double merge_threshold_double = merge_threshold
     cdef bool deduplicated_bool = deduplicated
 
-    if n:
+    if n:  # Prevent dereferencing empty arrays.
         with nogil:
             cpp_result = greedy_solve_inner(
                 &dset_is0[0],
