@@ -142,7 +142,7 @@ def nonmatch_index_score(candidate_pairs, n=1):
     possible matches and definite nonmatches. The index (in decreasing
     order of similarity) of the ``n``th definite nonmatch is returned.
 
-    Smaller values of ``n`` introduce more noise of the heuristic, but
+    Smaller values of ``n`` introduce more noise to the heuristic, but
     larger values of ``n`` provide less information.
 
     Raises ValueError if there are fewer than n definite nonmatches.
