@@ -135,7 +135,10 @@ def cumul_number_matches_vs_threshold(
     return num_matches, thresholds
 
 
-def nonmatch_index_score(candidate_pairs, n=1):
+def nonmatch_index_score(
+    candidate_pairs: _typechecking.CandidatePairs,
+    n: int = 1
+) -> int:
     """Find the index of the ``n``th definite nonmatch.
 
     We use the 2-party greedy solver to split the candidate pairs into
@@ -159,8 +162,8 @@ def nonmatch_index_score(candidate_pairs, n=1):
         raise ValueError('only 2-party matching is supported')
     _, _, (rec_is0, rec_is1) = candidate_pairs
 
-    matched0 = set()
-    matched1 = set()
+    matched0: _typing.Set[int] = set()
+    matched1: _typing.Set[int] = set()
     nonmatches = 0
     for i, rec_i0, rec_i1 in zip(itertools.count(), rec_is0, rec_is1):
         if rec_i0 not in matched0 and rec_i1 not in matched1:
