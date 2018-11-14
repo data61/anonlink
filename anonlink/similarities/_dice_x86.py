@@ -1,6 +1,5 @@
 from array import array
 from itertools import chain, groupby, repeat
-from numbers import Real
 from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
@@ -22,7 +21,7 @@ def _all_equal(iterable):
 
 def dice_coefficient_accelerated(
     datasets: Sequence[Sequence[bitarray]],
-    threshold: Real,
+    threshold: float,
     k: Optional[int] = None
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
     """Find Dice coefficients of CLKs.

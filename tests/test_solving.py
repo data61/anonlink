@@ -5,8 +5,10 @@ from collections import Counter
 import pytest
 from hypothesis import given, reject, strategies
 
-from anonlink.solving import (greedy_solve, greedy_solve_python,
-                              greedy_solve_native, pairs_from_groups)
+from anonlink.solving import (
+    greedy_solve, greedy_solve_python, greedy_solve_native, pairs_from_groups,
+    probabilistic_greedy_solve, probabilistic_greedy_solve_native,
+    probabilistic_greedy_solve_python)
 
 def _zip_candidates(candidates):
     candidates = tuple(candidates)
@@ -196,6 +198,14 @@ candidate_pairs_np = strategies.dictionaries(
         strategies.floats(min_value=0, max_value=1)
     ).map(dict_to_candidate_pairs)
 
+index_pair_np_ndedup = strategies.tuples(
+        indices_np, indices_np
+    ).map(lambda x: tuple(sorted(x)))
+candidate_pairs_np_ndedup = strategies.dictionaries(
+        index_pair_np,
+        strategies.floats(min_value=0, max_value=1)
+    ).map(dict_to_candidate_pairs)
+
 @given(candidate_pairs_np)
 def test_greedy_np(candidate_pairs):
     candidates = _zip_candidates(candidate_pairs)
@@ -298,3 +308,136 @@ def _groups_from_pairs(pairs):
 @given(groups_space_2p)
 def test_pairs_from_groups(groups):
     assert groups == _groups_from_pairs(pairs_from_groups(groups))
+
+
+@given(candidate_pairs_2p,
+       strategies.floats(min_value=0, max_value=1),
+       strategies.booleans())
+def test_probabilistic_python_native_match_2p(
+    candidate_pairs,
+    merge_threshold,
+    deduplicated
+):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_python = probabilistic_greedy_solve_python(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+    solution_native = probabilistic_greedy_solve_native(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+
+    # We don't care about the order
+    solution_python = frozenset(map(frozenset, solution_python))
+    solution_native = frozenset(map(frozenset, solution_native))
+
+    assert solution_python == solution_native
+
+
+@given(candidate_pairs_np,
+       strategies.floats(min_value=0, max_value=1),
+       strategies.booleans())
+def test_probabilistic_python_native_match_np(
+    candidate_pairs,
+    merge_threshold,
+    deduplicated
+):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_python = probabilistic_greedy_solve_python(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+    solution_native = probabilistic_greedy_solve_native(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+
+    # We don't care about the order
+    solution_python = frozenset(map(frozenset, solution_python))
+    solution_native = frozenset(map(frozenset, solution_native))
+
+    assert solution_python == solution_native
+
+
+@given(candidate_pairs_np_ndedup,
+       strategies.floats(min_value=0, max_value=1),
+       strategies.booleans())
+def test_probabilistic_python_native_match_np_ndedup(
+    candidate_pairs,
+    merge_threshold,
+    deduplicated
+):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_python = probabilistic_greedy_solve_python(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+    solution_native = probabilistic_greedy_solve_native(
+        candidates, merge_threshold=merge_threshold, deduplicated=deduplicated)
+
+    # We don't care about the order
+    solution_python = frozenset(map(frozenset, solution_python))
+    solution_native = frozenset(map(frozenset, solution_native))
+
+    assert solution_python == solution_native
+
+
+@given(candidate_pairs_np)
+def test_probabilistic_nonprobabilistic_match(candidate_pairs):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_probabilistic = probabilistic_greedy_solve(
+        candidates, merge_threshold=1, deduplicated=False)
+    solution_nonprobabilistic = greedy_solve(candidates)
+
+    # We don't care about the order
+    solution_probabilistic = frozenset(map(frozenset, solution_probabilistic))
+    solution_nonprobabilistic = frozenset(map(frozenset,
+                                              solution_nonprobabilistic))
+
+    assert solution_probabilistic == solution_nonprobabilistic
+
+
+@given(candidate_pairs_np_ndedup)
+def test_probabilistic_nonprobabilistic_match_ndedup(candidate_pairs):
+    candidates = _zip_candidates(candidate_pairs)
+    solution_probabilistic = probabilistic_greedy_solve(
+        candidates, merge_threshold=1, deduplicated=False)
+    solution_nonprobabilistic = greedy_solve(candidates)
+
+    # We don't care about the order
+    solution_probabilistic = frozenset(map(frozenset, solution_probabilistic))
+    solution_nonprobabilistic = frozenset(map(frozenset,
+                                              solution_nonprobabilistic))
+
+    assert solution_probabilistic == solution_nonprobabilistic
+
+
+def test_probabilistic_greedy():
+    candidates = [(.9, ((0, 0), (0, 1))),
+                  (.8, ((1, 0), (1, 1))),
+                  (.7, ((0, 0), (1, 0))),
+                  (.6, ((0, 0), (1, 1))),
+                  (.5, ((0, 1), (1, 0)))]
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=0., deduplicated=True)
+    _compare_matching(result, [{(0,0), (1,0)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=.75, deduplicated=True)
+    _compare_matching(result, [{(0,0), (1,0)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=.76, deduplicated=True)
+    _compare_matching(result, [{(0,0), (1,0)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=1., deduplicated=True)
+    _compare_matching(result, [{(0,0), (1,0)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=0.0, deduplicated=False)
+    _compare_matching(result, [{(0,0), (1,0), (0,1), (1,1)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=0.75, deduplicated=False)
+    _compare_matching(result, [{(0,0), (1,0), (0,1), (1,1)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=0.76, deduplicated=False)
+    _compare_matching(result, [{(0,0), (0,1)}, {(1,0), (1,1)}])
+    
+    result = probabilistic_greedy_solve(
+        _zip_candidates(candidates), merge_threshold=1, deduplicated=False)
+    _compare_matching(result, [{(0,0), (0,1)}, {(1,0), (1,1)}])

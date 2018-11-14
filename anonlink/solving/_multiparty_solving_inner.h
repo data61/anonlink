@@ -14,6 +14,10 @@ struct Record {
     }
 };
 
+
+// These are only ever made inside the GroupsStore class in _multiparty_solving_inner.
+// They are always created with at least one element. Elements are never deleted. Thus, they are
+// always nonempty.
 typedef std::vector<Record> Group;
 
 
@@ -23,6 +27,8 @@ greedy_solve_inner(
     unsigned int dset_is1[],
     unsigned int rec_is0[],
     unsigned int rec_is1[],
-    size_t n);
+    size_t n,
+    double merge_threshold,
+    bool deduplicated);
 
 #endif /* _multiparty_solving_inner_h */

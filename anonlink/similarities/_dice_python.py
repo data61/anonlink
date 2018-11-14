@@ -1,7 +1,6 @@
 from array import array
 from itertools import repeat
-from numbers import Real
-from typing import Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
@@ -14,7 +13,7 @@ __all__ = ['dice_coefficient_python']
 
 def dice_coefficient_python(
     datasets: Sequence[Sequence[bitarray]],
-    threshold: Real,
+    threshold: float,
     k: Optional[int] = None
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
     """Find Dice coefficients of CLKs.
@@ -62,8 +61,9 @@ def dice_coefficient_python(
     for i, f0 in enumerate(filters0):
         f0_count = f0.count()
         if f0_count:
-            coeffs = (2 * (f0 & f1).count() / (f0_count + f1_count)
-                      for f1, f1_count in zip(filters1, f1_counts))
+            coeffs: Iterable[float] = (
+                2 * (f0 & f1).count() / (f0_count + f1_count)
+                for f1, f1_count in zip(filters1, f1_counts))
         else:  # Avoid division by zero.
             coeffs = repeat(0., len(filters1))
         
