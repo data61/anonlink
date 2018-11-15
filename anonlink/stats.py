@@ -1,3 +1,4 @@
+import itertools
 import typing as _typing
 
 import numpy as _np
@@ -132,3 +133,45 @@ def cumul_number_matches_vs_threshold(
     num_matches_rev = num_matches[::-1]
     _np.cumsum(num_matches_rev, out=num_matches_rev)
     return num_matches, thresholds
+
+
+def nonmatch_index_score(
+    candidate_pairs: _typechecking.CandidatePairs,
+    n: int = 1
+) -> int:
+    """Find the index of the ``n``th definite nonmatch.
+
+    We use the 2-party greedy solver to split the candidate pairs into
+    possible matches and definite nonmatches. The index (in decreasing
+    order of similarity) of the ``n``th definite nonmatch is returned.
+
+    Smaller values of ``n`` introduce more noise to the heuristic, but
+    larger values of ``n`` provide less information.
+
+    Raises ValueError if there are fewer than n definite nonmatches.
+
+    :param candidate pairs: The candidate pairs. Must represent a
+        bipartite problem.
+    :param n: We return the index of the ``n``th definite nonmatch.
+        Default 1.
+
+    :return: The index of the ``n``th definite nonmatch if there are at
+        least ``n`` definite nonmatches in the candidate pairs.
+    """
+    if not _check_bipartite(candidate_pairs):
+        raise ValueError('only 2-party matching is supported')
+    _, _, (rec_is0, rec_is1) = candidate_pairs
+
+    matched0: _typing.Set[int] = set()
+    matched1: _typing.Set[int] = set()
+    nonmatches = 0
+    for i, rec_i0, rec_i1 in zip(itertools.count(), rec_is0, rec_is1):
+        if rec_i0 not in matched0 and rec_i1 not in matched1:
+            matched0.add(rec_i0)
+            matched1.add(rec_i1)
+        else:
+            nonmatches += 1
+            if nonmatches == n:
+                return i
+    # Fewer than n definite nonmatches.
+    raise ValueError('fewer than n definite nonmatches')
