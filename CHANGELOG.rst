@@ -1,3 +1,22 @@
+0.11.0
+======
+
+Major changes:
+--------------
+- The greedy solver has been ported to C++, bringing performance improvements. The pure Python version remains in the package as `anonlink.solving.greedy_solve_python`.
+- Candidate pair generation now supports blocking. Some blocking functions are defined in `anonlink.blocking` but custom ones may be defined.
+- New utilities assist in analysis of similarity scores. They can help an analyst find a good threshold or determine the quality of the linkage, and can be found in `anonlink.stats`. Examples are located in `docs/examples/similarity-plots`.
+- Adds a _probabilistic_ multiparty greedy solver. It generally yields more accurate results than the previous multiparty greedy solver. It is able to infer that some pairs match even they are below the similarity threshold.
+
+Minor changes:
+--------------
+- The `hamming_similarity` in the `similarities` module is renamed to `simple_matching_coefficient`, which is the canonical name for this similarity measure. `hamming_similarity` is now a deprecated alias.
+- `anonlink.similarities` is now imported whenever `anonlink` is imported. This means that `anonlink.similarities` no longer has to be imported separately.
+- The new helper function `anonlink.solving.pairs_from_groups` turns the output of the greedy solver (a set of groups) into an iterable of pairs for bipartite problems.
+- Dice similarity functions now support `bytes` as input. Previously the inputs had to be `bitarray`s.
+- Mypy typing is enforced in the automated tests.
+- Adds a heuristic for estimating the quality of the linkage, `anonlink.stats.nonmatch_index_score`.
+
 0.10.0
 ======
 
