@@ -2,6 +2,8 @@ import functools as _functools
 import typing as _typing
 import warnings as _warnings
 
+import mypy_extensions as _mypy_extensions
+
 
 def _warn_deprecated(
     module_name: str,
@@ -16,20 +18,39 @@ def _warn_deprecated(
     _warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
 
-# Mypy typing this is too hard. ¯\_(ツ)_/¯
-def make_decorator(module_name):
-    def deprecate_decorator(f=None, *, replacement=None):
-        def deprecate_decorator_inner(f):
+_WrappedF = _typing.TypeVar('_WrappedF',
+                            bound=_typing.Callable[..., _typing.Any])
+def make_decorator(
+    module_name: str
+) -> _typing.Callable[..., _typing.Any]:
+    @_typing.overload
+    def deprecate_decorator(
+        f: None = None,
+        *,
+        replacement: _typing.Optional[str] = None
+    ) -> _typing.Callable[[_WrappedF], _WrappedF]:
+        ...
+    @_typing.overload
+    def deprecate_decorator(
+        f: _WrappedF,
+        *,
+        replacement: _typing.Optional[str] = None
+    ) -> _WrappedF:
+        ...
+    def deprecate_decorator(
+        f: _typing.Optional[_WrappedF] = None,
+        *,
+        replacement: _typing.Optional[str] = None
+    ) -> _typing.Union[_WrappedF, _typing.Callable[[_WrappedF], _WrappedF]]:
+        def deprecate_decorator_inner(f: _WrappedF) -> _WrappedF:
             @_functools.wraps(f)
             def f_inner(*args, **kwargs):
                 _warn_deprecated(module_name, f.__name__, replacement)
                 return f(*args, **kwargs)
-            return f_inner
+            return _typing.cast(_WrappedF, f_inner)
         # Use decorator with or without arguments.
         if f is None:
             return deprecate_decorator_inner
         else:
             return deprecate_decorator_inner(f)
     return deprecate_decorator
-
-

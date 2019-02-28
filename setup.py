@@ -1,5 +1,7 @@
-from setuptools import setup, find_packages
+from setuptools import setup, Extension, find_packages
 import os
+
+from Cython.Build import cythonize, build_ext
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -13,24 +15,36 @@ requirements = [
         "mypy-extensions>=0.3"
     ]
 
+extensions = [Extension(
+    name="solving._multiparty_solving", 
+    sources=["anonlink/solving/_multiparty_solving.pyx",
+             "anonlink/solving/_multiparty_solving_inner.cpp"],
+    language="c++",
+    extra_compile_args=["-std=c++11"],
+    extra_link_args=["-std=c++11"],
+    define_macros=[('NDEBUG', None)]
+    )]
+
 with open('README.rst', 'r', encoding='utf-8') as f:
     readme = f.read()
 
 setup(
     name="anonlink",
-    version='0.10.0',
+    version='0.11.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
-    setup_requires=['cffi>=1.7'],
+    setup_requires=['cffi>=1.7', 'cython>=0.28'],
     install_requires=requirements,
     packages=find_packages(exclude=[
         '_cffi_build', '_cffi_build/*',
         'tests'
     ]),
     package_data={'anonlink': ['_cffi_build']},
+    ext_modules = cythonize(extensions),
+    build_ext=build_ext,
 
     ext_package="anonlink",
     classifiers=[

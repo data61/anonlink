@@ -18,4 +18,4 @@ done
 
 # Install packages and test
 "${PYBIN}/pip" install anonlink --no-index -f /io/wheelhouse
-(cd "$HOME"; "${PYBIN}/pytest" /io/tests -W ignore:DeprecationWarning)
+(cd "$HOME"; "${PYBIN}/pytest" /io/tests -W ignore::DeprecationWarning)

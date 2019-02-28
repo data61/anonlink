@@ -2,7 +2,6 @@ language: python
 sudo: false
 
 python:
-  - '3.6'
   - '3.7-dev'
   - 'nightly'
   - 'pypy3'
@@ -15,6 +14,11 @@ matrix:
     - python: '3.7-dev'
     - python: 'nightly'
     - python: 'pypy3'
+
+  include:
+    - python: '3.6'
+      env:
+        - MYPY_TYPING=1
 
 jobs:
   include:
@@ -30,6 +34,7 @@ jobs:
         - ls wheelhouse/
 
 install:
+  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
   - travis_retry pip install pytest pytest-cov
   - if [ -n "$USE_ASV" ]; then pip install asv; fi
   - travis_retry pip install -r requirements.txt
@@ -37,4 +42,5 @@ install:
   - travis_retry pip install -e .
 
 script:
-  - pytest --cov=anonlink -W ignore:DeprecationWarning
+  - if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
+  - pytest --cov=anonlink -W ignore::DeprecationWarning
