@@ -1,7 +1,15 @@
 from setuptools import setup, Extension, find_packages
 import os
 
-from Cython.Build import cythonize, build_ext
+try:
+    from Cython.Build import cythonize, build_ext
+except ImportError:
+    # No Cython but we may have pre-converted the files
+    maybe_cythonize = lambda x: x
+    cython_cpp_ext = 'cpp'
+else:
+    maybe_cythonize = cythonize
+    cython_cpp_ext = 'pyx'
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,8 +25,9 @@ requirements = [
 
 extensions = [Extension(
     name="solving._multiparty_solving", 
-    sources=["anonlink/solving/_multiparty_solving.pyx",
+    sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
              "anonlink/solving/_multiparty_solving_inner.cpp"],
+    include=["anonlink/solving/_multiparty_solving_inner.h"],
     language="c++",
     extra_compile_args=["-std=c++11"],
     extra_link_args=["-std=c++11"],
@@ -30,21 +39,20 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.11.0',
+    version='0.11.1',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
     url='https://github.com/n1analytics/anonlink',
     license='Apache',
-    setup_requires=['cffi>=1.7', 'cython>=0.28'],
+    setup_requires=['cffi>=1.7'],
     install_requires=requirements,
     packages=find_packages(exclude=[
         '_cffi_build', '_cffi_build/*',
         'tests'
     ]),
     package_data={'anonlink': ['_cffi_build']},
-    ext_modules = cythonize(extensions),
-    build_ext=build_ext,
+    ext_modules = maybe_cythonize(extensions),
 
     ext_package="anonlink",
     classifiers=[
