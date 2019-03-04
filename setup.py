@@ -24,7 +24,7 @@ requirements = [
     ]
 
 extensions = [Extension(
-    name="solving._multiparty_solving", 
+    name="solving._multiparty_solving",
     sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
              "anonlink/solving/_multiparty_solving_inner.cpp"],
     include=["anonlink/solving/_multiparty_solving_inner.h"],
