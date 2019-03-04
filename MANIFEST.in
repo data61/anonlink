@@ -6,3 +6,7 @@ global-exclude __pycache__/*
 # Exclude jenkins things
 exclude Jenkinsfile
 exclude .jenkins
+
+# Include Cython code
+global-include *.pyx
+global-include *.pxd
