@@ -1,3 +1,8 @@
+0.11.1
+======
+
+- Fixes an issue that prevented anonlink being installed from a .tar.gz archive. This caused installations from PyPI to fail.
+
 0.11.0
 ======
 
