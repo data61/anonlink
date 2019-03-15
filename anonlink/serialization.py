@@ -120,10 +120,10 @@ def _make_buffered(
     f: _typing.BinaryIO
 ) -> _typing.BinaryIO:
     # Make sure that f.read(n) returns exactly n bytes.
-    if not isinstance(f, _io.BufferedIOBase):
-        f = _io.BufferedReader(f)  # type: ignore
-        # Mypy complains that f is not guaranteed to be RawIOBase.
-        # That's true but BufferedReader doesn't explicitly check this.
+    if isinstance(f, _io.RawIOBase):
+        f = _io.BufferedReader(f)
+    # If f is neither BufferedReader nor RawIOBase then we shrug and see
+    # what happens...
     return f
 
 
