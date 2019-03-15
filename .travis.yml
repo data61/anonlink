@@ -1,46 +1,41 @@
 language: python
 sudo: false
-
 python:
-  - '3.7-dev'
-  - 'nightly'
-  - 'pypy3'
-
+- 3.7-dev
+- nightly
+- pypy3
 env:
-  - INCLUDE_10K=
-
+- INCLUDE_10K=
 matrix:
   allow_failures:
-    - python: '3.7-dev'
-    - python: 'nightly'
-    - python: 'pypy3'
-
+  - python: 3.7-dev
+  - python: nightly
+  - python: pypy3
   include:
-    - python: '3.6'
-      env:
-        - MYPY_TYPING=1
-
+  - python: '3.6'
+    env:
+    - MYPY_TYPING=1
 jobs:
   include:
-    - stage: Build wheels
-      sudo: required
-      python: '3.6'
-      services:
-        - docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
-      install: docker pull $DOCKER_IMAGE
-      script:
-        - docker run --rm -v `pwd`:/io $DOCKER_IMAGE /io/travis/build-wheels.sh
-        - ls wheelhouse/
+  - stage: Build wheels
+    sudo: required
+    python: '3.6'
+    services:
+    - docker
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+    install: docker pull $DOCKER_IMAGE
+    script:
+    - docker run --rm -v `pwd`:/io $DOCKER_IMAGE /io/travis/build-wheels.sh
+    - ls wheelhouse/
 
 install:
-  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
-  - travis_retry pip install pytest pytest-cov
-  - if [ -n "$USE_ASV" ]; then pip install asv; fi
-  - travis_retry pip install -r requirements.txt
-  - travis_retry python setup.py sdist bdist_wheel
-  - travis_retry pip install -e .
-
+- if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
+- travis_retry pip install pytest pytest-cov
+- if [ -n "$USE_ASV" ]; then pip install asv; fi
+- travis_retry pip install -r requirements.txt
+- travis_retry python setup.py sdist bdist_wheel
+- travis_retry pip install -e .
 script:
-  - if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
-  - pytest --cov=anonlink -W ignore::DeprecationWarning
+- if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
+- pytest --cov=anonlink -W ignore::DeprecationWarning
+
