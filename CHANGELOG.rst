@@ -1,3 +1,7 @@
+0.11.2
+======
+- Fixes an issue that caused the loading functions in `anonlink.serialization` to raise when loading from Minio objects.
+
 0.11.1
 ======
 
