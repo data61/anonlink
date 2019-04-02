@@ -1,16 +1,16 @@
+import io
 import math
 import os
 import unittest
 import random
 from operator import itemgetter
 
+from bitarray import bitarray
 from clkhash import bloomfilter, randomnames, schema
 from clkhash.key_derivation import generate_key_lists
 
-from anonlink import network_flow
-from anonlink import entitymatch
-from anonlink import distributed_processing
-from anonlink.util import *
+import anonlink
+import anonlink.benchmark
 
 __author__ = 'Brian Thorne'
 
@@ -20,8 +20,10 @@ def generate_data(samples, proportion=0.75):
     s1, s2 = nl.generate_subsets(samples, proportion)
 
     keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
-    filters1 = list(bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
-    filters2 = list(bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA))
+    filters1 = list(map(itemgetter(0),
+                    bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA)))
+    filters2 = list(map(itemgetter(0),
+                    bloomfilter.stream_bloom_filters(s2, keys, nl.SCHEMA)))
 
     return (s1, s2, filters1, filters2)
 
@@ -59,27 +61,15 @@ class EntityHelperMixin(object):
 
 class EntityHelperTestMixin(EntityHelperMixin):
 
-    def test_default(self):
-        similarity = entitymatch.calculate_filter_similarity(
-            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
-        mapping = network_flow.map_entities(similarity, threshold=0.95)
-        self.check_accuracy(mapping)
-
-    def test_bipartite(self):
-        similarity = entitymatch.calculate_filter_similarity(
-            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
-        mapping = network_flow.map_entities(similarity, threshold=0.95, method='bipartite')
-        self.check_accuracy(mapping)
-
-    def test_weighted(self):
-        similarity = entitymatch.calculate_filter_similarity(
-            self.filters1, self.filters2, self.default_similarity_k, self.default_similarity_threshold)
-        mapping = network_flow.map_entities(similarity, threshold=0.95, method='weighted')
-        self.check_accuracy(mapping)
-
     def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (self.filters1, self.filters2),
+            anonlink.similarities.dice_coefficient,
+            self.default_greedy_threshold,
+            k=self.default_greedy_k)
+        groups = anonlink.solving.greedy_solve(candidate_pairs)
+        mapping = dict(anonlink.solving.pairs_from_groups(groups))
+
         self.check_accuracy(mapping)
 
 
@@ -103,21 +93,26 @@ class TestEntityMatchingE2E_100(EntityHelperTestMixin, unittest.TestCase):
         cls.s1, cls.s2, cls.filters1, cls.filters2 = generate_data(cls.sample, cls.proportion)
 
     def test_extra(self):
-        a = bitarray('11111100011101100100100111110110001100110101101111011101011100110111111110010100101110001100111101000110111101111101111100101110010111101110001101010100010110000101100101011111011101001011101000010111010100000110111111110011100010110000001111101111000010101100000100000010000100111111010011011010001000100110010001110001010010110011110101100111110110100001000111111010001110001111111111101000011010100001001100001110011001010110101010000011010010100111111001100011011011100100011101111011111111010001110010011111110100010110111001001010001010000110000101100010010100100000011001001101010111111110011100100001001101001100100100000000011111110100010100110111111110011010001110101000000001011000100101111000100001100100111011110100001000100110111011000010000001010111001110100111001111011111110101000011111110001111010000101000011110000010011010110110011100000001111101101000001100100101001010010101000100101110100010001111000000110111010100100110001111001101011000111000011111100110000100001100110101101100111101110010')
-        b = bitarray('11101000011110000101001110000110010100001000100111101000111111001001001110110000001011110011101000001000100011000110111100001010101111001001100000111000010010000100110100011000101001100110110011000111111011111100110111010111001000010100010110001111000010001011110000111101111011011110001111001011110010000111110100110010000010101100111100000100111010000010001100111010100010001111000101100001101010001010101110011101101010101010100010010100100010101000100111011001101001101100101010001110110110001000100010111101100110011100011011010100010011100110110011101101110110100010001011101000001010011110000010000111100110001011100010101001100000101000011111010001011010001011010010011000101111101001100001001001101111101010111000001011000000011011101010110111010110001111111000110001001011101011101010010001100110011100010010111001100011000001101100011010000110101011110110001101011111110100010111100111110101100101110110001001001110100110100011101010010111110101100000001101100111101001110010001000101110011000101111101010')
+        a = bitarray('1111110001110110010010011111011000110011010110111101110101110011011111111001010010111000110011110100011011110111110111110010111001011110111000110101010001011000010110010101111101110100101110100001011101010000011011111111001110001011000000111110111100001010110000010000001000010011111101001101101000100010011001000111000101001011001111010110011111011010000100011111101000111000111111111110100001101010000100110000111001100101011010101000001101001010011111100110001101101110010001110111101111111101000111001001111111010001011011100100101000101000011000010110001001010010000001100100110101011111111001110010000100110100110010010000000001111111010001010011011111111001101000111010100000000101100010010111100010000110010011101111010000100010011011101100001000000101011100111010011100111101111111010100001111111000111101000010100001111000001001101011011001110000000111110110100000110010010100101001010100010010111010001000111100000011011101010010011000111100110101100011100001111110011000010000110011010110110011110111001001110010')
+        b = bitarray('1110100001111000010100111000011001010000100010011110100011111100100100111011000000101111001110100000100010001100011011110000101010111100100110000011100001001000010011010001100010100110011011001100011111101111110011011101011100100001010001011000111100001000101111000011110111101101111000111100101111001000011111010011001000001010110011110000010011101000001000110011101010001000111100010110000110101000101010111001110110101010101010001001010010001010100010011101100110100110110010101000111011011000100010001011110110011001110001101101010001001110011011001110110111011010001000101110100000101001111000001000011110011000101110001010100110000010100001111101000101101000101101001001100010111110100110000100100110111110101011100000101100000001101110101011011101011000111111100011000100101110101110101001000110011001110001001011100110001100000110110001101000011010101111011000110101111111010001011110011111010110010111011000100100111010011010001110101001011111010110000000110110011110100111001000100010111001100010111110101011101010')
+        assert len(self.filters1[0]) == len(a)
+        assert len(self.filters2[0]) == len(a)
+        assert len(self.filters1[0]) == len(b)
+        assert len(self.filters2[0]) == len(b)
 
-        self.filters1[-1] = (a, 100, a.count())
-        self.filters2[-1] = (a, 100, a.count())
+        self.filters1[-1] = a
+        self.filters2[-1] = a
 
-        self.filters2[-2] = (b, 101, b.count())
+        self.filters2[-2] = b
 
-        sparse_scores = entitymatch.calculate_filter_similarity(
-            self.filters1, self.filters2, k=20, threshold=0.8, use_python=False)
-        ordered_by_score = sorted(sparse_scores, key=itemgetter(1), reverse=True)
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (self.filters1, self.filters2),
+            anonlink.similarities.dice_coefficient_python,
+            0.8,
+            k=20)
+        groups = anonlink.solving.greedy_solve(candidate_pairs)
+        mapping = dict(anonlink.solving.pairs_from_groups(groups))
 
-        ordered_scores = sorted(ordered_by_score, key=itemgetter(0))
-
-        mapping = entitymatch.greedy_solver(ordered_scores)
         self.check_accuracy(mapping)
 
 
@@ -177,22 +172,44 @@ class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
 
     def test_cffi_k(self):
 
-        f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
-        f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
+        f1 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s1, self.key_lists, self.nl.SCHEMA)))
+        f2 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s2, self.key_lists, self.nl.SCHEMA)))
 
         threshold = 0.9
-        similarity = entitymatch.cffi_filter_similarity_k(f1, f2, 4, threshold)
-        mapping = network_flow.map_entities(similarity, threshold, method=None)
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (f1, f2),
+            anonlink.similarities.dice_coefficient_accelerated,
+            threshold,
+            k=4)
+        groups = anonlink.solving.greedy_solve(candidate_pairs)
+        mapping = dict(anonlink.solving.pairs_from_groups(groups))
 
         self.check_accuracy(mapping)
 
     def test_concurrent(self):
-        f1 = tuple(bloomfilter.stream_bloom_filters(self.s1, self.key_lists, self.nl.SCHEMA))
-        f2 = tuple(bloomfilter.stream_bloom_filters(self.s2, self.key_lists, self.nl.SCHEMA))
+        f1 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s1, self.key_lists, self.nl.SCHEMA)))
+        f2 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s2, self.key_lists, self.nl.SCHEMA)))
 
         threshold = 0.9
-        similarity = distributed_processing.calculate_filter_similarity(f1, f2, 4, threshold)
-        mapping = network_flow.map_entities(similarity, threshold, method=None)
+        candidate_pairs = anonlink.concurrency.process_chunk(
+            [
+                {"datasetIndex": 0, "range": [0, len(f1)]},
+                {"datasetIndex": 1, "range": [0, len(f2)]}
+            ],
+            (f1, f2),
+            anonlink.similarities.dice_coefficient,
+            threshold,
+            k=4)
+        groups = anonlink.solving.greedy_solve(candidate_pairs)
+        mapping = dict(anonlink.solving.pairs_from_groups(groups))
 
         self.check_accuracy(mapping)
 
@@ -201,40 +218,72 @@ class TestGreedy(unittest.TestCase):
     default_greedy_k = 5
     default_greedy_threshold = 0.95
 
-    some_filters = generate_clks(1000)
+    some_filters = anonlink.benchmark.generate_random_clks(1000)
 
     def test_greedy_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
-        result = entitymatch.calculate_mapping_greedy(
-            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (filters1, filters2),
+            anonlink.similarities.dice_coefficient_accelerated,
+            self.default_greedy_threshold,
+            k=self.default_greedy_k)
+        anonlink.solving.greedy_solve(candidate_pairs)
 
     def test_greedy_chunked_matching_works(self):
         filters1 = [self.some_filters[random.randrange(0, 800)] for _ in range(1000)]
         filters2 = [self.some_filters[random.randrange(200, 1000)] for _ in range(1500)]
 
-        all_in_one_mapping = entitymatch.calculate_mapping_greedy(
-            filters1, filters2, self.default_greedy_k, self.default_greedy_threshold)
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (filters1, filters2),
+            anonlink.similarities.dice_coefficient_accelerated,
+            self.default_greedy_threshold)
+        groups = anonlink.solving.greedy_solve(candidate_pairs)
+        mapping = dict(anonlink.solving.pairs_from_groups(groups))
 
-        filters1_chunk1, filters1_chunk2 = filters1[:500],  filters1[500:]
-        assert len(filters1_chunk1) == 500
+        chunk_size = len(filters1) // 2
+        filters1_chunk1, filters1_chunk2 \
+            = filters1[:chunk_size], filters1[chunk_size:]
+        assert len(filters1_chunk1) == len(filters1_chunk2) == chunk_size
 
-        chunk_1 = entitymatch.calculate_filter_similarity(filters1_chunk1, filters2, threshold=0.95, k=5)
+        chunk_1 = anonlink.concurrency.process_chunk(
+            [
+                {"datasetIndex": 0, "range": [0, chunk_size]},
+                {"datasetIndex": 1, "range": [0, len(filters2)]}
+            ],
+            (filters1_chunk1, filters2),
+            anonlink.similarities.dice_coefficient,
+            .95)
+        chunk_2 = anonlink.concurrency.process_chunk(
+            [
+                {"datasetIndex": 0, "range": [chunk_size, len(filters1)]},
+                {"datasetIndex": 1, "range": [0, len(filters2)]}
+            ],
+            (filters1_chunk2, filters2),
+            anonlink.similarities.dice_coefficient,
+            .95)
 
-        chunk_2 = distributed_processing.calc_chunk_result(1, filters1_chunk2, filters2, k=5, threshold=0.95)
+        chunk_1_f = io.BytesIO()
+        anonlink.serialization.dump_candidate_pairs(chunk_1, chunk_1_f)
+        chunk_1_f.seek(0)
+        
+        chunk_2_f = io.BytesIO()
+        anonlink.serialization.dump_candidate_pairs(chunk_2, chunk_2_f)
+        chunk_2_f.seek(0)
 
-        full_similarity_scores = entitymatch.calculate_filter_similarity(filters1, filters2, threshold=0.95, k=5)
+        merged_f = io.BytesIO()
+        anonlink.serialization.merge_streams((chunk_1_f, chunk_2_f), merged_f)
+        merged_f.seek(0)
 
-        sparse_matrix = chunk_1
-        sparse_matrix.extend(chunk_2)
+        full_candidate_pairs = anonlink.serialization.load_candidate_pairs(
+            merged_f)
 
-        self.assertEqual(len(full_similarity_scores), len(sparse_matrix))
+        assert candidate_pairs == full_candidate_pairs
+        merged_groups = anonlink.solving.greedy_solve(full_candidate_pairs)
+        merged_mapping = dict(
+            anonlink.solving.pairs_from_groups(merged_groups))
 
-        partial_mapping = entitymatch.greedy_solver(sparse_matrix)
-
-        for entityA in all_in_one_mapping:
-            assert entityA in partial_mapping
-            self.assertEqual(all_in_one_mapping[entityA], partial_mapping[entityA])
+        assert mapping == merged_mapping
 
 
 if __name__ == '__main__':
