@@ -1,68 +1,29 @@
+import itertools
 import random
+import operator
+import os
 from timeit import default_timer as timer
 
+import bitarray
 from clkhash.key_derivation import generate_key_lists
 from clkhash.bloomfilter import stream_bloom_filters
 from clkhash.randomnames import NameList
 
-from anonlink.entitymatch import *
-from anonlink.util import popcount_vector, generate_clks, generate_bitarray
+import anonlink
 
 
-some_filters = generate_clks(10000)
+def generate_random_bitarrays(length=1024):
+    while True:
+        a = bitarray.bitarray()
+        a.frombytes(os.urandom(length//8))
+        yield a
 
 
-def compute_popcount_speed(n):
-    """
-    Just do as much counting of bits.
-    """
-    clk_bits = 1024
-    clk_bytes = clk_bits / 8
-    clks_MiB = n * clk_bytes * 1.0 / (1 << 20)
+def generate_random_clks(count, length=1024):
+    return tuple(itertools.islice(generate_random_bitarrays(length), count))
 
-    clks = [generate_bitarray(clk_bits) for _ in range(n)]
 
-    print("{:6d} x {:d} bit popcounts".format(n, clk_bits))
-    print("Implementation              | Time (ms) | Bandwidth (MiB/s) | Throughput (1e6 popc/s)")
-
-    # Python
-    popcounts, elapsed_time = popcount_vector(clks, use_python=True)
-
-    # Guard against division by zero (have observed elapsed_nocopy ==
-    # 0 in the wild; see issue #92).
-    inv_elapsed_time = 1 / elapsed_time if elapsed_time > 0 else float('inf')
-
-    python_speed_in_MiB = clks_MiB * inv_elapsed_time
-    python_Mops = (n / 1e6) * inv_elapsed_time
-
-    elapsed_time_ms = elapsed_time * 1e3
-    print("Python (bitarray.count()):  |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
-          .format(elapsed_time_ms, python_speed_in_MiB, python_Mops))
-
-    # Native
-    start = timer()
-    popcounts, elapsed_nocopy = popcount_vector(clks, use_python=False)
-    end = timer()
-    elapsed_time = end - start
-
-    # Guard against division by zero (have observed elapsed_nocopy ==
-    # 0 in the wild; see issue #92).
-    inv_elapsed_time = 1 / elapsed_time if elapsed_time > 0 else float('inf')
-    inv_elapsed_nocopy = 1 / elapsed_nocopy if elapsed_nocopy > 0 else float('inf')
-
-    copy_percent = 100*(elapsed_time - elapsed_nocopy) * inv_elapsed_time
-    elapsed_time_ms = elapsed_time * 1e3
-    elapsed_nocopy_ms = elapsed_nocopy * 1e3
-    native_speed_in_MiB = clks_MiB * inv_elapsed_time
-    native_speed_in_MiB_nocopy = clks_MiB * inv_elapsed_nocopy
-    native_Mops = (n / 1e6) * inv_elapsed_time
-    native_Mops_nocopy = (n / 1e6) * inv_elapsed_nocopy
-    print("Native code (no copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f}"
-          .format(elapsed_nocopy_ms, native_speed_in_MiB_nocopy, native_Mops_nocopy))
-    print("Native code (w/ copy):      |  {:7.2f}  |   {:9.2f}       | {:7.2f} ({:.1f}% copying)"
-          .format(elapsed_time_ms, native_speed_in_MiB, native_Mops, copy_percent))
-
-    return python_speed_in_MiB
+some_filters = generate_random_clks(10000)
 
 
 def print_comparison_header(threshold):
@@ -82,9 +43,12 @@ def compute_comparison_speed(n1, n2, threshold):
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
     start = timer()
-    sparse_matrix = calculate_filter_similarity(filters1, filters2, len(filters2), threshold)
+    sparse_matrix = anonlink.candidate_generation.find_candidate_pairs(
+        (filters1, filters2),
+        anonlink.similarities.dice_coefficient,
+        threshold)
     t1 = timer()
-    _ = greedy_solver(sparse_matrix)
+    anonlink.solving.greedy_solve(sparse_matrix)
     end = timer()
 
     similarity_time = t1 - start
@@ -120,18 +84,28 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     sl1, sl2 = nml.generate_subsets(nsubset, frac)
 
     keys = generate_key_lists(('test1', 'test2'), len(nml.schema_types))
-    filters1 = tuple(stream_bloom_filters(sl1, keys, nml.SCHEMA))
-    filters2 = tuple(stream_bloom_filters(sl2, keys, nml.SCHEMA))
+    filters1 = tuple(map(operator.itemgetter(0),
+                         stream_bloom_filters(sl1, keys, nml.SCHEMA)))
+    filters2 = tuple(map(operator.itemgetter(0),
+                         stream_bloom_filters(sl2, keys, nml.SCHEMA)))
 
     # Pure Python version
     start = timer()
-    result = python_filter_similarity(filters1, filters2, 1, 0.0)
+    result = anonlink.candidate_generation.find_candidate_pairs(
+        (filters1, filters2),
+        anonlink.similarities.dice_coefficient_python,
+        0.0,
+        k=1)
     end = timer()
     python_time = end - start
 
-    # C++ cffi version
+    # C++ accelerated version
     start = timer()
-    result3 = cffi_filter_similarity_k(filters1, filters2, 1, 0.0)
+    result3 = anonlink.candidate_generation.find_candidate_pairs(
+        (filters1, filters2),
+        anonlink.similarities.dice_coefficient_accelerated,
+        0.0,
+        k=1)
     end = timer()
     cffi_time = end - start
 
@@ -150,8 +124,6 @@ def benchmark(size, compare):
     print("------------------------------------------------")
     if compare:
         print(compare_python_c(ntotal=1000, nsubset=600))
-
-    compute_popcount_speed(100000)
 
     possible_test_sizes = [
         1000, 2000, 3000, 4000,
