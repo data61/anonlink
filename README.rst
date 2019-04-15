@@ -1,6 +1,6 @@
 
-.. image:: https://travis-ci.org/n1analytics/anonlink.svg?branch=master
-    :target: https://travis-ci.org/n1analytics/anonlink
+.. image:: https://travis-ci.org/data61/anonlink.svg?branch=master
+    :target: https://travis-ci.org/data61/anonlink
 
 
 A Python (and optimised C++) implementation of **anonymous linkage** using
@@ -11,7 +11,7 @@ Code <http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf>`__.
 Computes similarity scores, and/or best guess matches between two sets
 of *cryptographic linkage keys* (hashed entity records).
 
-Use `clkhash <https://github.com/n1analytics/clkhash>`__ to create cryptographic linkage keys
+Use `clkhash <https://github.com/data61/clkhash>`__ to create cryptographic linkage keys
 from personally identifiable data.
 
 Installation
