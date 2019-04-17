@@ -204,7 +204,7 @@ Other improvements
 - Internal C/C++ cleanup/refactoring and optimization.
 - Expose the native popcount implementation to Python.
 - Bug fix to avoid configuring a logger.
-- Testing is now with `py.test` and runs on [travis-ci](https://travis-ci.org/n1analytics/anonlink/)
+- Testing is now with `py.test` and runs on [travis-ci](https://travis-ci.org/data61/anonlink/)
 
 0.6.3
 =====
