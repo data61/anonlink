@@ -1,4 +1,4 @@
-@Library("N1Pipeline@0.0.5")
+@Library("N1Pipeline@0.0.24")
 import com.n1analytics.git.GitUtils;
 import com.n1analytics.git.GitCommit;
 import com.n1analytics.n1.docker.N1EngineContainer;

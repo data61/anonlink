@@ -1,5 +1,13 @@
+0.12.0
+======
+
+- Removes deprecated API.
+- Minor housekeeping moving to a new home at github.com/data61/anonlink
+- PyPi release should be automatically made by travis-ci
+
 0.11.2
 ======
+
 - Fixes an issue that caused the loading functions in `anonlink.serialization` to raise when loading from Minio objects.
 
 0.11.1
@@ -204,7 +212,7 @@ Other improvements
 - Internal C/C++ cleanup/refactoring and optimization.
 - Expose the native popcount implementation to Python.
 - Bug fix to avoid configuring a logger.
-- Testing is now with `py.test` and runs on [travis-ci](https://travis-ci.org/n1analytics/anonlink/)
+- Testing is now with `py.test` and runs on [travis-ci](https://travis-ci.org/data61/anonlink/)
 
 0.6.3
 =====
