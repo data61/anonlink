@@ -1,5 +1,13 @@
+0.12.0
+======
+
+- Removes deprecated API.
+- Minor housekeeping moving to a new home at github.com/data61/anonlink
+- PyPi release should be automatically made by travis-ci
+
 0.11.2
 ======
+
 - Fixes an issue that caused the loading functions in `anonlink.serialization` to raise when loading from Minio objects.
 
 0.11.1
