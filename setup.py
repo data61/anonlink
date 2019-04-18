@@ -43,7 +43,7 @@ setup(
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
-    url='https://github.com/n1analytics/anonlink',
+    url='https://github.com/data61/anonlink',
     license='Apache',
     setup_requires=['cffi>=1.7'],
     install_requires=requirements,
