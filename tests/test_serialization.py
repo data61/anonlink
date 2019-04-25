@@ -172,6 +172,25 @@ class TestLoadCandidatePairs:
             f.seek(0)
             assert candidate_pairs == serialization.load_candidate_pairs(f)
 
+
+class TestLoadCandidatePairsToIterable:
+    def test_general(self, cands_bytes_pair, new_file_function):
+        candidate_pairs, bytes_, *_ = cands_bytes_pair
+        sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = candidate_pairs
+        candidate_pairs_iter = zip(sims, dset_is0, dset_is1, rec_is0, rec_is1)
+        with new_file_function() as f:
+            length = f.write(bytes_)
+            f.seek(0)
+            for p0, p1 in itertools.zip_longest(
+                    candidate_pairs_iter, serialization.load_to_iterable(f)):
+                assert p0 == p1
+
+
+@pytest.mark.parametrize(
+    'load_function',
+    [serialization.load_candidate_pairs,
+     serialization.load_to_iterable])
+class TestLoadCandidatePairsErrorCases:
     @pytest.mark.parametrize('sim_size', FLOAT_SIZES)
     @pytest.mark.parametrize('dset_i_size', UINT_SIZES)
     @pytest.mark.parametrize('rec_i_size', UINT_SIZES)
@@ -179,7 +198,7 @@ class TestLoadCandidatePairs:
     @pytest.mark.parametrize('version', (0, 2, 172))
     def test_incorrect_version(
             self,
-            new_file_function,
+            new_file_function, load_function,
             sim_size, dset_i_size, rec_i_size, length,
             version):
         pairs_list = random_pairs_list(
@@ -191,7 +210,7 @@ class TestLoadCandidatePairs:
             f.write(bytes_)
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
     @pytest.mark.parametrize('sim_size', FLOAT_SIZES)
     @pytest.mark.parametrize('dset_i_size', UINT_SIZES)
@@ -199,7 +218,7 @@ class TestLoadCandidatePairs:
     @pytest.mark.parametrize('length', (0, 5))
     def test_unsupported_sizes(
             self,
-            new_file_function,
+            new_file_function, load_function,
             sim_size, dset_i_size, rec_i_size, length):
         pairs_list = random_pairs_list(
             sim_size, dset_i_size, rec_i_size, length)
@@ -211,7 +230,7 @@ class TestLoadCandidatePairs:
             f.write(bytes_)
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
         
         bytes_ = pairs_list_to_bytes(
             pairs_list, sim_size, dset_i_size, rec_i_size)
@@ -220,7 +239,7 @@ class TestLoadCandidatePairs:
             f.write(bytes_)
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
         
         bytes_ = pairs_list_to_bytes(
             pairs_list, sim_size, dset_i_size, rec_i_size)
@@ -229,31 +248,31 @@ class TestLoadCandidatePairs:
             f.write(bytes_)
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
-    def test_empty_file(self, new_file_function):
+    def test_empty_file(self, new_file_function, load_function):
         with new_file_function() as f:
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
-    def test_incomplete_header(self, new_file_function):
+    def test_incomplete_header(self, new_file_function, load_function):
         with new_file_function() as f:
             f.write(FORMAT_VERSION.to_bytes(1, 'little'))
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
             f.seek(0, 2)
             f.write(DEFAULT_SIZE.to_bytes(1, 'little'))
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
             f.seek(0, 2)
             f.write(DEFAULT_SIZE.to_bytes(1, 'little'))
             f.seek(0)
             with pytest.raises(ValueError):
-                serialization.load_candidate_pairs(f)
+                load_function(f)
 
     @pytest.mark.parametrize('sim_size', FLOAT_SIZES)
     @pytest.mark.parametrize('dset_i_size', UINT_SIZES)
@@ -261,7 +280,7 @@ class TestLoadCandidatePairs:
     @pytest.mark.parametrize('preceeding', (0, 5))
     def test_incomplete_entry(
             self,
-            new_file_function,
+            new_file_function, load_function,
             sim_size, dset_i_size, rec_i_size,
             preceeding):
         pairs_list = random_pairs_list(
@@ -274,8 +293,13 @@ class TestLoadCandidatePairs:
                 f.seek(-1, 2)
                 f.truncate()
                 f.seek(0)
-                with pytest.raises(ValueError):
-                    serialization.load_candidate_pairs(f)
+                if load_function is serialization.load_to_iterable:
+                    with pytest.raises(ValueError):
+                        consume(load_function(f))
+                else:
+                    with pytest.raises(ValueError):
+                        load_function(f)
+
 
 @pytest.mark.parametrize('merge_function',
                          [merge_to_file_stream,
