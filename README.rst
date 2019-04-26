@@ -151,6 +151,16 @@ Limitations
    in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
 
 
+Discussion
+----------
+
+If you run into bugs, you can file them in our [issue tracker](https://github.com/data61/anonlink/issues) on GitHub.
+
+There is also an [anonlink mailing list](https://groups.google.com/forum/#!forum/anonlink) for development discussion and release announcements.
+
+Wherever we interact, we strive to follow the [Python Community Code of Conduct](https://www.python.org/psf/codeofconduct/).
+
+
 License
 -------
 
