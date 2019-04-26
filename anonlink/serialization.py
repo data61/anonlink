@@ -140,7 +140,7 @@ def _load_header_and_check_version(
     return sim_t_size, dset_i_t_size, rec_i_t_size
 
 
-def _load_to_iterable(
+def _load_to_iter_with_sizes(
     f: _typing.BinaryIO
 ) -> _typing.Tuple[_CandidatePairIter, int, int, int, int]:
     f = _make_buffered(f)
@@ -153,6 +153,26 @@ def _load_to_iterable(
     return (_entries_iterable(f, entry_struct),
             sim_t_size, dset_i_t_size, rec_i_t_size,
             entry_struct.size)
+
+
+def load_to_iterable(
+    f: _typing.BinaryIO
+) -> _CandidatePairIter:
+    """Load candidate pairs from file as an iterable.
+
+    This function does not load all the candidate pairs into memory at
+    once.
+
+    :param f: Binary stream to read from.
+
+    :return: An iterable of 5-tuples. Each 5-tuple represents one
+        candidate pair and is composed of the similarity, the index of
+        the first record's dataset, the index of the second record's
+        dataset, the index of the first record within its dataset, and
+        the index of the second record within its dataset.
+    """
+    iterable, _, _, _, _ = _load_to_iter_with_sizes(f)
+    return iterable
 
 
 def _file_size(entry_struct, entries):
@@ -200,7 +220,7 @@ def dump_candidate_pairs(
 ) -> int:
     """Dump candidate pairs to file.
 
-    :param f: Binary buffer to write to.
+    :param f: Binary stream to write to.
     :param candidate_pairs: Candidate pairs, as returned by a similarity
         function or `load_candidate_pairs`.
 
@@ -213,12 +233,13 @@ def dump_candidate_pairs(
 def load_candidate_pairs(f: _typing.BinaryIO) -> _typechecking.CandidatePairs:
     """Load candidate pairs from file.
 
-    :param f: Binary buffer to read from.
+    :param f: Binary stream to read from.
 
     :return: Candidate pairs, compatible with the type returned from a
         similarity function.
     """
-    iterable, sim_t_size, dset_i_t_size, rec_i_t_size, _ = _load_to_iterable(f)
+    iterable_with_sizes = _load_to_iter_with_sizes(f)
+    iterable, sim_t_size, dset_i_t_size, rec_i_t_size, _ = iterable_with_sizes
 
     try:
         sim_t = _ARRAY_FLOAT_LEN_TO_FMT[sim_t_size]
@@ -288,7 +309,8 @@ def merge_streams_iter(
     if not files_in:
         raise ValueError('no files provided')
 
-    file_iterables, *field_sizes = zip(*map(_load_to_iterable, files_in))
+    iterables_with_sizes = map(_load_to_iter_with_sizes, files_in)
+    file_iterables, *field_sizes = zip(*iterables_with_sizes)
     file_sim_t_size, file_dset_i_t_size, file_rec_i_t_size, file_entry_size \
         = field_sizes
 
@@ -332,7 +354,7 @@ def merge_streams(
     candidate pairs dump.
 
     :param files_in: Sequence of files to read from.
-    :param f_out: Binary buffer write the merged candidate pairs to.
+    :param f_out: Binary stream write the merged candidate pairs to.
 
     :return: Number of bytes written.
     """
