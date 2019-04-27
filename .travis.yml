@@ -15,22 +15,6 @@ python:
 - pypy3
 
 env:
-  - MYPY_TYPING=1
-    INCLUDE_10K=1
-
-# matrix doesn't work with stages....
-#matrix:
-#  fast_finish: true   # https://docs.travis-ci.com/user/build-matrix/#fast-finishing
-#  include:
-#  - python: 3.6
-#    env:
-#    - MYPY_TYPING=1
-#    - INCLUDE_10K=1
-#  - python: 3.7
-#  - python: 3.8-dev
-#  - python: nightly
-#  - python: pypy3
-#    dist: trusty
 
 install:
   - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
@@ -47,20 +31,21 @@ script:
 jobs:
   #fast_finish: true
   allow_failures:
-    - python: 3.8-dev
-    - python: nightly
-    - python: pypy3
+    - python: "3.8-dev"
+    - python: "nightly"
+    - python: "pypy3"
   include:
     # No matrix support in Stages
     # Stages with the same name get run in parallel
     - stage: test
-      allow_failures:
-        - python: 3.8-dev
-        - python: nightly
-        - python: pypy3
+      name: "Typecheck"
+      python: "3.6"
+      env:
+        - MYPY_TYPING=1
+          INCLUDE_10K=1
     - stage: Build wheels
       sudo: required
-      python: '3.6'
+      python: "3.6"
       services:
       - docker
       env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
