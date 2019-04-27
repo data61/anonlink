@@ -3,6 +3,10 @@
     :target: https://travis-ci.org/data61/anonlink
 
 
+.. image:: https://codecov.io/gh/data61/anonlink/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/data61/anonlink
+
+
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
