@@ -17,7 +17,7 @@ python:
 env:
 
 install:
-  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install -U mypy mypy-extensions; fi
+  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install -U mypy; fi
   - travis_retry pip install -U pytest pytest-cov
   - travis_retry pip install -r requirements.txt
   - travis_retry python setup.py sdist bdist_wheel

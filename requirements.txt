@@ -4,6 +4,6 @@ pytest>=3.4
 pytest-cov>=2.5
 clkhash==0.11.0
 numpy==1.15.3
-mypy-extensions==0.3.0
+mypy-extensions==0.4.1
 hypothesis==3.69.2
 Cython==0.28.5
