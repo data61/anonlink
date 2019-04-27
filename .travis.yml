@@ -33,15 +33,22 @@ jobs:
     - python: "3.8-dev"
     - python: "nightly"
     - python: "pypy3"
+    - name: "Extended 100K"
   include:
     # No matrix support in Stages
     # Stages with the same name get run in parallel. Jobs within a stage can also be named.
     - stage: test
     - stage: test
-      name: "Extended Size"
+      name: "Extended Size 10K"
+      python: "3.7"
       env:
         - INCLUDE_10K=1
-        #- INCLUDE_100K=1
+    - stage: test
+      name: "Extended Size 100K"
+      python: "3.7"
+      env:
+        - INCLUDE_100K=1
+    - stage: test
       name: "Typecheck"
       python: "3.7"
       env:
