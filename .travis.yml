@@ -17,18 +17,16 @@ python:
 env:
 
 install:
-  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install -U mypy; fi
   - travis_retry pip install -U pytest pytest-cov
   - travis_retry pip install -r requirements.txt
   - travis_retry python setup.py sdist bdist_wheel
   - travis_retry pip install -e .
 
 script:
-  - if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
   - pytest --cov=anonlink -W ignore::DeprecationWarning
 
 jobs:
-  #fast_finish: true
+  fast_finish: true
   allow_failures:
     - python: "3.8-dev"
     - python: "nightly"
@@ -50,8 +48,10 @@ jobs:
     - stage: test
       name: "Typecheck"
       python: "3.7"
-      env:
-        - MYPY_TYPING=1
+      before_install:
+        - travis_retry pip install -U mypy
+      script:
+        - mypy anonlink --ignore-missing-imports
     - stage: Build wheels
       sudo: required
       python: "3.6"
