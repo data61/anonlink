@@ -7,27 +7,51 @@ cache:
   directories:
   - "$HOME/.cache/pip"
 
-matrix:
-  fast_finish: true   # https://docs.travis-ci.com/user/build-matrix/#fast-finishing
-  include:
-  - python: 3.6
-    env:
-    - MYPY_TYPING=1
-    - INCLUDE_10K=1
-  - python: 3.7
-  - python: 3.8-dev
-  - python: nightly
-  - python: pypy3
-    dist: trusty
+python:
+- 3.7
+- 3.8-dev
+- nightly
+- pypy3
 
-  allow_failures:
-  - python: 3.8-dev
-  - python: nightly
-  - python: pypy3
+env:
+  - MYPY_TYPING=1
+    INCLUDE_10K=1
+
+# matrix doesn't work with stages....
+#matrix:
+#  fast_finish: true   # https://docs.travis-ci.com/user/build-matrix/#fast-finishing
+#  include:
+#  - python: 3.6
+#    env:
+#    - MYPY_TYPING=1
+#    - INCLUDE_10K=1
+#  - python: 3.7
+#  - python: 3.8-dev
+#  - python: nightly
+#  - python: pypy3
+#    dist: trusty
+
+install:
+  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
+  - travis_retry pip install pytest pytest-cov
+  - if [ -n "$USE_ASV" ]; then pip install asv; fi
+  - travis_retry pip install -r requirements.txt
+  - travis_retry python setup.py sdist bdist_wheel
+  - travis_retry pip install -e .
+
+script:
+  - if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
+  - pytest --cov=anonlink -W ignore::DeprecationWarning
 
 jobs:
   include:
-    - stage: Test
+    # No matrix support in Stages
+    # Stages with the same name get run in parallel
+    - stage: test
+      allow_failures:
+        - python: 3.8-dev
+        - python: nightly
+        - python: pypy3
     - stage: Build wheels
       sudo: required
       python: '3.6'
@@ -45,15 +69,3 @@ jobs:
           secure: rRlPkjKaI/HIkA/HEagWgFyqZ6ds+yZWiYAsGHuop3DAGFKRjtDkvj+ukCoL0Tmz66PxyKp0wEEstA+RwdbkMkOPHGs7zraoRevETI2nrbmNLyipSlXrPIfm8Tru5mMQVMVXuKYfJwu4SnWZzd/Yd+E1wiLRU4IcACTyt1w9aSrDN122+Xgvq8/b9sJNp1VMaD/3ca4xBjuYlCH6FITjH1NCWL5ETguupoKF2kzXztSnO5jZhSfeGNe4yDoOymOKInaVy4Wog5HX0SbHAEuC13PxZn5HftSR4kwtuO0WZLZKX1qap6Vo06aQ9x+epR2ZtAdS0eHp/DaONSyCaKj9/bxYlSc45a2wnM4SgG0fX8MhCt2qHGnntXVcb60y3guEwb/uiI7yPAoG7sHcqdRCLLPYMzrKKmde83ElF29LMOf6MDfnfR+O1F1PDXZfzSi/bKUo42J6XrH8i5eDIRgS6kIGNncO4QoU7RHW+KoUPIZE9NfnPVkYNmc8m8O3Er5UF4OeIc/1SRouhq1hdb3VvahnXRWmHo1EYMYeKcVE6HVwkopnwWbs788ANl/lj8QlNY5jfPxWcEAqrhl9UfgFwgz7RAbYs04asqf3RvqX3NabfoeqtLzXMrq7ajdOMJuDhS7ody5aHzXj7rP/9K8Rju7qKeuVIf4VqJ1iKz2n1Q8=
         on:
           tags: true
-
-install:
-  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy; fi
-  - travis_retry pip install pytest pytest-cov
-  - if [ -n "$USE_ASV" ]; then pip install asv; fi
-  - travis_retry pip install -r requirements.txt
-  - travis_retry python setup.py sdist bdist_wheel
-  - travis_retry pip install -e .
-
-script:
-  - if [ "${MYPY_TYPING}" == "1" ]; then mypy anonlink --ignore-missing-imports; fi
-  - pytest --cov=anonlink -W ignore::DeprecationWarning
