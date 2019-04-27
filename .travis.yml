@@ -38,7 +38,6 @@ jobs:
     # No matrix support in Stages
     # Stages with the same name get run in parallel. Jobs within a stage can also be named.
     - stage: test
-    - stage: test
       name: "Extended Size 10K"
       python: "3.7"
       env:
@@ -58,10 +57,9 @@ jobs:
       python: "3.6"
       services:
       - docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
-      install: docker pull $DOCKER_IMAGE
+      install: docker pull quay.io/pypa/manylinux1_x86_64
       script:
-      - docker run --rm -v `pwd`:/io $DOCKER_IMAGE /io/travis/build-wheels.sh
+      - docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
       - ls wheelhouse/
       deploy:
         provider: pypi
