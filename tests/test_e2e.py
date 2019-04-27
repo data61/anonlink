@@ -12,8 +12,6 @@ from clkhash.key_derivation import generate_key_lists
 import anonlink
 import anonlink.benchmark
 
-__author__ = 'Brian Thorne'
-
 
 def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
@@ -129,7 +127,7 @@ class TestEntityMatchingE2E_1K(EntityHelperTestMixin, unittest.TestCase):
 
 @unittest.skipUnless("INCLUDE_10K" in os.environ,
                      "Set envvar INCLUDE_10K to run")
-class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
+class TestEntityMatchingE2E_10k(EntityHelperTestMixin, unittest.TestCase):
 
     sample = 10000
     proportion = 0.7
@@ -137,26 +135,16 @@ class TestEntityMatchingE2E_10k(EntityHelperMixin, unittest.TestCase):
     def setUp(self):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
 
-    def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
-        self.check_accuracy(mapping)
-
 
 @unittest.skipUnless("INCLUDE_100K" in os.environ,
                      "Set envvar INCLUDE_100K to run")
-class TestEntityMatchingE2E_100k(EntityHelperMixin, unittest.TestCase):
+class TestEntityMatchingE2E_100k(EntityHelperTestMixin, unittest.TestCase):
 
     sample = 100000
     proportion = 0.9
 
     def setUp(self):
         self.s1, self.s2, self.filters1, self.filters2 = generate_data(self.sample, self.proportion)
-
-    def test_greedy(self):
-        mapping = entitymatch.calculate_mapping_greedy(
-            self.filters1, self.filters2, self.default_greedy_k, self.default_greedy_threshold)
-        self.check_accuracy(mapping)
 
 
 class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
