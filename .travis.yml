@@ -17,9 +17,8 @@ python:
 env:
 
 install:
-  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install mypy mypy-extensions>=0.3; fi
-  - travis_retry pip install pytest pytest-cov
-  - if [ -n "$USE_ASV" ]; then pip install asv; fi
+  - if [ "${MYPY_TYPING}" == "1" ]; then travis_retry pip install -U mypy mypy-extensions; fi
+  - travis_retry pip install -U pytest pytest-cov
   - travis_retry pip install -r requirements.txt
   - travis_retry python setup.py sdist bdist_wheel
   - travis_retry pip install -e .
