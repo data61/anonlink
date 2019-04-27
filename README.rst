@@ -52,7 +52,7 @@ You can run the benchmark with:
 
 ::
 
-    $ python3 -m anonlink.benchmark
+    $ python -m anonlink.benchmark
     Anonlink benchmark -- see README for explanation
     ------------------------------------------------
     100000 x 1024 bit popcounts
@@ -154,11 +154,13 @@ Limitations
 Discussion
 ----------
 
-If you run into bugs, you can file them in our [issue tracker](https://github.com/data61/anonlink/issues) on GitHub.
+If you run into bugs, you can file them in our `issue tracker <https://github.com/data61/anonlink/issues>`__
+on GitHub.
 
-There is also an [anonlink mailing list](https://groups.google.com/forum/#!forum/anonlink) for development discussion and release announcements.
+There is also an `anonlink mailing list <https://groups.google.com/forum/#!forum/anonlink>`__
+for development discussion and release announcements.
 
-Wherever we interact, we strive to follow the [Python Community Code of Conduct](https://www.python.org/psf/codeofconduct/).
+Wherever we interact, we strive to follow the `Python Community Code of Conduct <https://www.python.org/psf/codeofconduct/>`__.
 
 
 License
