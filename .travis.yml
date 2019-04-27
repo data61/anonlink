@@ -8,6 +8,7 @@ cache:
   - "$HOME/.cache/pip"
 
 python:
+- 3.6
 - 3.7
 - 3.8-dev
 - nightly
@@ -44,6 +45,11 @@ script:
   - pytest --cov=anonlink -W ignore::DeprecationWarning
 
 jobs:
+  #fast_finish: true
+  allow_failures:
+    - python: 3.8-dev
+    - python: nightly
+    - python: pypy3
   include:
     # No matrix support in Stages
     # Stages with the same name get run in parallel
