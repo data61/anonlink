@@ -13,7 +13,6 @@ else:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-
 requirements = [
         "bitarray>=0.8.1",
         "cffi>=1.7",
@@ -38,7 +37,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.11.2',
+    version='0.12.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
@@ -65,6 +64,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Security :: Cryptography",
