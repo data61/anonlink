@@ -17,13 +17,13 @@ python:
 env:
 
 install:
-  - travis_retry pip install -U pytest pytest-cov
   - travis_retry pip install -r requirements.txt
   - travis_retry python setup.py sdist bdist_wheel
-  - travis_retry pip install -e .
+  - travis_retry pip install -e .[test]
 
 script:
   - pytest --cov=anonlink -W ignore::DeprecationWarning
+  - codecov
 
 jobs:
   fast_finish: true

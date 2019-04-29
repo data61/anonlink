@@ -13,13 +13,19 @@ else:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-
 requirements = [
         "bitarray>=0.8.1",
         "cffi>=1.7",
         "clkhash>=0.11",
         "numpy>=1.14",
         "mypy-extensions>=0.3"
+    ]
+
+test_requirements = [
+        "pytest",
+        "pytest-timeout",
+        "pytest-cov",
+        "codecov"
     ]
 
 extensions = [Extension(
@@ -38,14 +44,18 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.11.2',
+    version='0.12.0',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
     url='https://github.com/data61/anonlink',
     license='Apache',
-    setup_requires=['cffi>=1.7'],
+    setup_requires=["cffi>=1.7", "pytest-runner"],
     install_requires=requirements,
+    tests_require=test_requirements,
+    extras_require={
+        "test": test_requirements
+    },
     packages=find_packages(exclude=[
         '_cffi_build', '_cffi_build/*',
         'tests'
@@ -65,6 +75,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Security :: Cryptography",
