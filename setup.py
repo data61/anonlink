@@ -22,6 +22,13 @@ requirements = [
         "mypy-extensions>=0.3"
     ]
 
+test_requirements = [
+        "pytest",
+        "pytest-timeout",
+        "pytest-cov",
+        "codecov"
+    ]
+
 extensions = [Extension(
     name="solving._multiparty_solving",
     sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
@@ -44,8 +51,12 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/data61/anonlink',
     license='Apache',
-    setup_requires=['cffi>=1.7'],
+    setup_requires=["cffi>=1.7", "pytest-runner"],
     install_requires=requirements,
+    tests_require=test_requirements,
+    extras_require={
+        "test": test_requirements
+    },
     packages=find_packages(exclude=[
         '_cffi_build', '_cffi_build/*',
         'tests'
@@ -65,6 +76,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Security :: Cryptography",
