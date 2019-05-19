@@ -8,14 +8,23 @@ yum install -y atlas-devel
 export PYBIN="/opt/python/cp37-cp37m/bin"
 
 "${PYBIN}/pip" install -r /io/requirements.txt
+"${PYBIN}/pip" install -U setuptools wheel twine
 "${PYBIN}/pip" install -e /io/
 "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/anonlink-*.whl; do
-    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+    auditwheel repair "$whl" --plat manylinux1_x86_64 -w /io/wheelhouse/
 done
 
 # Install packages and test
 "${PYBIN}/pip" install anonlink --no-index -f /io/wheelhouse
 (cd "$HOME"; "${PYBIN}/pytest" /io/tests -W ignore::DeprecationWarning)
+
+#  Upload packages
+for whl in wheelhouse/anonlink-*.whl; do
+    "$PYBIN/twine" upload \
+        --skip-existing \
+        -u "confidentialcomputing" -p "${TWINE_PASSWORD}" \
+        "${whl}"
+done

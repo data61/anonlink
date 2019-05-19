@@ -54,22 +54,13 @@ jobs:
         - mypy anonlink --ignore-missing-imports
     - stage: Build wheels
       sudo: required
+      if: tag IS present
       python: "3.6"
       services:
       - docker
       env:
-        - PLAT=manylinux1_x86_64
+        - secure: "mludl5NTGnCyiMeJ4J7Y2juy+od3vaf3zWpD7mPKij0ezKJ+6Pc3WfBtWSlonQIM6I7jLLStFi15/vGKDP1DprkFLzJ9VNtwzCUNYK2Euswmq6t9WHWK1OR/6P7XKAiJ3TpRF2CuleG++SjIGWc9pUHj+ch8ALcZztZ9MeSR+BW1zim7WpA9lAjLwbnkYqje/aRtOJnSuqDIPwyJBsJlra17/9srBpDYQ8hFULl7EUd9SB2im7ZfCGS2ToqTuU8gYzaikakHXbQ076oliTauCJxSKvrsvXi7Tr4So32lvaJwmSPw/ci+5pgUxFIoIa26EsljU506A1+Ucs4LW8W/5iMg3pDPP+AhJVVaq5Kb2wMZ+5ITzH/1O200zcP7RHVCo6y/1NA96vFAP1rsQFg7ucFGa2orUC+Xd2dWz2TPA32VdvBKUlcPkhD+RPh381/l4MXmXgadexPWDwwcon67zfbFBGyBbDmjEeRwD1pYOYgqoUx1AFxw/rkfwZ2wlXPXxLa8o35YifKdOxbL0RHHvvR5nBhJkgWD5WZNBmTdubzLbEhJbdM+LcdAJ3cQTGgu4+O/TfTRF+woNB+/LQvJ2KseCIBolu0nX40uRpriAl1rtil+rCUyOUz82I8NFuOTDjfIGNV2Ey5dAVK9+ZbXbVusUNl7xjc827g85hThJq8="
       install: docker pull quay.io/pypa/manylinux1_x86_64
       script:
-      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
+      - docker run --rm --e TWINE_PASSWORD -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
       - ls wheelhouse/
-      deploy:
-        provider: pypi
-        distributions: "bdist_wheel"
-        local_dir: wheelhouse
-        user: confidentialcomputing
-        password:
-          secure: rRlPkjKaI/HIkA/HEagWgFyqZ6ds+yZWiYAsGHuop3DAGFKRjtDkvj+ukCoL0Tmz66PxyKp0wEEstA+RwdbkMkOPHGs7zraoRevETI2nrbmNLyipSlXrPIfm8Tru5mMQVMVXuKYfJwu4SnWZzd/Yd+E1wiLRU4IcACTyt1w9aSrDN122+Xgvq8/b9sJNp1VMaD/3ca4xBjuYlCH6FITjH1NCWL5ETguupoKF2kzXztSnO5jZhSfeGNe4yDoOymOKInaVy4Wog5HX0SbHAEuC13PxZn5HftSR4kwtuO0WZLZKX1qap6Vo06aQ9x+epR2ZtAdS0eHp/DaONSyCaKj9/bxYlSc45a2wnM4SgG0fX8MhCt2qHGnntXVcb60y3guEwb/uiI7yPAoG7sHcqdRCLLPYMzrKKmde83ElF29LMOf6MDfnfR+O1F1PDXZfzSi/bKUo42J6XrH8i5eDIRgS6kIGNncO4QoU7RHW+KoUPIZE9NfnPVkYNmc8m8O3Er5UF4OeIc/1SRouhq1hdb3VvahnXRWmHo1EYMYeKcVE6HVwkopnwWbs788ANl/lj8QlNY5jfPxWcEAqrhl9UfgFwgz7RAbYs04asqf3RvqX3NabfoeqtLzXMrq7ajdOMJuDhS7ody5aHzXj7rP/9K8Rju7qKeuVIf4VqJ1iKz2n1Q8=
-        on:
-          tags: true
-        skip_cleanup: true
