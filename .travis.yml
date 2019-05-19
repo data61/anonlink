@@ -67,7 +67,9 @@ jobs:
         provider: pypi
         user: confidentialcomputing
         password:
-          secure: rRlPkjKaI/HIkA/HEagWgFyqZ6ds+yZWiYAsGHuop3DAGFKRjtDkvj+ukCoL0Tmz66PxyKp0wEEstA+RwdbkMkOPHGs7zraoRevETI2nrbmNLyipSlXrPIfm8Tru5mMQVMVXuKYfJwu4SnWZzd/Yd+E1wiLRU4IcACTyt1w9aSrDN122+Xgvq8/b9sJNp1VMaD/3ca4xBjuYlCH6FITjH1NCWL5ETguupoKF2kzXztSnO5jZhSfeGNe4yDoOymOKInaVy4Wog5HX0SbHAEuC13PxZn5HftSR4kwtuO0WZLZKX1qap6Vo06aQ9x+epR2ZtAdS0eHp/DaONSyCaKj9/bxYlSc45a2wnM4SgG0fX8MhCt2qHGnntXVcb60y3guEwb/uiI7yPAoG7sHcqdRCLLPYMzrKKmde83ElF29LMOf6MDfnfR+O1F1PDXZfzSi/bKUo42J6XrH8i5eDIRgS6kIGNncO4QoU7RHW+KoUPIZE9NfnPVkYNmc8m8O3Er5UF4OeIc/1SRouhq1hdb3VvahnXRWmHo1EYMYeKcVE6HVwkopnwWbs788ANl/lj8QlNY5jfPxWcEAqrhl9UfgFwgz7RAbYs04asqf3RvqX3NabfoeqtLzXMrq7ajdOMJuDhS7ody5aHzXj7rP/9K8Rju7qKeuVIf4VqJ1iKz2n1Q8=
+          secure: lXO+O26PFznLnhNTK/HaQrXrV4j7vlkKGdfG/mPMb6i1HXI14WQa8gsQwCWAc845nk1J8IYmCzLev9wOX15ZYYSnrBYCSLzQGTvX5l0EuAEQmiu8AMN2ZyVu+vDnaZSAsDdGYBjbrnz+PCyEwu0YvcQ1xbtPa2b8IvhVx9Oi5XCErxLAjxVdxSNDfe3riexbOE27di++wjwremp+hGezQMu4mcQkDH84WAHh1RfCfRuAZ6zsXnv+BSRUnmEedIL4wkupAY79OvcavPCHQBf1nbQ3CqcBhXehEM4Q7ZTWFe8kb5wPfpHq1mFsBbCY6rVbfvo5AgJFPfkXi+3NBNPIXdAk7/sTfjfBSZfMbgI9Cd4XmbkG5YYLTtBemH07/HBK+jnbNEc2Iw5LQyuvmlQl6nmWEjI4tXo8mNBIurMHr3junashIxLwG+NDs+BO/wz6GA7xWgl0CMxbCbo73Bq5DNti5toClhQc2mvSf14GMkuLkTU0UBD6F6flF81sDZsTX9nUmtAzGb60ccLsCuo5LPh1P05wjUpdeRGtwB5LOGQWLwSsq8blTpsYDWfcPreAIWzwqAjPpyzDvs+02SBVErt/0zxBN0zf0ybC1XLI8N91yViGSBJvGIJZ8tNpaXmPKflHZ+Z/gHc4+86LW+dqsrfXL+jOSCDwXh0JBypHIxo=
         on:
           tags: true
         skip_cleanup: true
+        file:
+        - wheelhouse/anonlink-*.whl
