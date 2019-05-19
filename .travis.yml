@@ -54,20 +54,17 @@ jobs:
         - mypy anonlink --ignore-missing-imports
     - stage: Build wheels
       sudo: required
+      if: tag IS present
       python: "3.6"
       services:
       - docker
       env:
         - PLAT=manylinux1_x86_64
-      install: docker pull quay.io/pypa/manylinux1_x86_64
+        - TWINE_USERNAME=confidentialcomputing
+      install:
+        - docker pull quay.io/pypa/manylinux1_x86_64
+        - travis_retry pip install -U twine
       script:
       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
       - ls wheelhouse/
-      deploy:
-        provider: pypi
-        user: confidentialcomputing
-        password:
-          secure: rRlPkjKaI/HIkA/HEagWgFyqZ6ds+yZWiYAsGHuop3DAGFKRjtDkvj+ukCoL0Tmz66PxyKp0wEEstA+RwdbkMkOPHGs7zraoRevETI2nrbmNLyipSlXrPIfm8Tru5mMQVMVXuKYfJwu4SnWZzd/Yd+E1wiLRU4IcACTyt1w9aSrDN122+Xgvq8/b9sJNp1VMaD/3ca4xBjuYlCH6FITjH1NCWL5ETguupoKF2kzXztSnO5jZhSfeGNe4yDoOymOKInaVy4Wog5HX0SbHAEuC13PxZn5HftSR4kwtuO0WZLZKX1qap6Vo06aQ9x+epR2ZtAdS0eHp/DaONSyCaKj9/bxYlSc45a2wnM4SgG0fX8MhCt2qHGnntXVcb60y3guEwb/uiI7yPAoG7sHcqdRCLLPYMzrKKmde83ElF29LMOf6MDfnfR+O1F1PDXZfzSi/bKUo42J6XrH8i5eDIRgS6kIGNncO4QoU7RHW+KoUPIZE9NfnPVkYNmc8m8O3Er5UF4OeIc/1SRouhq1hdb3VvahnXRWmHo1EYMYeKcVE6HVwkopnwWbs788ANl/lj8QlNY5jfPxWcEAqrhl9UfgFwgz7RAbYs04asqf3RvqX3NabfoeqtLzXMrq7ajdOMJuDhS7ody5aHzXj7rP/9K8Rju7qKeuVIf4VqJ1iKz2n1Q8=
-        on:
-          tags: true
-        skip_cleanup: true
+      - python -m twine upload wheelhouse/*.whl
