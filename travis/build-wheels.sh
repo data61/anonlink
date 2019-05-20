@@ -13,7 +13,7 @@ export PYBIN="/opt/python/cp37-cp37m/bin"
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/anonlink-*.whl; do
-    auditwheel repair "$whl" -w /io/wheelhouse/
+    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
 done
 
 # Install packages and test
