@@ -15,7 +15,6 @@ python:
 - pypy3
 
 env:
-  - TWINE_USERNAME=confidentialcomputing
 
 install:
   - travis_retry pip install -r requirements.txt
@@ -61,11 +60,11 @@ jobs:
       - docker
       env:
         - PLAT=manylinux1_x86_64
+        - TWINE_USERNAME=confidentialcomputing
       install:
         - docker pull quay.io/pypa/manylinux1_x86_64
-        - travis_retry pip install -U twine setuptools
+        - travis_retry pip install -U twine
       script:
       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
       - ls wheelhouse/
-      - python setup.py sdist
-      - python -m twine upload --skip-existing wheelhouse/*.whl dist/*
+      - python -m twine upload --skip-existing wheelhouse/*.whl
