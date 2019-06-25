@@ -31,7 +31,7 @@ jobs:
     - python: "3.8-dev"
     - python: "nightly"
     - python: "pypy3"
-    - name: "Extended 100K"
+    - name: "Extended Size 100K"
   include:
     # No matrix support in Stages
     # Stages with the same name get run in parallel. Jobs within a stage can also be named.
@@ -67,4 +67,5 @@ jobs:
       script:
       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
       - ls wheelhouse/
+      - python setup.py build sdist -d wheelhouse
       - python -m twine upload --skip-existing wheelhouse/*.whl
