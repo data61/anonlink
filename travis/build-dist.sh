@@ -9,7 +9,7 @@ export PYBIN="/opt/python/cp37-cp37m/bin"
 
 "${PYBIN}/pip" install -r /io/requirements.txt
 "${PYBIN}/pip" install -e /io/
-"${PYBIN}/python" setup.py sdist -d wheelhouse/
+"${PYBIN}/python" setup.py sdist -d wheelhouse
 "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
