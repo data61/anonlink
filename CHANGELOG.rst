@@ -1,3 +1,9 @@
+0.12.2
+======
+
+- Automatic release from travis-ci now includes sdist and manylinux wheel.
+- Update requirements.
+
 0.12.0
 ======
 
