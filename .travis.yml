@@ -65,7 +65,6 @@ jobs:
         - docker pull quay.io/pypa/manylinux1_x86_64
         - travis_retry pip install -U twine
       script:
-      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-wheels.sh
+      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-dist.sh
       - ls wheelhouse/
-      - python setup.py sdist -d wheelhouse
       - python -m twine upload --skip-existing wheelhouse/*
