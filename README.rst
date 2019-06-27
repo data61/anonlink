@@ -4,15 +4,18 @@
 
 
 .. image:: https://codecov.io/gh/data61/anonlink/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/data61/anonlink
+    :target: https://codecov.io/gh/data61/anonlink
 
+
+.. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=master
+    :target: https://requires.io/github/data61/anonlink/requirements/?branch=master
 
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
 Code <http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf>`__.
 
-Computes similarity scores, and/or best guess matches between two sets
+``anonlink`` computes similarity scores, and/or best guess matches between sets
 of *cryptographic linkage keys* (hashed entity records).
 
 Use `clkhash <https://github.com/data61/clkhash>`__ to create cryptographic linkage keys
@@ -21,15 +24,11 @@ from personally identifiable data.
 Installation
 ============
 
-Install directly from PyPi:
-
-::
+Install directly from PyPi::
 
     pip install anonlink
 
-Or to install from source:
-
-::
+Or to install from source::
 
     pip install -r requirements.txt
     pip install -e .
