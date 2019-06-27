@@ -1,9 +1,9 @@
-bitarray==0.8.1
+bitarray==0.9.3
 cffi>=1.7
 pytest>=3.4
 pytest-cov>=2.5
 clkhash==0.11.0
-numpy==1.15.3
+numpy==1.16.4
 mypy-extensions==0.4.1
 hypothesis==3.69.2
-Cython==0.28.5
+Cython==0.29.7
