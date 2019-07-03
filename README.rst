@@ -13,7 +13,7 @@
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
-Code <http://www.record-linkage.de/-download=wp-grlc-2011-02.pdf>`__.
+Code <http://grlc.german-microsimulation.de/wp-content/uploads/2017/05/downloadwp-grlc-2011-02.pdf>`__.
 
 ``anonlink`` computes similarity scores, and/or best guess matches between sets
 of *cryptographic linkage keys* (hashed entity records).
@@ -151,7 +151,7 @@ Limitations
 
 -  The linkage process has order n^2 time complexity - although algorithms exist to
    significantly speed this up. Several possible speedups are described
-   in http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf
+   in `Privacy Preserving Record Linkage with PPJoin <http://dbs.uni-leipzig.de/file/P4Join-BTW2015.pdf>`__.
 
 
 Discussion
