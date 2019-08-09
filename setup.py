@@ -1,7 +1,6 @@
 from setuptools import setup, Extension, find_packages
 import os
 
-from Cython.Build import cythonize, build_ext
 try:
     from Cython.Build import cythonize, build_ext
 except ImportError:
