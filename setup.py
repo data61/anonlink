@@ -34,7 +34,6 @@ extensions = [Extension(
     name="solving._multiparty_solving",
     sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
              "anonlink/solving/_multiparty_solving_inner.cpp"],
-    # include=["anonlink/solving/_multiparty_solving_inner.h"],
     include_dirs=["anonlink/solving"],
     language="c++",
     extra_compile_args=["-std=c++11"],
