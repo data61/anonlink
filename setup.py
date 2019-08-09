@@ -18,7 +18,8 @@ requirements = [
         "cffi>=1.7",
         "clkhash>=0.11",
         "numpy>=1.14",
-        "mypy-extensions>=0.3"
+        "mypy-extensions>=0.3",
+        "Cython>=0.29.10"
     ]
 
 test_requirements = [
