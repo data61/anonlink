@@ -1,6 +1,7 @@
 from setuptools import setup, Extension, find_packages
 import os
 
+from Cython.Build import cythonize, build_ext
 try:
     from Cython.Build import cythonize, build_ext
 except ImportError:
@@ -33,7 +34,8 @@ extensions = [Extension(
     name="solving._multiparty_solving",
     sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
              "anonlink/solving/_multiparty_solving_inner.cpp"],
-    include=["anonlink/solving/_multiparty_solving_inner.h"],
+    # include=["anonlink/solving/_multiparty_solving_inner.h"],
+    include_dirs=["anonlink/solving"],
     language="c++",
     extra_compile_args=["-std=c++11"],
     extra_link_args=["-std=c++11"],
