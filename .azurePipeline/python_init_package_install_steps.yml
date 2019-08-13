@@ -10,7 +10,7 @@ steps:
   displayName: 'Init Python'
 
 - script: |
-      pip install --upgrade pip setuptools wheel codecov
+      pip install setuptools wheel codecov
       pip install -r requirements.txt
   displayName: 'Install Python requirements'
 
