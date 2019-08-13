@@ -33,22 +33,22 @@ stages:
           compiler: gcc
           pythonVersion: '3.7'
 
-     steps:
-     - script: |
-         sudo apt update
-         sudo apt install $(compiler)
-       displayName: 'Install compiler'
-     - template: .azurePipeline/python_init_package_install_steps.yml
-       parameters:
-         compiler: $(compiler)
-         pythonVersion: $(pythonVersion)
-         operatingSystem: 'ubuntu-16.04'
-     - task: PublishPipelineArtifact@0
-       condition: and(eq(variables['compiler'], 'gcc'), eq(variables['pythonVersion'], '3.7'))
-       displayName: 'Publish artifacts in Azure'
-       inputs:
-         artifactName: Artifacts
-         targetPath: 'dist/'
+    steps:
+    - script: |
+        sudo apt update
+        sudo apt install $(compiler)
+      displayName: 'Install compiler'
+    - template: .azurePipeline/python_init_package_install_steps.yml
+      parameters:
+        compiler: $(compiler)
+        pythonVersion: $(pythonVersion)
+        operatingSystem: 'ubuntu-16.04'
+    - task: PublishPipelineArtifact@0
+      condition: and(eq(variables['compiler'], 'gcc'), eq(variables['pythonVersion'], '3.7'))
+      displayName: 'Publish artifacts in Azure'
+      inputs:
+        artifactName: Artifacts
+        targetPath: 'dist/'
 
   - job:
     displayName: OSX
@@ -64,12 +64,12 @@ stages:
           compiler: clang
           pythonVersion: '3.7'
 
-     steps:
-     - template: .azurePipeline/python_init_package_install_steps.yml
-       parameters:
-         compiler: $(compiler)
-         pythonVersion: $(pythonVersion)
-         operatingSystem: 'macos-10.13'
+    steps:
+    - template: .azurePipeline/python_init_package_install_steps.yml
+      parameters:
+        compiler: $(compiler)
+        pythonVersion: $(pythonVersion)
+        operatingSystem: 'macos-10.13'
          
   - job:
     displayName: Windows
@@ -85,10 +85,10 @@ stages:
           compiler: gcc
           pythonVersion: '3.7'
 
-     steps:
-     - template: .azurePipeline/python_init_package_install_steps.yml
-       parameters:
-         compiler: $(compiler)
-         pythonVersion: $(pythonVersion)
-         operatingSystem: 'vs2017-win2016'
+    steps:
+    - template: .azurePipeline/python_init_package_install_steps.yml
+      parameters:
+        compiler: $(compiler)
+        pythonVersion: $(pythonVersion)
+        operatingSystem: 'vs2017-win2016'
 
