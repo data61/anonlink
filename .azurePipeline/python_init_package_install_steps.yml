@@ -30,7 +30,7 @@ steps:
   condition: succeededOrFailed()
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: 'testResults.xml'
+    testResultsFiles: 'testoutput.xml'
     testRunTitle: 'Test results on a vm ${{ parameters.operatingSystem }} for Python ${{ parameters.pythonVersion }} with ${{ parameters.compiler }} compiler'
     failTaskOnFailedTests: true
 
