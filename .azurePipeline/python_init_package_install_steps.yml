@@ -45,6 +45,10 @@ steps:
 #      reportDirectory: 'htmlcov'
     failIfCoverageEmpty: true
 
-- script: python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F 'OS:${{ parameters.operatingSystem }}' -F 'python:${{ parameters.pythonVersion }}' -F 'CC:${{ parameters.compiler }}'
+- bash: |
+      opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g')
+      pyVFlag=$(echo ${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g')
+      compFlag=$(echo ${{ parameters.compiler }} | sed 's/[[:punct:]]//g')
+      python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag -F python$pyVFlag -F $compFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
