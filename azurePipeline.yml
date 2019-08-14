@@ -70,25 +70,3 @@ stages:
         compiler: $(compiler)
         pythonVersion: $(pythonVersion)
         operatingSystem: 'macos-10.13'
-         
-  - job:
-    displayName: Windows
-    pool:
-      vmImage: 'vs2017-win2016'
-    strategy:
-      matrix:
-        Python3.6 gcc:
-          compiler: gcc
-          pythonVersion: '3.6'
-
-        Python3.7 gcc:
-          compiler: gcc
-          pythonVersion: '3.7'
-
-    steps:
-    - template: .azurePipeline/python_init_package_install_steps.yml
-      parameters:
-        compiler: $(compiler)
-        pythonVersion: $(pythonVersion)
-        operatingSystem: 'vs2017-win2016'
-
