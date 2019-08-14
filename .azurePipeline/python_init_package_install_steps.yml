@@ -45,6 +45,6 @@ steps:
 #      reportDirectory: 'htmlcov'
     failIfCoverageEmpty: true
 
-#- script: python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml
-#  displayName: 'Send coverage to codecov'
-#  condition: succeededOrFailed()
+- script: python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml
+  displayName: 'Send coverage to codecov'
+  condition: succeededOrFailed()
