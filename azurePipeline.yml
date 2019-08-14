@@ -1,0 +1,72 @@
+# This pipeline should be triggered by every local branches, but should not be used for external PRs.
+# In fact, this pipeline is able to use some of our secrets to push images on dockerhub and deploy on k8s.
+pr: none
+trigger:
+  branches:
+    include:
+    - '*'
+
+stages:
+- stage: build_and_test
+  displayName: Build and test
+  dependsOn: []
+  jobs:
+  - job:
+    displayName: Linux
+    pool:
+      vmImage: 'ubuntu-16.04'
+    strategy:
+      matrix:
+        Python3.6 clang:
+          compiler: clang
+          pythonVersion: '3.6'
+
+        Python3.7 clang:
+          compiler: clang
+          pythonVersion: '3.7'
+
+        Python3.6 gcc:
+          compiler: gcc
+          pythonVersion: '3.6'
+
+        Python3.7 gcc:
+          compiler: gcc
+          pythonVersion: '3.7'
+
+    steps:
+    - script: |
+        sudo apt update
+        sudo apt install $(compiler)
+      displayName: 'Install compiler'
+    - template: .azurePipeline/python_init_package_install_steps.yml
+      parameters:
+        compiler: $(compiler)
+        pythonVersion: $(pythonVersion)
+        operatingSystem: 'ubuntu-16.04'
+    - task: PublishPipelineArtifact@0
+      condition: and(eq(variables['compiler'], 'gcc'), eq(variables['pythonVersion'], '3.7'))
+      displayName: 'Publish artifacts in Azure'
+      inputs:
+        artifactName: Artifacts
+        targetPath: 'dist/'
+
+  - job:
+    displayName: OSX
+    pool:
+      vmImage: 'macos-10.13'
+    strategy:
+      matrix:
+        Python3.6 clang:
+          compiler: clang
+          pythonVersion: '3.6'
+
+        Python3.7 clang:
+          compiler: clang
+          pythonVersion: '3.7'
+
+    steps:
+    - template: .azurePipeline/python_init_package_install_steps.yml
+      parameters:
+        compiler: $(compiler)
+        pythonVersion: $(pythonVersion)
+        operatingSystem: 'macos-10.13'

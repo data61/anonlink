@@ -1,0 +1,55 @@
+parameters:
+  compiler: 'gcc'
+  pythonVersion: '3.7'
+  operatingSystem: 'ubuntu-16.04'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+  displayName: 'Init Python'
+
+- script: |
+      pip install setuptools wheel codecov
+      pip install -r requirements.txt
+  displayName: 'Install Python requirements'
+
+- script: python setup.py sdist bdist_wheel --universal
+  env:
+    CC: ${{ parameters.compiler }}
+  displayName: 'Package'
+
+- script: pip install -e .
+  displayName: 'Install anonlink'
+
+- script: pytest --cov=anonlink --junitxml=testoutput.xml --cov-report=xml:coverage.xml --cov-report=html:htmlcov -W ignore::DeprecationWarning
+  displayName: 'pytest'
+  
+- task: PublishTestResults@2
+  displayName: 'Publish test results in Azure'
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'testoutput.xml'
+    testRunTitle: 'Test results on a vm ${{ parameters.operatingSystem }} for Python ${{ parameters.pythonVersion }} with ${{ parameters.compiler }} compiler'
+    failTaskOnFailedTests: true
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage in Azure'
+  # If the previous stage fail, we still want to run this one as the previous stage may fail because of a failing test.
+  condition: succeededOrFailed()
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: 'coverage.xml'
+# Seems to create warning as this step is already creating its own html pages.
+#      reportDirectory: 'htmlcov'
+    failIfCoverageEmpty: true
+
+- bash: |
+      opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      compFlag=$(echo ${{ parameters.compiler }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      echo "python -m codecov --file coverage.xml -F $opSysFlag,$pyVFlag,$compFlag"
+      python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag,$pyVFlag,$compFlag
+  displayName: 'Send coverage to codecov'
+  condition: succeededOrFailed()
