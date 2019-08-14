@@ -46,9 +46,10 @@ steps:
     failIfCoverageEmpty: true
 
 - bash: |
-      opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g')
-      pyVFlag=$(echo ${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g')
-      compFlag=$(echo ${{ parameters.compiler }} | sed 's/[[:punct:]]//g')
-      python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag -F python$pyVFlag -F $compFlag
+      opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      compFlag=$(echo ${{ parameters.compiler }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
+      echo "python -m codecov --file coverage.xml -F $opSysFlag -F python$pyVFlag -F $compFlag"
+      python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag -F $pyVFlag -F $compFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
