@@ -81,7 +81,11 @@ def test_cumul_number_matches_vs_threshold(candidate_pairs, steps):
         candidate_pairs, steps=steps)
     
     assert len(counts) == len(thresholds) == steps + 1
-    assert len(set(thresholds)) == len(thresholds)
+    # if we have less pairs than steps, then the threshold bins are not necessarily unique. E.g: two pairs with
+    # similarities 0.5000000000000003, 0.5000000000000001, and steps=3, we end up with the thresholds
+    # [0.5000000000000001, 0.5000000000000002, 0.5000000000000001, 0.5000000000000003]
+    if len(candidate_pairs[0]) >= steps:
+        assert len(set(thresholds)) == len(thresholds)
     assert sorted(thresholds) == list(thresholds)
 
     for count, threshold in zip(counts, thresholds):
