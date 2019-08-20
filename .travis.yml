@@ -52,7 +52,8 @@ jobs:
         - travis_retry pip install -U mypy
       script:
         - mypy anonlink --ignore-missing-imports
-    - stage: Build wheels
+    - stage: "Build wheels"
+      name: "manylinux1_x86_64"
       sudo: required
       #if: tag IS present
       python: "3.6"
@@ -69,3 +70,20 @@ jobs:
       - ls wheelhouse/
       - python -m twine upload --skip-existing wheelhouse/anonlink*manylinux1_x86_64.whl
       - python -m twine upload --skip-existing wheelhouse/anonlink*.tar.gz
+    - name: "manylinux2010_x86_64"
+      sudo: required
+      if: tag IS present
+      python: "3.6"
+      services:
+      - docker
+      env:
+        - PLAT=manylinux2010_x86_64
+        - TWINE_USERNAME=confidentialcomputing
+      install:
+        - docker pull quay.io/pypa/manylinux1_x86_64
+        - travis_retry pip install -U twine
+      script:
+      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux2010_x86_64 /io/travis/build-dist.sh
+      - ls wheelhouse/
+      - python -m twine upload --skip-existing wheelhouse/anonlink*manylinux2010_x86_64.whl
+
