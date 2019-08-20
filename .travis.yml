@@ -54,7 +54,7 @@ jobs:
         - mypy anonlink --ignore-missing-imports
     - stage: Build wheels
       sudo: required
-      if: tag IS present
+      #if: tag IS present
       python: "3.6"
       services:
       - docker
