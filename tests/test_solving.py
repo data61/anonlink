@@ -3,12 +3,14 @@ from array import array
 from collections import Counter
 
 import pytest
-from hypothesis import given, reject, strategies
+from hypothesis import given, strategies
 
 from anonlink.solving import (
     greedy_solve, greedy_solve_python, greedy_solve_native, pairs_from_groups,
     probabilistic_greedy_solve, probabilistic_greedy_solve_native,
     probabilistic_greedy_solve_python)
+from tests import UINT_MAX
+
 
 def _zip_candidates(candidates):
     candidates = tuple(candidates)
@@ -186,8 +188,8 @@ def dict_to_candidate_pairs(candidate_dict):
 
 
 indices_np = strategies.tuples(
-    strategies.integers(min_value=0),
-    strategies.integers(min_value=0))
+    strategies.integers(min_value=0, max_value=UINT_MAX),
+    strategies.integers(min_value=0, max_value=UINT_MAX))
 index_pair_np = strategies.tuples(
         indices_np, indices_np
     ).filter(
@@ -228,9 +230,9 @@ def test_greedy_np(candidate_pairs):
 
 
 indices0_2p = strategies.tuples(strategies.just(0),
-                          strategies.integers(min_value=0))
+                          strategies.integers(min_value=0, max_value=UINT_MAX))
 indices1_2p = strategies.tuples(strategies.just(1),
-                          strategies.integers(min_value=0))
+                          strategies.integers(min_value=0, max_value=UINT_MAX))
 index_pair_2p = strategies.tuples(indices0_2p, indices1_2p)
 candidate_pairs_2p = strategies.dictionaries(
         index_pair_2p,
