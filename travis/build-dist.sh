@@ -9,7 +9,6 @@ yum install -y atlas-devel
 ls /opt/python/
 
 listOfPythons="
-cp35-cp35m
 cp36-cp36m
 cp37-cp37m"
 
