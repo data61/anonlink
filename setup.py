@@ -26,7 +26,8 @@ test_requirements = [
         "pytest",
         "pytest-timeout",
         "pytest-cov",
-        "codecov"
+        "codecov",
+        "hypothesis"
     ]
 
 extensions = [Extension(
