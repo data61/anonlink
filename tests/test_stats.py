@@ -4,6 +4,7 @@ import hypothesis
 import pytest
 
 import anonlink
+from tests import UINT_MAX
 
 
 def zip_candidates(candidates):
@@ -38,10 +39,10 @@ def dict_to_candidate_pairs(candidate_dict):
 
 indices0_2p = hypothesis.strategies.tuples(
     hypothesis.strategies.just(0),
-    hypothesis.strategies.integers(min_value=0))
+    hypothesis.strategies.integers(min_value=0, max_value=UINT_MAX))
 indices1_2p = hypothesis.strategies.tuples(
     hypothesis.strategies.just(1),
-    hypothesis.strategies.integers(min_value=0))
+    hypothesis.strategies.integers(min_value=0, max_value=UINT_MAX))
 index_pair_2p = hypothesis.strategies.tuples(indices0_2p, indices1_2p)
 candidate_pairs_2p = hypothesis.strategies.dictionaries(
         index_pair_2p,
@@ -99,6 +100,8 @@ def test_cumul_number_matches_vs_threshold(candidate_pairs, steps):
                       min_value=1,
                       max_value=100,  # Linear in this
                       ))
+#@hypothesis.example(((0.5325659332756726, ((0, 97), (1, 628))), (0.08830395403829218, ((0, 5052346094), (1, 340))), (0.023114404426094696, ((0, 34975), (1, 725)))), 3
+#)
 def test_matches_nonmatches_hist(candidate_pairs, bins):
     hist = anonlink.stats.matches_nonmatches_hist(
         candidate_pairs, bins=bins)
