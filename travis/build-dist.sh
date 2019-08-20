@@ -4,6 +4,8 @@
 
 set -e -x
 
+yum install -y atlas-devel
+
 ls /opt/python/
 
 # Compile wheels for each Python version
