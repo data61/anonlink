@@ -55,7 +55,7 @@ jobs:
     - stage: "Build wheels"
       name: "manylinux1_x86_64"
       sudo: required
-      #if: tag IS present
+      if: tag IS present
       python: "3.6"
       services:
       - docker
@@ -72,7 +72,7 @@ jobs:
       - python -m twine upload --skip-existing wheelhouse/anonlink*.tar.gz
     - name: "manylinux2010_x86_64"
       sudo: required
-      #if: tag IS present
+      if: tag IS present
       python: "3.6"
       services:
       - docker
