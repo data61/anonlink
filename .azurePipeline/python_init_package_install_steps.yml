@@ -14,13 +14,18 @@ steps:
       pip install -r requirements.txt
   displayName: 'Install Python requirements'
 
-- script: python setup.py sdist bdist_wheel --universal
+- script: python setup.py sdist bdist_wheel
   env:
     CC: ${{ parameters.compiler }}
-  displayName: 'Package'
+  displayName: 'Build Package'
+
+- bash: |
+      pip install dist/anonlink*.whl
+      python -c "import anonlink; print(anonlink.__version__)"
+  displayName: 'Install anonlink wheel'
 
 - script: pip install -e .
-  displayName: 'Install anonlink'
+  displayName: 'Install anonlink for testing'
 
 - script: pytest --cov=anonlink --junitxml=testoutput.xml --cov-report=xml:coverage.xml --cov-report=html:htmlcov -W ignore::DeprecationWarning
   displayName: 'pytest'
@@ -41,8 +46,6 @@ steps:
   inputs:
     codeCoverageTool: Cobertura
     summaryFileLocation: 'coverage.xml'
-# Seems to create warning as this step is already creating its own html pages.
-#      reportDirectory: 'htmlcov'
     failIfCoverageEmpty: true
 
 - bash: |
