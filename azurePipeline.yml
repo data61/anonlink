@@ -8,7 +8,7 @@ trigger:
 
 
 stages:
-- stage: buildWheels
+- stage: wheels
   displayName: Build Wheel Packages
   variables:
     CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
@@ -53,9 +53,9 @@ stages:
     - template: .azurePipeline/cibuildwheel_steps.yml
 
 
-- stage: build_and_test
-  displayName: Build and unit test
-  dependsOn: []
+- stage: test
+  displayName: Unittests
+  dependsOn: ['wheels']
   jobs:
   - job:
     displayName: Linux
@@ -63,50 +63,55 @@ stages:
       vmImage: 'ubuntu-16.04'
     strategy:
       matrix:
-        Python3.6 clang:
-          compiler: clang
+        Python3.6:
           pythonVersion: '3.6'
-
-        Python3.7 clang:
-          compiler: clang
+          artifactName: 'wheels.linux36'
+        Python3.7:
           pythonVersion: '3.7'
-
-        Python3.6 gcc:
-          compiler: gcc
-          pythonVersion: '3.6'
-
-        Python3.7 gcc:
-          compiler: gcc
-          pythonVersion: '3.7'
-
+          artifactName: 'wheels.linux37'
     steps:
-    - script: |
-        sudo apt update
-        sudo apt install $(compiler)
-      displayName: 'Install compiler'
-    - template: .azurePipeline/python_init_package_install_steps.yml
-      parameters:
-        compiler: $(compiler)
-        pythonVersion: $(pythonVersion)
-        operatingSystem: 'ubuntu-16.04'
-
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          artifactName: $(artifactName)
+          patterns: '**/*.whl'
+          path: $(Pipeline.Workspace)
+      - template: .azurePipeline/unittest_wheel_steps.yml
+        parameters:
+          pythonVersion: $(pythonVersion)
+          operatingSystem: 'ubuntu-16.04'
   - job:
-    displayName: OSX
+    displayName: MacOS
     pool:
-      vmImage: 'macos-10.13'
+      vmImage: 'macOS-10.13'
     strategy:
       matrix:
-        Python3.6 clang:
-          compiler: clang
+        Python3.6:
           pythonVersion: '3.6'
-
-        Python3.7 clang:
-          compiler: clang
+          artifactName: 'wheels.macos36'
+        Python3.7:
           pythonVersion: '3.7'
-
+          artifactName: 'wheels.macos37'
     steps:
-    - template: .azurePipeline/python_init_package_install_steps.yml
-      parameters:
-        compiler: $(compiler)
-        pythonVersion: $(pythonVersion)
-        operatingSystem: 'macos-10.13'
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          artifactName: $(artifactName)
+          patterns: '**/*.whl'
+          path: $(Pipeline.Workspace)
+      - template: .azurePipeline/unittest_wheel_steps.yml
+        parameters:
+          pythonVersion: $(pythonVersion)
+          operatingSystem: 'macOS-10.13'
+
+- stage: static_checks
+  displayName: Static Checks
+  dependsOn: []
+  jobs:
+  - job:
+    displayName: Typecheck
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - script: pip install -U mypy
+      - script: mypy anonlink --ignore-missing-imports
+        displayName: mypy
