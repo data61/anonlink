@@ -44,7 +44,7 @@ stages:
         pythonVersion: $(pythonVersion)
         operatingSystem: 'ubuntu-16.04'
     - task: PublishPipelineArtifact@0
-      condition: and(eq(variables['compiler'], 'gcc'), eq(variables['pythonVersion'], '3.7'))
+      condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
       displayName: 'Publish artifacts in Azure'
       inputs:
         artifactName: Artifacts
