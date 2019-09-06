@@ -6,9 +6,47 @@ trigger:
     include:
     - '*'
 
+
 stages:
+- stage: buildWheels
+  displayName: Build Wheel Packages
+  variables:
+    CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
+    CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml=testoutput.xml --cov-report=xml:coverage.xml --cov-report=html:htmlcov -W ignore::DeprecationWarning'
+    CIBW_BEFORE_BUILD: 'pip install -r requirements.txt && pip install -e .'
+    # Only build for Python36+, and x64 arch
+    CIBW_BUILD: 'cp37-* cp36-*'
+    CIBW_SKIP: '*-win32 *-manylinux1_i686'
+  jobs:
+  - job: linux
+    pool: {vmImage: 'Ubuntu-16.04'}
+    variables:
+      CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
+    steps:
+      - task: UsePythonVersion@0
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade wheel setuptools
+          pip install cibuildwheel==0.11.1
+          cibuildwheel --output-dir wheelhouse .
+      - task: PublishPipelineArtifact@1
+        inputs: {targetPath: 'wheelhouse'}
+  - job: macos
+    pool: {vmImage: 'macOS-10.13'}
+    variables:
+      CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
+    steps:
+      - task: UsePythonVersion@0
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install git+https://github.com/Czaki/cibuildwheel cython
+          cibuildwheel --output-dir wheelhouse .
+      - task: PublishPipelineArtifact@1
+        inputs: {targetPath: 'wheelhouse'}
+
+
 - stage: build_and_test
-  displayName: Build and test
+  displayName: Unit tests
   dependsOn: []
   jobs:
   - job:
@@ -43,7 +81,6 @@ stages:
         compiler: $(compiler)
         pythonVersion: $(pythonVersion)
         operatingSystem: 'ubuntu-16.04'
-
 
   - job:
     displayName: OSX
