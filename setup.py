@@ -46,7 +46,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.12.5a4',
+    version='0.12.5',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
@@ -63,7 +63,7 @@ setup(
         'tests'
     ]),
     package_data={'anonlink': ['_cffi_build']},
-    ext_modules = maybe_cythonize(extensions),
+    ext_modules=maybe_cythonize(extensions),
 
     ext_package="anonlink",
     classifiers=[
