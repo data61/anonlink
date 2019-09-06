@@ -28,7 +28,7 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy built distribution'
   inputs:
-    contents: 'dist/?(*.whl|*.tar.gz)'
+    contents: 'dist/?(*.whl)'
     targetFolder: $(Build.ArtifactStagingDirectory)
 
 - script: pip install -e .
@@ -64,15 +64,10 @@ steps:
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
 
-#- task: PublishBuildArtifacts@1
-#  displayName: 'Publish build artifacts in Azure'
-#  condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
-#  inputs:
-#    artifactName: Artifacts
-#    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-
+# Note PipelineArtifacts replace BuildArtifacts
 - task: PublishPipelineArtifact@1
   condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
   displayName: 'Publish pipeline artifacts in Azure'
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/dist'
+    artifact: Release
