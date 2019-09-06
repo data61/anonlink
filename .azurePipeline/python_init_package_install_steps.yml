@@ -28,7 +28,7 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy built distribution'
   inputs:
-    contents: 'dist/?(*.exe|*.tar.gz)'
+    contents: 'dist/?(*.whl|*.tar.gz)'
     targetFolder: $(Build.ArtifactStagingDirectory)
 
 - script: pip install -e .
