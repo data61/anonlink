@@ -24,6 +24,13 @@ steps:
       python -c "import anonlink; print(anonlink.__version__)"
   displayName: 'Install anonlink wheel'
 
+
+- task: CopyFiles@2
+  displayName: 'Copy built distribution'
+  inputs:
+    contents: 'dist/?(*.exe|*.tar.gz)'
+    targetFolder: $(Build.ArtifactStagingDirectory)
+
 - script: pip install -e .
   displayName: 'Install anonlink for testing'
 
@@ -56,3 +63,18 @@ steps:
       python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag,$pyVFlag,$compFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish build artifacts in Azure'
+  condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
+  inputs:
+    artifactName: Artifacts
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+
+
+#- task: PublishPipelineArtifact@0
+#  condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
+#  displayName: 'Publish artifacts in Azure'
+#  inputs:
+#    artifactName: Artifacts
+#    targetPath: 'dist/'
