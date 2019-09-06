@@ -24,6 +24,12 @@ steps:
       python -c "import anonlink; print(anonlink.__version__)"
   displayName: 'Install anonlink wheel'
 
+- task: CopyFiles@2
+  displayName: 'Copy source distribution'
+  #condition: and(eq(variables['compiler'], 'gcc'), eq(variables['pythonVersion'], '3.7'))
+  inputs:
+    contents: 'dist/?(*.tar.gz)'
+    targetFolder: $(Build.ArtifactStagingDirectory)
 
 - task: CopyFiles@2
   displayName: 'Copy built distribution'
@@ -70,4 +76,4 @@ steps:
   displayName: 'Publish pipeline artifacts in Azure'
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/dist'
-    artifact: Release
+    artifact: 'Build Artifacts ${{ parameters.operatingSystem }} for Python ${{ parameters.pythonVersion }}'

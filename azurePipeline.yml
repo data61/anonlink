@@ -44,6 +44,7 @@ stages:
         pythonVersion: $(pythonVersion)
         operatingSystem: 'ubuntu-16.04'
 
+
   - job:
     displayName: OSX
     pool:
