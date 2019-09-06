@@ -1,3 +1,28 @@
+0.12.5
+======
+
+- Feature azure pipeline (#223)
+- Delete Jenkinsfile. (#226)
+- fix flaky test (#225)
+- fix tar.gz release file
+- Updates hypothesis (#231)
+- Build and test wheel for each Python version in manylinux1 container (#232)
+- Build wheels for multiple platforms (#234)
+- Get azure to install and import the previously built wheel (#233)
+- Azure Pipelines: Publish wheel for OSX (#235)
+
+0.12.4
+======
+
+- Update broken GRLC link in docs
+- Add cython dependency to setup.py
+
+0.12.3
+======
+
+- Tweak twine upload to exclude non anonlink packages
+- Update clkhash and cython requirement
+
 0.12.2
 ======
 
