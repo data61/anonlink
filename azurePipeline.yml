@@ -44,7 +44,6 @@ stages:
       - task: PublishPipelineArtifact@1
         inputs: {targetPath: 'wheelhouse'}
 
-
 - stage: build_and_test
   displayName: Unit tests
   dependsOn: []

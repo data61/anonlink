@@ -19,11 +19,6 @@ steps:
     CC: ${{ parameters.compiler }}
   displayName: 'Build Package'
 
-- bash: |
-      pip install dist/anonlink*.whl
-      python -c "import anonlink; print(anonlink.__version__)"
-  displayName: 'Install anonlink wheel'
-
 - script: pip install -e .
   displayName: 'Install anonlink for testing'
 
@@ -56,11 +51,3 @@ steps:
       python -m codecov --token $(CODECOV_TOKEN) --file coverage.xml -F $opSysFlag,$pyVFlag,$compFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
-
-# Note PipelineArtifacts replace BuildArtifacts
-- task: PublishPipelineArtifact@1
-  condition: and(eq(variables['compiler'], 'clang'), eq(variables['pythonVersion'], '3.7'))
-  displayName: 'Publish pipeline artifacts in Azure'
-  inputs:
-    targetPath: 'dist'
-    artifact: 'Build Artifacts ${{ parameters.operatingSystem }} for Python ${{ parameters.pythonVersion }}'
