@@ -27,8 +27,6 @@ stages:
       CIBW_BUILD: 'cp37-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-      parameters:
-        pythonVersion: '3.7'
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
@@ -36,8 +34,7 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-      parameters:
-        pythonVersion: '3.6'
+
 #- stage: buildMacOSWheels
 #  displayName: Build macos Wheel Packages
 
@@ -48,8 +45,6 @@ stages:
       CIBW_BUILD: 'cp37-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-      parameters:
-        pythonVersion: '3.7'
 
   - job: macos_36
     displayName: MacOS + Python3.6
@@ -58,8 +53,7 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-      parameters:
-        pythonVersion: '3.6'
+
 
 - stage: build_and_test
   displayName: Build and unit test
