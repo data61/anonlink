@@ -6,8 +6,11 @@ steps:
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
 - bash: |
-    python -m pip install --upgrade wheel setuptools
-    pip install cibuildwheel==0.11.1
+    # Use this fork of cibuildwheel for macos c++11 support
+    # https://github.com/joerick/cibuildwheel/pull/156
+    python -m pip install git+https://github.com/Czaki/cibuildwheel
     cibuildwheel --output-dir wheelhouse .
+- bash: |
+    ls
 - task: PublishPipelineArtifact@1
   inputs: {targetPath: 'wheelhouse'}
