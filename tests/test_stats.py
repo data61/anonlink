@@ -62,7 +62,6 @@ def test_similarities_hist(candidate_pairs, bins):
         candidate_pairs, bins=bins)
 
     assert sorted(bin_edges) == list(bin_edges)
-    assert len(set(bin_edges)) == len(bin_edges) == bins + 1
     assert len(counts) == bins
 
     for count, bin_edge_left, bin_edge_right in zip(
