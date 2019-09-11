@@ -14,6 +14,8 @@ stages:
     CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
     CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml=testoutput.xml --cov-report=xml:coverage.xml --cov-report=html:htmlcov -W ignore::DeprecationWarning'
     CIBW_BEFORE_BUILD: 'python -m pip install --upgrade pip && pip install wheel setuptools -r requirements.txt && pip install -e .'
+    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
+    CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux1_i686'
@@ -23,35 +25,27 @@ stages:
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp37-*'
-      CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
     steps:
-      - task: UsePythonVersion@0
-      - bash: |
-          #python -m pip install --upgrade wheel setuptools
-          pip install cibuildwheel==0.11.1
-          cibuildwheel --output-dir wheelhouse .
-      - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
+    - template: .azurePipeline/cibuildwheel_steps.yml
+      parameters:
+        pythonVersion: $(pythonVersion)
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp36-*'
-      CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
     steps:
-      - task: UsePythonVersion@0
-      - bash: |
-          #python -m pip install --upgrade wheel setuptools
-          pip install cibuildwheel==0.11.1
-          cibuildwheel --output-dir wheelhouse .
-      - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
+    - template: .azurePipeline/cibuildwheel_steps.yml
+      parameters:
+        pythonVersion: $(pythonVersion)
+#- stage: buildMacOSWheels
+#  displayName: Build macos Wheel Packages
+
   - job: macos_37
     displayName: MacOS + Python3.7
     pool: {vmImage: 'macOS-10.13'}
     variables:
       CIBW_BUILD: 'cp37-*'
-      CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
     steps:
       - task: UsePythonVersion@0
       - bash: |
@@ -68,7 +62,6 @@ stages:
     pool: {vmImage: 'macOS-10.13'}
     variables:
       CIBW_BUILD: 'cp36-*'
-      CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
     steps:
       - task: UsePythonVersion@0
       - bash: |

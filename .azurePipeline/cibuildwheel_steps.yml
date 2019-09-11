@@ -1,0 +1,13 @@
+parameters:
+  pythonVersion: '3.7'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+- bash: |
+    python -m pip install --upgrade wheel setuptools
+    pip install cibuildwheel==0.11.1
+    cibuildwheel --output-dir wheelhouse .
+- task: PublishPipelineArtifact@1
+  inputs: {targetPath: 'wheelhouse'}
