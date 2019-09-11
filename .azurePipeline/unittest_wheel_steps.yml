@@ -9,16 +9,16 @@ steps:
   displayName: 'Init Python'
 
 - script: |
-      pip install -U codecov
-      pip install -r requirements.txt
+      pip install -U codecov -r requirements.txt
   displayName: 'Install testing requirements'
 
 - script: |
       pip install $(Pipeline.Workspace)/anonlink*.whl
-  displayName: 'Install anonlink '
+  displayName: 'Install anonlink'
 
 - script: |
-    mv anonlink __anonlink
+    # Delete the source code folder to ensure we test the installed wheel
+    rm -fr anonlink
     cd tests
     pytest --cov=anonlink --junitxml=$(Common.TestResultsDirectory)/testoutput.xml --cov-report=xml:$(Common.TestResultsDirectory)/coverage.xml -W ignore::DeprecationWarning
   displayName: 'pytest'
@@ -45,6 +45,8 @@ steps:
       opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       echo "python -m codecov --file coverage.xml -F $opSysFlag,$pyVFlag"
-      python -m codecov --token $(CODECOV_TOKEN) --file $(Common.TestResultsDirectory)/coverage.xml -F $opSysFlag,$pyVFlag
+      python -m codecov --token $(CODECOV_TOKEN) \
+        --file $(Common.TestResultsDirectory)/coverage.xml \
+        -F $opSysFlag,$pyVFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
