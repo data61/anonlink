@@ -24,29 +24,15 @@ from personally identifiable data.
 Installation
 ============
 
-Install directly from PyPi::
+Install a precompiled wheel from PyPi::
 
     pip install anonlink
 
-Or to install from source::
+Or (if your system has a C++ compiler) you can locally install from source::
 
     pip install -r requirements.txt
     pip install -e .
 
-Alternative - Manually compile the C++ library
-----------------------------------------------
-
-For mac with:
-
-::
-
-    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -dynamiclib -fpic -o _entitymatcher.dll dice_one_against_many.cpp
-
-For linux with:
-
-::
-
-    g++ -std=c++11 -mssse3 -mpopcnt -O2 -Wall -pedantic -Wextra -shared -fpic -o _entitymatcher.so dice_one_against_many.cpp
 
 Benchmark
 ---------
