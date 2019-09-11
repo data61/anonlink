@@ -27,7 +27,7 @@ stages:
     steps:
       - task: UsePythonVersion@0
       - bash: |
-          python -m pip install --upgrade wheel setuptools
+          #python -m pip install --upgrade wheel setuptools
           pip install cibuildwheel==0.11.1
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
@@ -41,7 +41,7 @@ stages:
     steps:
       - task: UsePythonVersion@0
       - bash: |
-          python -m pip install --upgrade wheel setuptools
+          #python -m pip install --upgrade wheel setuptools
           pip install cibuildwheel==0.11.1
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
@@ -58,6 +58,7 @@ stages:
           # Use this fork of cibuildwheel for macos c++11 support
           # https://github.com/joerick/cibuildwheel/pull/156
           python -m pip install git+https://github.com/Czaki/cibuildwheel cython
+          #python -m pip install cython
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
         inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
@@ -72,6 +73,7 @@ stages:
       - task: UsePythonVersion@0
       - bash: |
           python -m pip install git+https://github.com/Czaki/cibuildwheel cython
+          #python -m pip install cython
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
         inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
