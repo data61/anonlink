@@ -1,6 +1,7 @@
 parameters:
   pythonVersion: '3.7'
   operatingSystem: 'ubuntu-16.04'
+  artifactName: 'wheels.linux37'
 
 steps:
 - task: UsePythonVersion@0
@@ -11,6 +12,12 @@ steps:
 - script: |
       pip install -U codecov -r requirements.txt
   displayName: 'Install testing requirements'
+
+- task: DownloadPipelineArtifact@2
+  inputs:
+    artifactName: ${{ parameters.artifactName }}
+    patterns: '**/*.whl'
+    path: $(Pipeline.Workspace)
 
 - script: |
       pip install $(Pipeline.Workspace)/anonlink*.whl

@@ -70,13 +70,9 @@ stages:
           pythonVersion: '3.7'
           artifactName: 'wheels.linux37'
     steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          artifactName: $(artifactName)
-          patterns: '**/*.whl'
-          path: $(Pipeline.Workspace)
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
+          artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'ubuntu-16.04'
   - job:
@@ -92,13 +88,9 @@ stages:
           pythonVersion: '3.7'
           artifactName: 'wheels.macos37'
     steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          artifactName: $(artifactName)
-          patterns: '**/*.whl'
-          path: $(Pipeline.Workspace)
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
+          artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'macOS-10.13'
 
