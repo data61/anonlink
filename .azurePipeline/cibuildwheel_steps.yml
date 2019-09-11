@@ -6,7 +6,6 @@ steps:
     # https://github.com/joerick/cibuildwheel/pull/156
     python -m pip install git+https://github.com/Czaki/cibuildwheel
     cibuildwheel --output-dir wheelhouse .
-- bash: |
-    ls
+  displayName: Build Wheel
 - task: PublishPipelineArtifact@1
   inputs: {targetPath: 'wheelhouse'}
