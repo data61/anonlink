@@ -31,7 +31,7 @@ stages:
           pip install cibuildwheel==0.11.1
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse'}
+        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
@@ -45,7 +45,7 @@ stages:
           pip install cibuildwheel==0.11.1
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse'}
+        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
   - job: macos_37
     displayName: MacOS + Python3.7
     pool: {vmImage: 'macOS-10.13'}
@@ -55,10 +55,12 @@ stages:
     steps:
       - task: UsePythonVersion@0
       - bash: |
+          # Use this fork of cibuildwheel for macos c++11 support
+          # https://github.com/joerick/cibuildwheel/pull/156
           python -m pip install git+https://github.com/Czaki/cibuildwheel cython
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse'}
+        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
 
   - job: macos_36
     displayName: MacOS + Python3.6
@@ -72,10 +74,10 @@ stages:
           python -m pip install git+https://github.com/Czaki/cibuildwheel cython
           cibuildwheel --output-dir wheelhouse .
       - task: PublishPipelineArtifact@1
-        inputs: {targetPath: 'wheelhouse'}
+        inputs: {targetPath: 'wheelhouse', artifact: 'wheels'}
 
 - stage: build_and_test
-  displayName: Unit tests
+  displayName: Build and unit test
   dependsOn: []
   jobs:
   - job:
