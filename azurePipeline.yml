@@ -15,7 +15,7 @@ stages:
     CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml={project}/testoutput.xml --cov-report=xml:{project}/coverage.xml -k test_similarity_dice -W ignore::DeprecationWarning'
     CIBW_BEFORE_BUILD: 'python -m pip install --upgrade pip && pip install wheel setuptools -r requirements.txt && pip install -e .'
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
-    CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
+    #CIBW_ENVIRONMENT_MACOS: 'CC="clang" CXXFLAGS="-stdlib=libc++ -mssse3 -mpopcnt"'
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux1_i686'
