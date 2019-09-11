@@ -14,7 +14,7 @@ stages:
     CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
     CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml={project}/testoutput.xml --cov-report=xml:{project}/coverage.xml -k test_similarity_dice -W ignore::DeprecationWarning'
     CIBW_BEFORE_BUILD: 'python -m pip install --upgrade pip && pip install -r requirements.txt && pip install -e .'
-    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel && pip install -e . && python setup.py build'
+    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-dev atlas-devel'
 
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp37-* cp36-*'
