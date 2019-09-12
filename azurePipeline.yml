@@ -54,7 +54,7 @@ stages:
 
 
 - stage: test
-  displayName: Unittests
+  displayName: Unit tests
   dependsOn: ['wheels']
   jobs:
   - job:
@@ -103,7 +103,9 @@ stages:
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.7'
       - script: pip install -U mypy
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
