@@ -30,19 +30,7 @@ popcount(
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 }
 
-// Fast Path
-//
-// Source: http://danluu.com/assembly-intrinsics/
-// https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
-//
-// NB: Dan Luu's original assembly (and the SO answer it was based on)
-// is incorrect because it clobbers registers marked as "input only"
-// (see warning at
-// https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
-// -- this mistake does not materialise with GCC (4.9), but it does
-// with Clang (3.6 and 3.8)).  We fix the mistake by explicitly
-// loading the contents of buf into registers and using these same
-// registers for the intermediate popcnts.
+
 /**
  * The popcount of 4 elements of buf is the sum of c0, c1, c2, c3.
  */
@@ -51,7 +39,7 @@ inline void
 popcount<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf) {
-        c0 += popcnt(buf, 4*8);
+        c0 += popcnt(buf, 4*WORD_BYTES);
         c1 += 0;
         c2 += 0;
         c3 += 0;
@@ -113,12 +101,8 @@ popcount<1>(
 template<int nwords>
 static void
 _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
-    //uint64_t c0, c1, c2, c3;
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
-        //c0 = c1 = c2 = c3 = 0;
-        //popcount<nwords>(c0, c1, c2, c3, arrays);
-        //counts[i] = c0 + c1 + c2 + c3;
-        counts[i] = popcnt(arrays, nwords*8);
+        counts[i] = popcnt(arrays, nwords*WORD_BYTES);
     }
 }
 
@@ -127,8 +111,7 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
  */
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
-    int wordsize_in_bytes = sizeof(void*);
-    return popcnt(array, nwords*wordsize_in_bytes);
+    return popcnt(array, nwords*WORD_BYTES);
 }
 
 /**
