@@ -90,7 +90,7 @@ public:
         return group;
     }
     
-    Group *merge_into(Group * __restrict__ absorber, Group * __restrict__ absorbee) {
+    Group *merge_into(Group * absorber, Group * absorbee) {
         // Merges two existing groups. The records in absorbee are moved into absorber.
         // The absorbee is freed and should no longer be dereferenced.
         // Returns the merged group (the absorber).

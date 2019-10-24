@@ -24,10 +24,9 @@ static constexpr int WORD_BYTES = sizeof(uint64_t);
 template<int n>
 static inline void
 popcount(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    popcount<4>(c0, c1, c2, c3, buf);
-    popcount<n - 4>(c0, c1, c2, c3, buf + 4);
+    c0 += popcnt(buf, n*WORD_BYTES);
 }
 
 
@@ -37,12 +36,9 @@ popcount(
 template<>
 inline void
 popcount<4>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
         c0 += popcnt(buf, 4*WORD_BYTES);
-        c1 += 0;
-        c2 += 0;
-        c3 += 0;
 }
 
 // Slow paths
@@ -64,15 +60,14 @@ popcount<3>(
 #endif
 
 /**
- * The popcount of 2 elements of buf is the sum of c0, c1.
+ * The popcount of 2 elements of buf is the sum of c0.
  */
 template<>
 inline void
 popcount<2>(
-        uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
-    c1 += __builtin_popcountl(buf[1]);
+    c0 += popcnt(buf, 2*WORD_BYTES);
 }
 
 /**
@@ -134,14 +129,14 @@ popcount_logand(
 template<>
 inline void
 popcount_logand<4>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf1, const uint64_t *buf2) {
     uint64_t b[4];
     b[0] = buf1[0] & buf2[0];
     b[1] = buf1[1] & buf2[1];
     b[2] = buf1[2] & buf2[2];
     b[3] = buf1[3] & buf2[3];
-    popcount<4>(c0, c1, c2, c3, b);
+    c0 += popcnt(b, 4*WORD_BYTES);
 }
 
 /**
