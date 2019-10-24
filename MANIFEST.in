@@ -11,3 +11,4 @@ exclude .jenkins
 global-include *.pyx
 global-include *.pxd
 include anonlink/solving/_multiparty_solving_inner.h
+include _cffi_build/libpopcount.h

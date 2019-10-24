@@ -1,5 +1,5 @@
 import os.path
-
+import platform
 from cffi import FFI
 
 ffibuilder = FFI()
@@ -10,13 +10,19 @@ sourcefile = os.path.join(_path, 'dice_one_against_many.cpp')
 with open(sourcefile, 'r') as f:
     source = f.read()
 
+current_os = platform.system()
+if current_os == "Windows":
+    extra_compile_args = ['-Wall', '/std:c++17', '/arch:AVX512']
+else:
+    extra_compile_args = ['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-march=native', '-mssse3', '-mpopcnt',
+                          '-fvisibility=hidden']
+
 
 ffibuilder.set_source(
     "_entitymatcher",
     source,
     source_extension='.cpp',
-    extra_compile_args=['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-march=native', '-mssse3', '-mpopcnt', '-fvisibility=hidden'
-    ],
+    extra_compile_args=extra_compile_args
 )
 
 ffibuilder.cdef("""
