@@ -24,9 +24,12 @@ static constexpr int WORD_BYTES = sizeof(uint64_t);
 template<int n>
 static inline void
 popcount(
-        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf) {
-    c0 += popcnt(buf, n*WORD_BYTES);
+    //c0 += popcnt(buf, n*WORD_BYTES);
+
+    popcount<4>(c0, c1, c2, c3, buf);
+    popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 }
 
 
@@ -51,11 +54,9 @@ popcount<4>(
 template<>
 inline void
 popcount<3>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
-    c1 += __builtin_popcountl(buf[1]);
-    c2 += __builtin_popcountl(buf[2]);
+    c0 += popcnt(buf, 3*WORD_BYTES);
 }
 #endif
 
@@ -78,7 +79,7 @@ inline void
 popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
+    c0 += popcnt(buf, WORD_BYTES);
 }
 
 
@@ -96,8 +97,12 @@ popcount<1>(
 template<int nwords>
 static void
 _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
+    uint64_t c0, c1, c2, c3;
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
-        counts[i] = popcnt(arrays, nwords*WORD_BYTES);
+        //counts[i] = popcnt(arrays, nwords*WORD_BYTES);
+        c0 = c1 = c2 = c3 = 0;
+        popcount<nwords>(c0, c1, c2, c3, arrays);
+        counts[i] = c0 + c1 + c2 + c3;
     }
 }
 
@@ -106,7 +111,39 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
  */
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
-    return popcnt(array, nwords*WORD_BYTES);
+    //return popcnt(array, nwords*WORD_BYTES);
+
+    uint64_t c0, c1, c2, c3;
+    c0 = c1 = c2 = c3 = 0;
+
+    while (nwords >= 16) {
+        popcount<16>(c0, c1, c2, c3, array);
+        array += 16;
+        nwords -= 16;
+    }
+    // nwords < 16
+    if (nwords >= 8) {
+        popcount<8>(c0, c1, c2, c3, array);
+        array += 8;
+        nwords -= 8;
+    }
+    // nwords < 8
+    if (nwords >= 4) {
+        popcount<4>(c0, c1, c2, c3, array);
+        array += 4;
+        nwords -= 4;
+    }
+    // nwords < 4
+    if (nwords >= 2) {
+        popcount<2>(c0, c1, c2, c3, array);
+        array += 2;
+        nwords -= 2;
+    }
+    // nwords < 2
+    if (nwords == 1)
+        popcount<1>(c0, c1, c2, c3, array);
+    return c0 + c1 + c2 + c3;
+
 }
 
 /**
@@ -129,14 +166,15 @@ popcount_logand(
 template<>
 inline void
 popcount_logand<4>(
-        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf1, const uint64_t *buf2) {
     uint64_t b[4];
     b[0] = buf1[0] & buf2[0];
     b[1] = buf1[1] & buf2[1];
     b[2] = buf1[2] & buf2[2];
     b[3] = buf1[3] & buf2[3];
-    c0 += popcnt(b, 4*WORD_BYTES);
+    //c0 += popcnt(b, 4*WORD_BYTES);
+    popcount<4>(c0, c1, c2, c3, b);
 }
 
 /**
