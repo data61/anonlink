@@ -31,13 +31,13 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-#  - job: macos
-#    displayName: MacOS
-#    pool: {vmImage: 'macOS-10.13'}
-#    variables:
-#      MACOSX_DEPLOYMENT_TARGET: '10.13'
-#    steps:
-#    - template: .azurePipeline/cibuildwheel_steps.yml
+  - job: macos
+    displayName: MacOS
+    pool: {vmImage: 'macOS-10.14'}
+    variables:
+      MACOSX_DEPLOYMENT_TARGET: '10.10'
+    steps:
+    - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
     displayName: Windows
     pool: {vmImage: 'vs2017-win2016'}
@@ -68,27 +68,27 @@ stages:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'ubuntu-16.04'
-#  - job:
-#    displayName: MacOS
-#    pool:
-#      vmImage: 'macOS-10.13'
-#    strategy:
-#      matrix:
-#        Python3.6:
-#          pythonVersion: '3.6'
-#          artifactName: 'wheels.macos'
-#          artifactPattern: '**/*cp36*.whl'
-#        Python3.7:
-#          pythonVersion: '3.7'
-#          artifactName: 'wheels.macos'
-#          artifactPattern: '**/*cp37*.whl'
-#    steps:
-#      - template: .azurePipeline/unittest_wheel_steps.yml
-#        parameters:
-#          artifactName: $(artifactName)
-#          artifactPattern: $(artifactPattern)
-#          pythonVersion: $(pythonVersion)
-#          operatingSystem: 'macOS-10.13'
+  - job:
+    displayName: MacOS
+    pool:
+      vmImage: 'macOS-10.14'
+    strategy:
+      matrix:
+        Python3.6:
+          pythonVersion: '3.6'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp36*.whl'
+        Python3.7:
+          pythonVersion: '3.7'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp37*.whl'
+    steps:
+      - template: .azurePipeline/unittest_wheel_steps.yml
+        parameters:
+          artifactName: $(artifactName)
+          artifactPattern: $(artifactPattern)
+          pythonVersion: $(pythonVersion)
+          operatingSystem: 'macOS-10.13'
   - job:
     displayName: Windows
     pool:
