@@ -1,8 +1,6 @@
-import unittest
-
 import pytest
 from bitarray import bitarray
-from clkhash import bloomfilter, randomnames, schema
+from clkhash import bloomfilter, randomnames
 from clkhash.key_derivation import generate_key_lists
 from hypothesis import given, strategies
 
