@@ -178,7 +178,6 @@ _popcount_array(const uint64_t *array, int nwords) {
     if (nwords == 1)
         popcount<1>(c0, c1, c2, c3, array);
     return c0 + c1 + c2 + c3;
-
 }
 
 /**
@@ -190,25 +189,11 @@ static inline void
 popcount_logand(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf1, const uint64_t *buf2) {
-    popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
-    popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
-}
-
-/**
- * The popcount of the logical AND of 4 corresponding elements of buf1
- * and buf2 is the sum of c0, c1, c2, c3.
- */
-template<>
-inline void
-popcount_logand<4>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t *buf1, const uint64_t *buf2) {
-    uint64_t b[4];
-    b[0] = buf1[0] & buf2[0];
-    b[1] = buf1[1] & buf2[1];
-    b[2] = buf1[2] & buf2[2];
-    b[3] = buf1[3] & buf2[3];
-    popcount<4>(c0, c1, c2, c3, b);
+    uint64_t b[n];
+    for (int i = 0; i < n; i++) {
+        b[i] = buf1[i] & buf2[i];
+    }
+    popcount<n>(c0, c1, c2, c3, b);
 }
 
 /**
@@ -218,22 +203,37 @@ popcount_logand<4>(
 static uint32_t
 _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     // NB: The switch statement at the end of this function must have
-    // cases for all i = 1, ..., LOOP_LEN - 1.
-    static constexpr int LOOP_LEN = 4;
+    // cases for all cases not covered earlier
+
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
+    int nwords = len;
 
-    int i = 0;
-    for ( ; i + LOOP_LEN <= len; i += LOOP_LEN) {
-        popcount_logand<LOOP_LEN>(c0, c1, c2, c3, u, v);
-        u += LOOP_LEN;
-        v += LOOP_LEN;
+    while (nwords >= 128) {
+        popcount_logand<128>(c0, c1, c2, c3, u, v);
+        u += 128;
+        v += 128;
+        nwords -= 128;
+    }
+    // 16 <= nwords < 128
+    while (nwords >= 16) {
+        popcount_logand<16>(c0, c1, c2, c3, u, v);
+        u += 16;
+        v += 16;
+        nwords -= 16;
+    }
+    // 4 <= nwords < 128
+    while (nwords >= 4) {
+        popcount_logand<4>(c0, c1, c2, c3, u, v);
+        u += 4;
+        v += 4;
+        nwords -= 4;
     }
 
     // NB: The "fall through" comments are necessary to tell GCC and
     // Clang not to complain about the fact that the case clauses
     // don't have break statements in them.
-    switch (len - i) {
+    switch (nwords) {
     case 3: c2 += __builtin_popcountl(u[2] & v[2]);  /* fall through */
     case 2: c1 += __builtin_popcountl(u[1] & v[1]);  /* fall through */
     case 1: c0 += __builtin_popcountl(u[0] & v[0]);  /* fall through */
