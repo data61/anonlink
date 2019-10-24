@@ -28,21 +28,6 @@ stages:
       CIBW_BUILD: 'cp37-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: windows
-    pool: {vmImage: 'vs2017-win2016'}
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-      #- script: choco install vcpython27 -f -y
-      #  displayName: Install Visual C++ for Python 2.7
-      - bash: |
-          python -m pip install --upgrade pip
-          pip install cibuildwheel==0.12.0
-          cibuildwheel --output-dir wheelhouse .
-      - task: PublishBuildArtifacts@1
-        inputs: {pathtoPublish: 'wheelhouse'}
-
-
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
@@ -50,7 +35,6 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-
   - job: macos_37
     displayName: MacOS + Python3.7
     pool: {vmImage: 'macOS-10.13'}
@@ -58,7 +42,6 @@ stages:
       CIBW_BUILD: 'cp37-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-
   - job: macos_36
     displayName: MacOS + Python3.6
     pool: {vmImage: 'macOS-10.13'}
@@ -66,7 +49,12 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-
+  - job: windows
+    pool: {vmImage: 'vs2017-win2016'}
+    steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
 
 - stage: test
   displayName: Unit tests
@@ -94,6 +82,24 @@ stages:
     displayName: MacOS
     pool:
       vmImage: 'macOS-10.13'
+    strategy:
+      matrix:
+        Python3.6:
+          pythonVersion: '3.6'
+          artifactName: 'wheels.macos36'
+        Python3.7:
+          pythonVersion: '3.7'
+          artifactName: 'wheels.macos37'
+    steps:
+      - template: .azurePipeline/unittest_wheel_steps.yml
+        parameters:
+          artifactName: $(artifactName)
+          pythonVersion: $(pythonVersion)
+          operatingSystem: 'macOS-10.13'
+  - job:
+    displayName: Windows
+    pool:
+      vmImage: 'vs2017-win2016'
     strategy:
       matrix:
         Python3.6:
