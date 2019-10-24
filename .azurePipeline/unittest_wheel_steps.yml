@@ -2,6 +2,7 @@ parameters:
   pythonVersion: '3.7'
   operatingSystem: 'ubuntu-16.04'
   artifactName: 'wheels.linux37'
+  artifactPattern: '**/*.whl'
 
 steps:
 - task: UsePythonVersion@0
@@ -10,17 +11,19 @@ steps:
   displayName: 'Init Python'
 
 - script: |
+      python -m pip install --upgrade pip
       pip install -U codecov -r requirements.txt
   displayName: 'Install testing requirements'
 
 - task: DownloadPipelineArtifact@2
   inputs:
     artifactName: ${{ parameters.artifactName }}
-    patterns: '**/*.whl'
+    patterns: ${{ parameters.artifactPattern }}
     path: $(Pipeline.Workspace)
 
 - script: |
-      pip install $(Pipeline.Workspace)/anonlink*.whl
+      ls -lh $(Pipeline.Workspace)
+      pip install anonlink --no-index -f $(Pipeline.Workspace)
   displayName: 'Install anonlink'
 
 - script: |

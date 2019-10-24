@@ -35,24 +35,16 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: macos_37
-    displayName: MacOS + Python3.7
+  - job: macos
+    displayName: MacOS
     pool: {vmImage: 'macOS-10.13'}
-    variables:
-      CIBW_BUILD: 'cp37-*'
-    steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: macos_36
-    displayName: MacOS + Python3.6
-    pool: {vmImage: 'macOS-10.13'}
-    variables:
-      CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
+    displayName: Windows
     pool: {vmImage: 'vs2017-win2016'}
     steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
       - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
       - template: .azurePipeline/cibuildwheel_steps.yml
 
@@ -86,14 +78,17 @@ stages:
       matrix:
         Python3.6:
           pythonVersion: '3.6'
-          artifactName: 'wheels.macos36'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp36*.whl'
         Python3.7:
           pythonVersion: '3.7'
-          artifactName: 'wheels.macos37'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp37*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
           artifactName: $(artifactName)
+          artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'macOS-10.13'
   - job:
@@ -104,16 +99,19 @@ stages:
       matrix:
         Python3.6:
           pythonVersion: '3.6'
-          artifactName: 'wheels.macos36'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp36m*.whl'
         Python3.7:
           pythonVersion: '3.7'
-          artifactName: 'wheels.macos37'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp37m*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
           artifactName: $(artifactName)
+          artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'macOS-10.13'
+          operatingSystem: 'vs2017-win2016'
 
 - stage: static_checks
   displayName: Static Checks

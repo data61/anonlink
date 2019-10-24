@@ -12,7 +12,7 @@ with open(sourcefile, 'r') as f:
 
 current_os = platform.system()
 if current_os == "Windows":
-    extra_compile_args = ['-Wall', '/std:c++17', '/O2', '/arch:AVX512']
+    extra_compile_args = ['-Wall', '/std:c++17', '/O2', '/arch:AVX2']  #
 else:
     extra_compile_args = ['-Wall', '-Wextra', '-Werror', '-O3', '-std=c++11', '-fvisibility=hidden']
 

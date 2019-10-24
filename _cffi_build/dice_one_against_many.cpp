@@ -113,7 +113,7 @@ inline void
 popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += popcnt(buf, WORD_BYTES);
+    c0 += popcnt(&buf[0], WORD_BYTES);
 }
 
 
