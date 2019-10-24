@@ -130,3 +130,26 @@ stages:
       - script: pip install -U mypy
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
+
+- stage: publish
+  displayName: Publish packages to test feed
+  dependsOn: ['test']
+  jobs:
+  - job:
+    pool:
+      vmImage: 'ubuntu-latest'
+    variables:
+      # the name of an Azure artifacts feed to publish artifacts to
+      artifactFeed: anonlink
+    steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - script: 'pip install twine'
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          artifactName: 'drop'
+          patterns: '**/*.whl'
+          path: $(Pipeline.Workspace)
+      - task: TwineAuthenticate@1
+        inputs:
+          artifactFeed: $(artifactFeed)
+      - script: 'twine upload -r $(artifactFeed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/*.whl --skip-existing'
