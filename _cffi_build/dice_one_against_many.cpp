@@ -8,6 +8,13 @@
 #include <ctime>
 #include <cassert>
 #include <climits>
+#include "libpopcount.h"
+
+#if defined (_MSC_VER)
+// code specific to Visual Studio compiler
+# include <intrin.h>
+# define __builtin_popcountl __popcnt64
+#endif
 
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
@@ -44,19 +51,8 @@ inline void
 popcount<4>(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf) {
-    uint64_t b0, b1, b2, b3;
-    b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
-    __asm__(
-        "popcnt %4, %4  \n\t"
-        "add %4, %0     \n\t"
-        "popcnt %5, %5  \n\t"
-        "add %5, %1     \n\t"
-        "popcnt %6, %6  \n\t"
-        "add %6, %2     \n\t"
-        "popcnt %7, %7  \n\t"
-        "add %7, %3     \n\t"
-        : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
-          "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
+        c0 = popcnt(buf, 4);
+        c1 = 0; c2 = 0; c3 = 0;
 }
 
 // Slow paths
