@@ -26,10 +26,13 @@ static inline void
 popcount(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf) {
-    //c0 += popcnt(buf, n*WORD_BYTES);
-
+#if defined (_MSC_VER)
+    c0 += popcnt(buf, n*WORD_BYTES);
+    c1 += 0; c2 += 0; c3 += 0;
+#else
     popcount<4>(c0, c1, c2, c3, buf);
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
+#endif
 }
 
 
@@ -38,10 +41,41 @@ popcount(
  */
 template<>
 inline void
-popcount<4>(
-        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
-        const uint64_t *buf) {
-        c0 += popcnt(buf, 4*WORD_BYTES);
+popcount<4>( uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
+
+// Although `popcnt` from libpopcount.h works on Linux & MacOS
+// The handrolled assembler is faster for 32 byte buffers
+#if defined (_MSC_VER)
+    c0 += popcnt(buf, 4*WORD_BYTES);
+    c1 += 0; c2 += 0; c3 += 0;
+#else
+// Fast Path
+//
+// Source: http://danluu.com/assembly-intrinsics/
+// https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance
+//
+// NB: Dan Luu's original assembly (and the SO answer it was based on)
+// is incorrect because it clobbers registers marked as "input only"
+// (see warning at
+// https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#InputOperands
+// -- this mistake does not materialise with GCC (4.9), but it does
+// with Clang (3.6 and 3.8)).  We fix the mistake by explicitly
+// loading the contents of buf into registers and using these same
+// registers for the intermediate popcnts.
+    uint64_t b0, b1, b2, b3;
+    b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
+    __asm__(
+        "popcnt %4, %4  \n\t"
+        "add %4, %0     \n\t"
+        "popcnt %5, %5  \n\t"
+        "add %5, %1     \n\t"
+        "popcnt %6, %6  \n\t"
+        "add %6, %2     \n\t"
+        "popcnt %7, %7  \n\t"
+        "add %7, %3     \n\t"
+        : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
+          "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
+#endif
 }
 
 // Slow paths
@@ -99,6 +133,7 @@ static void
 _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     uint64_t c0, c1, c2, c3;
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
+        // TODO maybe just on Windows for performance
         //counts[i] = popcnt(arrays, nwords*WORD_BYTES);
         c0 = c1 = c2 = c3 = 0;
         popcount<nwords>(c0, c1, c2, c3, arrays);
@@ -173,7 +208,6 @@ popcount_logand<4>(
     b[1] = buf1[1] & buf2[1];
     b[2] = buf1[2] & buf2[2];
     b[3] = buf1[3] & buf2[3];
-    //c0 += popcnt(b, 4*WORD_BYTES);
     popcount<4>(c0, c1, c2, c3, b);
 }
 
