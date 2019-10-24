@@ -22,13 +22,15 @@ ffibuilder.set_source(
     "_entitymatcher",
     source,
     source_extension='.cpp',
-    extra_compile_args=extra_compile_args
+    extra_compile_args=extra_compile_args,
+    include_dirs=[_path]
 )
 
 ffibuilder.cdef("""
     int match_one_against_many_dice_k_top(const char *one, const char *many, const uint32_t *counts_many, int n, int keybytes, uint32_t k, double threshold, int *indices, double *scores);
     double dice_coeff(const char *array1, const char *array2, int array_bytes);
     double popcount_arrays(uint32_t *counts, const char *arrays, int narrays, int array_bytes);
+    uint64_t popcnt(const void* data, uint64_t size);
 """)
 
 
