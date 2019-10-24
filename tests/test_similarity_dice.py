@@ -7,6 +7,7 @@ from clkhash.key_derivation import generate_key_lists
 from hypothesis import given, strategies
 
 from anonlink import similarities
+from anonlink.similarities import dice_coefficient_accelerated
 
 __author__ = 'Brian Thorne'
 
@@ -284,13 +285,41 @@ def _to_bitarray(bytes_):
     ba.frombytes(bytes_)
     return ba
 
+#
+# @given(strategies.data(), strategies.floats(min_value=0, max_value=1))
+# @pytest.mark.parametrize('sim_fun', SIM_FUNS)
+# def test_bytes_bitarray_agree(sim_fun, data, threshold):
+#     bytes_length = data.draw(strategies.integers(
+#         min_value=0,
+#         max_value=1024  # Let's not get too carried away...
+#     ))
+#     bytes_length *= 8  # TODO: remove this line when we deal with #163
+#     filters0_bytes = data.draw(strategies.lists(strategies.binary(
+#         min_size=bytes_length, max_size=bytes_length)))
+#     filters1_bytes = data.draw(strategies.lists(strategies.binary(
+#         min_size=bytes_length, max_size=bytes_length)))
+#
+#     filters0_ba = tuple(map(_to_bitarray, filters0_bytes))
+#     filters1_ba = tuple(map(_to_bitarray, filters1_bytes))
+#
+#     print("Threshold", threshold)
+#     print("Bytes Length", bytes_length)
+#     print(len(filters0_bytes))
+#     print(len(filters1_bytes))
+#     print(len(filters0_ba))
+#     print(len(filters1_ba))
+#
+#     #res_bytes = sim_fun([filters0_bytes, filters1_bytes], threshold)
+#     res_ba = sim_fun([filters0_ba, filters1_ba], threshold)
+#     #assert (res_bytes == res_ba)
+#
 
-@given(strategies.data(), strategies.floats(min_value=0, max_value=1))
-@pytest.mark.parametrize('sim_fun', SIM_FUNS)
-def test_bytes_bitarray_agree(sim_fun, data, threshold):
+@given(strategies.data())
+def test_accelerated(data):
+    threshold = 0.999
     bytes_length = data.draw(strategies.integers(
-        min_value=0,
-        max_value=1024  # Let's not get too carried away...
+        min_value=64,
+        max_value=64  # Let's not get too carried away...
     ))
     bytes_length *= 8  # TODO: remove this line when we deal with #163
     filters0_bytes = data.draw(strategies.lists(strategies.binary(
@@ -301,5 +330,11 @@ def test_bytes_bitarray_agree(sim_fun, data, threshold):
     filters0_ba = tuple(map(_to_bitarray, filters0_bytes))
     filters1_ba = tuple(map(_to_bitarray, filters1_bytes))
 
-    assert (sim_fun([filters0_bytes, filters1_bytes], threshold)
-            == sim_fun([filters0_ba, filters1_ba], threshold))
+    print("Threshold", threshold)
+    print("Bytes Length", bytes_length)
+    print(len(filters0_bytes))
+    print(len(filters1_bytes))
+    print(len(filters0_ba))
+    print(len(filters1_ba))
+
+    res_ba = dice_coefficient_accelerated([filters0_ba, filters1_ba], threshold)
