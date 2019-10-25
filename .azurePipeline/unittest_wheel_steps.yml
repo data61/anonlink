@@ -28,24 +28,15 @@ steps:
 - script: |
     # Delete the source code folder to ensure we test only the installed wheel
     rm -fr anonlink
-    pytest --cov=anonlink --junitxml=$(Common.TestResultsDirectory)/testoutput.xml --cov-report=xml:$(Common.TestResultsDirectory)/coverage.xml -W ignore::DeprecationWarning
+    pytest --cov=anonlink --junitxml=$(Common.TestResultsDirectory)/testoutput.xml --cov-report=xml:coverage.xml --cov-report html -W ignore::DeprecationWarning
   displayName: 'pytest'
-
-- task: PublishCodeCoverageResults@1
-  displayName: 'Publish code coverage in Azure'
-  # If the previous stage fail, we still want to run this one as the previous stage may fail because of a failing test.
-  condition: succeededOrFailed()
-  inputs:
-    codeCoverageTool: Cobertura
-    summaryFileLocation: '$(Common.TestResultsDirectory)/coverage.xml'
-    failIfCoverageEmpty: false
 
 - bash: |
       opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
-      echo "python -m codecov --file coverage.xml -F $opSysFlag,$pyVFlag"
+      echo "codecov flags: $opSysFlag,$pyVFlag"
       python -m codecov --token $(CODECOV_TOKEN) \
-        --file $(Common.TestResultsDirectory)/coverage.xml \
+        --file coverage.xml \
         -F $opSysFlag,$pyVFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
