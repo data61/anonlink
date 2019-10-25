@@ -144,8 +144,6 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
  */
 static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
-    //return popcnt(array, nwords*WORD_BYTES);
-
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
     while (nwords >= 16) {
@@ -186,11 +184,33 @@ static inline void
 popcount_logand(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf1, const uint64_t *buf2) {
+#if defined (_MSC_VER)
     uint64_t b[n];
     for (int i = 0; i < n; i++) {
         b[i] = buf1[i] & buf2[i];
     }
     popcount<n>(c0, c1, c2, c3, b);
+#else
+    popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
+    popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
+#endif
+}
+
+/**
+ * The popcount of the logical AND of 4 corresponding elements of buf1
+ * and buf2 is the sum of c0, c1, c2, c3.
+ */
+template<>
+inline void
+popcount_logand<4>(
+        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
+        const uint64_t *buf1, const uint64_t *buf2) {
+    uint64_t b[4];
+    b[0] = buf1[0] & buf2[0];
+    b[1] = buf1[1] & buf2[1];
+    b[2] = buf1[2] & buf2[2];
+    b[3] = buf1[3] & buf2[3];
+    popcount<4>(c0, c1, c2, c3, b);
 }
 
 /**
