@@ -10,31 +10,25 @@
 #include <climits>
 #include "libpopcount.h"
 
-#if defined (_MSC_VER)
-// code specific to Visual Studio compiler
-# include <intrin.h>
-# define __builtin_popcountl __popcnt64
-#endif
-
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 /**
- * The popcount of n elements of buf is the sum of c0, c1, c2, c3.
+ * Popcount of n elements of buf.
  */
 template<int n>
 static inline void
-popcount(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t *buf) {
 #if defined (_MSC_VER)
+// code specific to Visual Studio compiler
+// With MSVC we call libpopcnt with the whole data and return the popcount in c0
+popcount( uint64_t &c0, uint64_t &, uint64_t &, uint64_t &, const uint64_t *buf) {
     c0 += popcnt(buf, n*WORD_BYTES);
-    c1 += 0; c2 += 0; c3 += 0;
 #else
+// The popcount of n elements of buf is the sum of c0, c1, c2, c3.
+popcount( uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
     popcount<4>(c0, c1, c2, c3, buf);
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
 #endif
 }
-
 
 /**
  * The popcount of 4 elements of buf is the sum of c0, c1, c2, c3.
@@ -252,9 +246,9 @@ _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     // Clang not to complain about the fact that the case clauses
     // don't have break statements in them.
     switch (nwords) {
-    case 3: c2 += __builtin_popcountl(u[2] & v[2]);  /* fall through */
-    case 2: c1 += __builtin_popcountl(u[1] & v[1]);  /* fall through */
-    case 1: c0 += __builtin_popcountl(u[0] & v[0]);  /* fall through */
+    case 3: c2 += popcnt64(u[2] & v[2]);  /* fall through */
+    case 2: c1 += popcnt64(u[1] & v[1]);  /* fall through */
+    case 1: c0 += popcnt64(u[0] & v[0]);  /* fall through */
     }
 
     return c0 + c1 + c2 + c3;
