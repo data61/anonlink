@@ -5,9 +5,6 @@ from clkhash.key_derivation import generate_key_lists
 from hypothesis import given, strategies
 
 from anonlink import similarities
-from anonlink.similarities import dice_coefficient_accelerated
-
-__author__ = 'Brian Thorne'
 
 FLOAT_ARRAY_TYPES = 'fd'
 UINT_ARRAY_TYPES = 'BHILQ'
