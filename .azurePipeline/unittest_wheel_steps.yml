@@ -26,9 +26,6 @@ steps:
   displayName: 'Install anonlink wheel'
 
 - script: |
-    # Delete the source code folder to ensure we test the installed wheel
-    rm -fr anonlink
-    cd tests
     pytest --cov=anonlink --junitxml=$(Common.TestResultsDirectory)/testoutput.xml --cov-report=xml:$(Common.TestResultsDirectory)/coverage.xml -W ignore::DeprecationWarning
   displayName: 'pytest'
   
