@@ -1,4 +1,4 @@
-bitarray==0.9.3
+bitarray==1.0.1
 cffi>=1.7
 pytest>=3.4
 pytest-cov>=2.5
