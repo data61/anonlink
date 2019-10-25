@@ -11,11 +11,8 @@ stages:
 - stage: wheels
   displayName: Build Wheel Packages
   variables:
-    CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
-    CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml={project}/testoutput.xml --cov-report=xml:{project}/coverage.xml -k "test_similarity_dice or test_solving" -W ignore::DeprecationWarning'
     # Need to install development libraries for manylinux container
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
-
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux1_i686'
