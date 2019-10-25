@@ -30,16 +30,7 @@ steps:
     rm -fr anonlink
     pytest --cov=anonlink --junitxml=$(Common.TestResultsDirectory)/testoutput.xml --cov-report=xml:$(Common.TestResultsDirectory)/coverage.xml -W ignore::DeprecationWarning
   displayName: 'pytest'
-  
-#- task: PublishTestResults@2
-#  displayName: 'Publish test results in Azure'
-#  condition: succeededOrFailed()
-#  inputs:
-#    testResultsFormat: 'JUnit'
-#    testResultsFiles: '$(Common.TestResultsDirectory)/testoutput.xml'
-#    testRunTitle: 'Test results on a vm ${{ parameters.operatingSystem }} for Python ${{ parameters.pythonVersion }}'
-#    failTaskOnFailedTests: true
-#
+
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish code coverage in Azure'
   # If the previous stage fail, we still want to run this one as the previous stage may fail because of a failing test.
@@ -47,7 +38,7 @@ steps:
   inputs:
     codeCoverageTool: Cobertura
     summaryFileLocation: '$(Common.TestResultsDirectory)/coverage.xml'
-    failIfCoverageEmpty: true
+    failIfCoverageEmpty: false
 
 - bash: |
       opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
