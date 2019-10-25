@@ -12,7 +12,7 @@ steps:
 
 - script: |
       python -m pip install --upgrade pip
-      pip install -U codecov -r requirements.txt
+      pip install -U pytest-azurepipelines codecov -r requirements.txt
   displayName: 'Install testing requirements'
 
 - task: DownloadPipelineArtifact@2
@@ -22,9 +22,8 @@ steps:
     path: $(Pipeline.Workspace)
 
 - script: |
-      ls -lh $(Pipeline.Workspace)
       pip install anonlink --no-index -f $(Pipeline.Workspace)
-  displayName: 'Install anonlink'
+  displayName: 'Install anonlink wheel'
 
 - script: |
     # Delete the source code folder to ensure we test the installed wheel
