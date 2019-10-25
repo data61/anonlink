@@ -1,3 +1,9 @@
+0.13.0-dev
+==========
+
+- Adds support for Windows including accelerated extensions. Note performance on Windows is
+  roughly half that of Linux.
+
 0.12.5
 ======
 
