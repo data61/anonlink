@@ -133,8 +133,6 @@ static void
 _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     uint64_t c0, c1, c2, c3;
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
-        // TODO maybe just on Windows for performance
-        //counts[i] = popcnt(arrays, nwords*WORD_BYTES);
         c0 = c1 = c2 = c3 = 0;
         popcount<nwords>(c0, c1, c2, c3, arrays);
         counts[i] = c0 + c1 + c2 + c3;
@@ -150,7 +148,6 @@ _popcount_array(const uint64_t *array, int nwords) {
 
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-
     while (nwords >= 16) {
         popcount<16>(c0, c1, c2, c3, array);
         array += 16;
@@ -208,7 +205,7 @@ _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
     int nwords = len;
-
+#if defined (_MSC_VER)
     while (nwords >= 128) {
         popcount_logand<128>(c0, c1, c2, c3, u, v);
         u += 128;
@@ -222,6 +219,7 @@ _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
         v += 16;
         nwords -= 16;
     }
+#endif
     // 4 <= nwords < 128
     while (nwords >= 4) {
         popcount_logand<4>(c0, c1, c2, c3, u, v);
