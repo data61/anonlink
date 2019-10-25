@@ -6,6 +6,7 @@ steps:
     # https://github.com/joerick/cibuildwheel/pull/156
     python -m pip install git+https://github.com/Czaki/cibuildwheel
     #python -m pip install cibuildwheel==0.12.0
+    cibuildwheel --print-build-identifiers
     cibuildwheel --output-dir wheelhouse .
   displayName: Build Wheel
 - task: PublishBuildArtifacts@1
