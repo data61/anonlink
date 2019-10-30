@@ -11,12 +11,8 @@ stages:
 - stage: wheels
   displayName: Build Wheel Packages
   variables:
-    CIBW_TEST_REQUIRES: 'pytest pytest-cov pytest-timeout hypothesis codecov'
-    CIBW_TEST_COMMAND: 'pytest {project}/tests --cov={project} --junitxml={project}/testoutput.xml --cov-report=xml:{project}/coverage.xml -k "test_similarity_dice or test_solving" -W ignore::DeprecationWarning'
-    CIBW_BEFORE_BUILD: 'python -m pip install --upgrade pip && pip install -e .'
     # Need to install development libraries for manylinux container
-    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel && pip install -e .'
-
+    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux1_i686'
@@ -35,23 +31,20 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-
-  - job: macos_37
-    displayName: MacOS + Python3.7
-    pool: {vmImage: 'macOS-10.13'}
-    variables:
-      CIBW_BUILD: 'cp37-*'
+#  - job: macos
+#    displayName: MacOS
+#    pool: {vmImage: 'macOS-10.13'}
+#    variables:
+#      MACOSX_DEPLOYMENT_TARGET: '10.13'
+#    steps:
+#    - template: .azurePipeline/cibuildwheel_steps.yml
+  - job: windows
+    displayName: Windows
+    pool: {vmImage: 'vs2017-win2016'}
     steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
-
-  - job: macos_36
-    displayName: MacOS + Python3.6
-    pool: {vmImage: 'macOS-10.13'}
-    variables:
-      CIBW_BUILD: 'cp36-*'
-    steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
-
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
 
 - stage: test
   displayName: Unit tests
@@ -75,24 +68,48 @@ stages:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'ubuntu-16.04'
+#  - job:
+#    displayName: MacOS
+#    pool:
+#      vmImage: 'macOS-10.13'
+#    strategy:
+#      matrix:
+#        Python3.6:
+#          pythonVersion: '3.6'
+#          artifactName: 'wheels.macos'
+#          artifactPattern: '**/*cp36*.whl'
+#        Python3.7:
+#          pythonVersion: '3.7'
+#          artifactName: 'wheels.macos'
+#          artifactPattern: '**/*cp37*.whl'
+#    steps:
+#      - template: .azurePipeline/unittest_wheel_steps.yml
+#        parameters:
+#          artifactName: $(artifactName)
+#          artifactPattern: $(artifactPattern)
+#          pythonVersion: $(pythonVersion)
+#          operatingSystem: 'macOS-10.13'
   - job:
-    displayName: MacOS
+    displayName: Windows
     pool:
-      vmImage: 'macOS-10.13'
+      vmImage: 'vs2017-win2016'
     strategy:
       matrix:
         Python3.6:
           pythonVersion: '3.6'
-          artifactName: 'wheels.macos36'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp36m*.whl'
         Python3.7:
           pythonVersion: '3.7'
-          artifactName: 'wheels.macos37'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp37m*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
           artifactName: $(artifactName)
+          artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'macOS-10.13'
+          operatingSystem: 'vs2017-win2016'
 
 - stage: static_checks
   displayName: Static Checks
@@ -109,3 +126,26 @@ stages:
       - script: pip install -U mypy
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
+
+- stage: publish
+  displayName: Publish packages to test feed
+  dependsOn: ['test']
+  jobs:
+  - job:
+    pool:
+      vmImage: 'ubuntu-latest'
+    variables:
+      # the name of an Azure artifacts feed to publish artifacts to
+      artifactFeed: anonlink
+    steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - script: 'pip install twine'
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          artifactName: 'drop'
+          patterns: '**/*.whl'
+          path: $(Pipeline.Workspace)
+      - task: TwineAuthenticate@1
+        inputs:
+          artifactFeed: $(artifactFeed)
+      - script: 'twine upload -r $(artifactFeed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/*.whl --skip-existing'

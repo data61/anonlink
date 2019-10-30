@@ -1,4 +1,8 @@
 
+.. image:: https://dev.azure.com/data61/Anonlink/_apis/build/status/data61.anonlink?branchName=master
+    :target: https://dev.azure.com/data61/Anonlink/_build/latest?definitionId=3&branchName=master
+
+
 .. image:: https://travis-ci.org/data61/anonlink.svg?branch=master
     :target: https://travis-ci.org/data61/anonlink
 

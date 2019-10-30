@@ -1,14 +1,10 @@
-import unittest
-
 import pytest
 from bitarray import bitarray
-from clkhash import bloomfilter, randomnames, schema
+from clkhash import bloomfilter, randomnames
 from clkhash.key_derivation import generate_key_lists
 from hypothesis import given, strategies
 
 from anonlink import similarities
-
-__author__ = 'Brian Thorne'
 
 FLOAT_ARRAY_TYPES = 'fd'
 UINT_ARRAY_TYPES = 'BHILQ'
@@ -301,5 +297,7 @@ def test_bytes_bitarray_agree(sim_fun, data, threshold):
     filters0_ba = tuple(map(_to_bitarray, filters0_bytes))
     filters1_ba = tuple(map(_to_bitarray, filters1_bytes))
 
-    assert (sim_fun([filters0_bytes, filters1_bytes], threshold)
-            == sim_fun([filters0_ba, filters1_ba], threshold))
+    res_bytes = sim_fun([filters0_bytes, filters1_bytes], threshold)
+    res_ba = sim_fun([filters0_ba, filters1_ba], threshold)
+    assert (res_bytes == res_ba)
+

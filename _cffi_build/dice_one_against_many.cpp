@@ -8,21 +8,41 @@
 #include <ctime>
 #include <cassert>
 #include <climits>
+#include "libpopcount.h"
 
 static constexpr int WORD_BYTES = sizeof(uint64_t);
 
 /**
- * The popcount of n elements of buf is the sum of c0, c1, c2, c3.
+ * Popcount of n elements of buf.
  */
 template<int n>
 static inline void
-popcount(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t *buf) {
+#if defined (_MSC_VER)
+// code specific to Visual Studio compiler
+// With MSVC we call libpopcnt with the whole data and return the popcount in c0
+popcount( uint64_t &c0, uint64_t &, uint64_t &, uint64_t &, const uint64_t *buf) {
+    c0 += popcnt(buf, n*WORD_BYTES);
+#else
+// The popcount of n elements of buf is the sum of c0, c1, c2, c3.
+popcount( uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
     popcount<4>(c0, c1, c2, c3, buf);
     popcount<n - 4>(c0, c1, c2, c3, buf + 4);
+#endif
 }
 
+/**
+ * The popcount of 4 elements of buf is the sum of c0, c1, c2, c3.
+ */
+template<>
+inline void
+popcount<4>( uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint64_t *buf) {
+
+// Although `popcnt` from libpopcount.h works on Linux & MacOS
+// The handrolled assembler is faster for 32 byte buffers
+#if defined (_MSC_VER)
+    c0 += popcnt(buf, 4*WORD_BYTES);
+    c1 += 0; c2 += 0; c3 += 0;
+#else
 // Fast Path
 //
 // Source: http://danluu.com/assembly-intrinsics/
@@ -36,14 +56,6 @@ popcount(
 // with Clang (3.6 and 3.8)).  We fix the mistake by explicitly
 // loading the contents of buf into registers and using these same
 // registers for the intermediate popcnts.
-/**
- * The popcount of 4 elements of buf is the sum of c0, c1, c2, c3.
- */
-template<>
-inline void
-popcount<4>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
-        const uint64_t *buf) {
     uint64_t b0, b1, b2, b3;
     b0 = buf[0]; b1 = buf[1]; b2 = buf[2]; b3 = buf[3];
     __asm__(
@@ -57,6 +69,7 @@ popcount<4>(
         "add %7, %3     \n\t"
         : "+r" (c0), "+r" (c1), "+r" (c2), "+r" (c3),
           "+r" (b0), "+r" (b1), "+r" (b2), "+r" (b3));
+#endif
 }
 
 // Slow paths
@@ -69,24 +82,21 @@ popcount<4>(
 template<>
 inline void
 popcount<3>(
-        uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
-    c1 += __builtin_popcountl(buf[1]);
-    c2 += __builtin_popcountl(buf[2]);
+    c0 += popcnt(buf, 3*WORD_BYTES);
 }
 #endif
 
 /**
- * The popcount of 2 elements of buf is the sum of c0, c1.
+ * The popcount of 2 elements of buf is the sum of c0.
  */
 template<>
 inline void
 popcount<2>(
-        uint64_t &c0, uint64_t &c1, uint64_t &, uint64_t &,
+        uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
-    c1 += __builtin_popcountl(buf[1]);
+    c0 += popcnt(buf, 2*WORD_BYTES);
 }
 
 /**
@@ -97,7 +107,7 @@ inline void
 popcount<1>(
         uint64_t &c0, uint64_t &, uint64_t &, uint64_t &,
         const uint64_t *buf) {
-    c0 += __builtin_popcountl(buf[0]);
+    c0 += popcnt(buf, WORD_BYTES);
 }
 
 
@@ -130,7 +140,6 @@ static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-
     while (nwords >= 16) {
         popcount<16>(c0, c1, c2, c3, array);
         array += 16;
@@ -169,8 +178,16 @@ static inline void
 popcount_logand(
         uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3,
         const uint64_t *buf1, const uint64_t *buf2) {
+#if defined (_MSC_VER)
+    uint64_t b[n];
+    for (int i = 0; i < n; i++) {
+        b[i] = buf1[i] & buf2[i];
+    }
+    popcount<n>(c0, c1, c2, c3, b);
+#else
     popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
     popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
+#endif
 }
 
 /**
@@ -197,25 +214,41 @@ popcount_logand<4>(
 static uint32_t
 _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
     // NB: The switch statement at the end of this function must have
-    // cases for all i = 1, ..., LOOP_LEN - 1.
-    static constexpr int LOOP_LEN = 4;
+    // cases for all cases not covered earlier
+
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
-
-    int i = 0;
-    for ( ; i + LOOP_LEN <= len; i += LOOP_LEN) {
-        popcount_logand<LOOP_LEN>(c0, c1, c2, c3, u, v);
-        u += LOOP_LEN;
-        v += LOOP_LEN;
+    int nwords = len;
+#if defined (_MSC_VER)
+    while (nwords >= 128) {
+        popcount_logand<128>(c0, c1, c2, c3, u, v);
+        u += 128;
+        v += 128;
+        nwords -= 128;
+    }
+    // 16 <= nwords < 128
+    while (nwords >= 16) {
+        popcount_logand<16>(c0, c1, c2, c3, u, v);
+        u += 16;
+        v += 16;
+        nwords -= 16;
+    }
+#endif
+    // 4 <= nwords < 128
+    while (nwords >= 4) {
+        popcount_logand<4>(c0, c1, c2, c3, u, v);
+        u += 4;
+        v += 4;
+        nwords -= 4;
     }
 
     // NB: The "fall through" comments are necessary to tell GCC and
     // Clang not to complain about the fact that the case clauses
     // don't have break statements in them.
-    switch (len - i) {
-    case 3: c2 += __builtin_popcountl(u[2] & v[2]);  /* fall through */
-    case 2: c1 += __builtin_popcountl(u[1] & v[1]);  /* fall through */
-    case 1: c0 += __builtin_popcountl(u[0] & v[0]);  /* fall through */
+    switch (nwords) {
+    case 3: c2 += popcnt64(u[2] & v[2]);  /* fall through */
+    case 2: c1 += popcnt64(u[1] & v[1]);  /* fall through */
+    case 1: c0 += popcnt64(u[0] & v[0]);  /* fall through */
     }
 
     return c0 + c1 + c2 + c3;

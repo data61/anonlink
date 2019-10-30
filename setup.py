@@ -1,3 +1,5 @@
+import platform
+
 from setuptools import setup, Extension, find_packages
 import os
 
@@ -30,14 +32,21 @@ test_requirements = [
         "hypothesis"
     ]
 
+current_os = platform.system()
+if current_os == "Windows":
+    extra_compile_args = ['/std:c++17', '/O2', '/arch:AVX512']
+else:
+    extra_compile_args = ['-O3', '-std=c++11']
+
+
 extensions = [Extension(
     name="solving._multiparty_solving",
     sources=["anonlink/solving/_multiparty_solving." + cython_cpp_ext,
              "anonlink/solving/_multiparty_solving_inner.cpp"],
     include_dirs=["anonlink/solving"],
     language="c++",
-    extra_compile_args=["-std=c++11"],
-    extra_link_args=["-std=c++11"],
+    extra_compile_args=extra_compile_args,
+    extra_link_args=extra_compile_args,
     define_macros=[('NDEBUG', None)]
     )]
 
@@ -46,7 +55,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.12.5',
+    version='0.13.0-dev',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',

@@ -10,4 +10,4 @@ from anonlink import stats
 from anonlink import typechecking
 
 __version__ = pkg_resources.get_distribution('anonlink').version
-__author__ = 'N1 Analytics'
+__author__ = 'Data61'
