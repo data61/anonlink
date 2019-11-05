@@ -30,7 +30,7 @@ Each proposal must have a champion — someone who writes the proposal using the
 shepherds the discussions in the appropriate forums, and attempts to build community consensus around the idea. 
 
 The proposal should be submitted as a draft proposal via a GitHub pull request to the `docs/proposals` directory with 
-the name prop-<n>-<short-title>.md where <n> is an appropriately assigned number (e.g., prop-0000.rst). The draft must 
+the name prop-<n>-<short-title>.md where <n> is an appropriately assigned number (e.g., prop-0000-fooDescription.rst). The draft must 
 comply with the technical specifications outlined below.
 
 Once the PR for the proposal is in place, a post should be made to the mailing list containing the abstract and a link
