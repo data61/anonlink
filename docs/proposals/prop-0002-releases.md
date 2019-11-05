@@ -1,5 +1,5 @@
-Proposal: 1
-Title: Releasing Anonlink
+Proposal: 2
+Title: Automatically Releasing Anonlink
 Author: Brian Thorne
 Status: Draft
 Created: 2019-11-5
@@ -12,7 +12,8 @@ Microsoft's Azure DevOps [^1].
 ## Motivation 
 
 An automated process for releasing Anonlink allows for more frequent releases and ensures that releases are
-packaged, reviewed and communicated consistently.
+packaged, reviewed and communicated consistently. Our CI system is already creating the required artifacts,
+but currently requires manual publishing.
 
 ### Current Manual Process
 
@@ -40,12 +41,14 @@ The release pipeline will:
 
 The full release process is then:
 
+- Create a `release-{version}` branch from an up to date master branch.
 - Update the version in `setup.py` using a semantic version.
 - Update the `CHANGELOG.rst`
-- Create a `release-{version}` branch from an up to date master branch and request a code review.
-- Tag the commit with the version by creating a GitHub release https://github.com/data61/anonlink/releases, include the changelog.
-- This triggers the CI system to build and upload artifacts to PyPi and GitHub
-- proudly announce the new release on the anonlink google group https://groups.google.com/forum/#!forum/anonlink
+- Push to the release branch and open a PR merging back into master. Request a code review.
+- Tag the merge commit with the version by creating a GitHub release https://github.com/data61/anonlink/releases, 
+  include the changelog.
+- This tag triggers the CI system to build and upload artifacts to PyPi and GitHub
+- Proudly announce the new release on the anonlink google group https://groups.google.com/forum/#!forum/anonlink
  
 
 ## Rejected Ideas
@@ -66,6 +69,7 @@ without changing the codebase simply by tagging a commit with e.g. `release-1.0.
 stored as a string literal in `setup.py`, however this could first check for an environment variable, or read the
 version from a text file.
 
+what to do if a during the review process, a branch has been merged into master which we do not want in the release?
 
 ## References
 
