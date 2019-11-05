@@ -17,7 +17,7 @@ a concise technical specification of the feature or change and the rationale beh
 The author is responsible for building consensus and documenting dissenting opinions.
 
 The audience of these proposals are developers of anonlink itself. Proposals are maintained as text files in the
-versioned repository, their revision history is the historical record of the feature proposal.
+versioned repository, their revision history is the historical record of the feature proposal. 
 
 ## Motivation 
 
@@ -30,8 +30,8 @@ Each proposal must have a champion — someone who writes the proposal using the
 shepherds the discussions in the appropriate forums, and attempts to build community consensus around the idea. 
 
 The proposal should be submitted as a draft proposal via a GitHub pull request to the `docs/proposals` directory with 
-the name prop-<n>-<short-title>.md where <n> is an appropriately assigned number (e.g., prop-0000-fooDescription.rst). The draft must 
-comply with the technical specifications outlined below.
+the name prop-<n>-<short-title>.md where <n> is an appropriately assigned 4 digit number 
+(e.g., prop-0000-fooDescription.rst). The draft must comply with the technical specifications outlined below.
 
 Once the PR for the proposal is in place, a post should be made to the mailing list containing the abstract and a link
 to the PR, with the purpose of starting discussion on usage and impact. Discussion on the pull request will have a 
@@ -51,16 +51,16 @@ proposal.
 
 Proposals are discussed on the anonlink mailing list. The possible paths of the status of a proposal are:
 
-![](./prop-1/resolution-process.png)
+![](prop-0001/resolution-process.png)
 
 Eventually, after discussion, there may be a consensus that the proposal should be accepted – see the next section 
 for details. At this point the status becomes `Accepted`.
 
-Once a Proposal has been `Accepted`, the implementation or change must be completed. When the reference implementation
-is complete and incorporated into the main source code repository, the status will be changed to `Final`.
+Once a Proposal has been `Accepted`, the implementation or change must be completed (incorporated into the main source 
+code repository) before updating the status of the proposal to `Final`.
 
 To allow gathering of additional design and interface feedback before committing to long term stability for a 
-feature or standard library API, a Proposal may also be marked as "Provisional". This is short for "Provisionally
+feature or standard library API, a Proposal may also be marked as `Provisional`. This is short for "Provisionally
 Accepted", and indicates that the proposal has been accepted for inclusion, but additional user feedback is needed
 before the full design can be considered `Final`. Unlike regular accepted proposals, provisionally accepted
 proposals may still be `Rejected` or `Withdrawn` even after the related changes have been included in a release.
@@ -72,7 +72,7 @@ A Proposal can also be assigned status `Deferred`. The author or any core develo
 when no progress is being made on a Proposal.
 
 A Proposal can also be `Rejected`. Perhaps after all is said and done it was not a good idea. It is still important to
-have a record of this fact. The `Withdrawn` `status is similar—it means that the author themselves has decided that
+have a record of this fact. The `Withdrawn` status is similar — it means that the author themselves has decided that
 the Proposal is actually a bad idea, or has accepted that a competing proposal is a better alternative.
 
 When a Proposal is `Accepted`, `Rejected`, or `Withdrawn`, the status should be updated accordingly. In addition to
@@ -85,12 +85,20 @@ respectively.
 
 Process proposals may have a status of `Active` if they are never meant to be completed, e.g. this proposal.
 
+## Maintenance
+
+In general, proposals are no longer modified after they have reached the `Final` state. The code and project 
+documentation are considered the ultimate reference for implemented features. However, `Active` proposals
+may be updated over time to reflect changes to development practices and other details. The precise process followed in
+these cases will depend on the nature and purpose of the update.
+
+
 ## Technical Specifications
 
 ### Document
 
 Proposal documents live in the `docs/proposals` folder of the `anonlink` library. Proposals are written
-in Markdown (or RST?)
+in Markdown.
 
 Proposal documents will be named `prop-{n}-{short-name}.md`.
  
@@ -142,12 +150,14 @@ All proposals should begin with a status of `Draft`.
 ## Open Issues
 
 - Should proposals just apply to the anonlink library, or anything related to the project.
+- Where should proposals live - here in the anonlink library docs or a new repository?
 - The process for accepting/rejecting/adopting a proposal
 - Proposals are discussed on the anonlink mailing list and/or GitHub PR?
+- Should this document mandate an _index_ of proposals?
+- Markdown versus reStructuredText
 
 ## References
 
 - The python enhancement proposal process https://www.python.org/dev/peps/pep-0001/
 - Numpy enhancement proposals https://numpy.org/neps/nep-0000
-- This historical record is available by the normal git commands for retrieving older revisions, and can also be 
-  browsed on GitHub.
+- Anonlink mailing list https://groups.google.com/forum/#!forum/anonlink
