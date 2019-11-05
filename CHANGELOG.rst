@@ -3,6 +3,8 @@
 
 - Adds support for Windows including accelerated extensions. Note performance on Windows is
   roughly half that of Linux.
+- Switch to using a fork of `bitarray` that distributes binary wheels.
+
 
 0.12.5
 ======

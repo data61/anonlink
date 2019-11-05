@@ -16,7 +16,7 @@ else:
 here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
-        "bitarray>=0.8.1",
+        "bitarray-hardbyte>=0.8.0",
         "cffi>=1.7",
         "clkhash>=0.11",
         "numpy>=1.14",
