@@ -102,11 +102,11 @@ in Markdown.
 
 Proposal documents will be named `prop-{n}-{short-name}.md`.
  
-This meta proposal is therefore found in the file: `prop-1-proposals.md`.
+This meta proposal is therefore found in the file: `prop-0001-proposals.md`.
 
 ### Auxiliary Files
 
-Additional files (such as diagrams or scripts) should be placed in a folder with the name `prop-n`.
+Additional files (such as diagrams or scripts) should be placed in a folder with the name `prop-{n}`.
 
 ### Proposal Contents
 
