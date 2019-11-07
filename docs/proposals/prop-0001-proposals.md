@@ -53,8 +53,10 @@ Proposals are discussed on the anonlink mailing list. The possible paths of the 
 
 ![](prop-0001/resolution-process.png)
 
-Eventually, after discussion, there may be a consensus that the proposal should be accepted – see the next section 
-for details. At this point the status becomes `Accepted`.
+Eventually, after discussion and refinement there may be a consensus that the proposal should be accepted. A proposal
+is accepted when at least 3 core developers (have write access to the repository) agree with the proposal. Ideally all
+developers that might be impacted by the proposal support it before proceeding. At this point the status becomes 
+`Accepted`.
 
 Once a Proposal has been `Accepted`, the implementation or change must be completed (incorporated into the main source 
 code repository) before updating the status of the proposal to `Final`.
