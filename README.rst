@@ -155,6 +155,21 @@ for development discussion and release announcements.
 
 Wherever we interact, we strive to follow the `Python Community Code of Conduct <https://www.python.org/psf/codeofconduct/>`__.
 
+Citing
+======
+
+Anonlink is designed, developed and supported by `CSIRO's Data61 <https://www.data61.csiro.au/>`__. If you use any part
+of this library in your research, please cite it using the following BibTex entry::
+
+    @misc{Anonlink,
+      author = {CSIRO's Data61},
+      title = {Anonlink Private Record Linkage System},
+      year = {2017},
+      publisher = {GitHub},
+      journal = {GitHub Repository},
+      howpublished = {\url{https://github.com/data61/anonlink}},
+    }
+
 
 License
 -------
