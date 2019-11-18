@@ -14,6 +14,11 @@
 .. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=master
     :target: https://requires.io/github/data61/anonlink/requirements/?branch=master
 
+
+.. image:: https://pepy.tech/badge/anonlink
+    :target: https://pepy.tech/project/anonlink
+
+
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
