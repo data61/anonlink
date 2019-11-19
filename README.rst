@@ -14,6 +14,11 @@
 .. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=master
     :target: https://requires.io/github/data61/anonlink/requirements/?branch=master
 
+
+.. image:: https://pepy.tech/badge/anonlink
+    :target: https://pepy.tech/project/anonlink
+
+
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
@@ -154,6 +159,21 @@ There is also an `anonlink mailing list <https://groups.google.com/forum/#!forum
 for development discussion and release announcements.
 
 Wherever we interact, we strive to follow the `Python Community Code of Conduct <https://www.python.org/psf/codeofconduct/>`__.
+
+Citing
+======
+
+Anonlink is designed, developed and supported by `CSIRO's Data61 <https://www.data61.csiro.au/>`__. If you use any part
+of this library in your research, please cite it using the following BibTex entry::
+
+    @misc{Anonlink,
+      author = {CSIRO's Data61},
+      title = {Anonlink Private Record Linkage System},
+      year = {2017},
+      publisher = {GitHub},
+      journal = {GitHub Repository},
+      howpublished = {\url{https://github.com/data61/anonlink}},
+    }
 
 
 License
