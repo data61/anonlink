@@ -17,7 +17,7 @@ def generate_data(samples, proportion=0.75):
     nl = randomnames.NameList(samples * 2)
     s1, s2 = nl.generate_subsets(samples, proportion)
 
-    keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+    keys = generate_key_lists('secret', len(nl.schema_types))
     filters1 = list(map(itemgetter(0),
                     bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA)))
     filters2 = list(map(itemgetter(0),
@@ -155,8 +155,7 @@ class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
     def setUp(self):
         self.nl = randomnames.NameList(300)
         self.s1, self.s2 = self.nl.generate_subsets(self.sample, self.proportion)
-        keys = ('test1', 'test2')
-        self.key_lists = generate_key_lists(keys, len(self.nl.schema_types))
+        self.key_lists = generate_key_lists('secret', len(self.nl.schema_types))
 
     def test_cffi_k(self):
 
