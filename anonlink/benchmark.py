@@ -83,7 +83,7 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
     nml = NameList(ntotal)
     sl1, sl2 = nml.generate_subsets(nsubset, frac)
 
-    keys = generate_key_lists(('test1', 'test2'), len(nml.schema_types))
+    keys = generate_key_lists('secret', len(nml.schema_types))
     filters1 = tuple(map(operator.itemgetter(0),
                          stream_bloom_filters(sl1, keys, nml.SCHEMA)))
     filters2 = tuple(map(operator.itemgetter(0),

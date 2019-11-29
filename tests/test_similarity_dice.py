@@ -20,7 +20,7 @@ class TestBloomFilterComparison:
         nl = randomnames.NameList(300)
         s1, s2 = nl.generate_subsets(200, cls.proportion)
 
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+        keys = generate_key_lists('secret', len(nl.schema_types))
         cls.filters1 = tuple(
             f[0]
             for f in bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
@@ -50,7 +50,7 @@ class TestBloomFilterComparison:
     def test_cffi_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
-        keys = generate_key_lists(('test1', 'test2'), len(nl.schema_types))
+        keys = generate_key_lists('secret', len(nl.schema_types))
         f1 = tuple(
             f[0]
             for f in bloomfilter.stream_bloom_filters(s1, keys, nl.SCHEMA))
