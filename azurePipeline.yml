@@ -33,7 +33,7 @@ stages:
     - template: .azurePipeline/cibuildwheel_steps.yml
   - job: macos
     displayName: MacOS
-    pool: {vmImage: 'macOS-10.13'}
+    pool: {vmImage: 'macOS-10.14'}
     variables:
       MACOSX_DEPLOYMENT_TARGET: '10.10'
     steps:
