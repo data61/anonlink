@@ -25,21 +25,24 @@ stages:
     variables:
       CIBW_BUILD: 'cp38-*'
     steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_37
     displayName: Linux + Python3.7
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp37-*'
     steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp36-*'
     steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
   - job: macos
     displayName: MacOS
     pool: {vmImage: 'macOS-10.14'}
