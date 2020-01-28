@@ -15,7 +15,9 @@ stages:
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
     CIBW_BUILD: 'cp38-* cp37-* cp36-*'
-    CIBW_SKIP: '*-win32 *-manylinux1_i686 *macosx_intel'
+    # Add MacOS Python 3.6 and 3.7 on x64 once https://github.com/joerick/cibuildwheel/pull/220
+    # is merged/released.
+    CIBW_SKIP: '*-win32 *-manylinux_i686 *macosx_intel'
   jobs:
   - job: linux_38
     displayName: Linux + Python3.8
@@ -117,7 +119,7 @@ stages:
         Python3.8:
           pythonVersion: '3.8'
           artifactName: 'wheels.windows'
-          artifactPattern: '**/*cp38m*.whl'
+          artifactPattern: '**/*cp38*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
