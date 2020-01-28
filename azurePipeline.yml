@@ -14,7 +14,7 @@ stages:
     # Need to install development libraries for manylinux container
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
-    CIBW_BUILD: 'cp37-* cp36-*'
+    CIBW_BUILD: 'cp38-* cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux1_i686'
   jobs:
   - job: linux_37
@@ -35,7 +35,7 @@ stages:
     displayName: MacOS
     pool: {vmImage: 'macOS-10.14'}
     variables:
-      MACOSX_DEPLOYMENT_TARGET: '10.10'
+      MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
