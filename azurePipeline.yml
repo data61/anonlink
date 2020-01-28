@@ -31,13 +31,13 @@ stages:
       CIBW_BUILD: 'cp36-*'
     steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-#  - job: macos
-#    displayName: MacOS
-#    pool: {vmImage: 'macOS-10.13'}
-#    variables:
-#      MACOSX_DEPLOYMENT_TARGET: '10.13'
-#    steps:
-#    - template: .azurePipeline/cibuildwheel_steps.yml
+  - job: macos
+    displayName: MacOS
+    pool: {vmImage: 'macOS-10.13'}
+    variables:
+      MACOSX_DEPLOYMENT_TARGET: '10.10'
+    steps:
+    - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
     displayName: Windows
     pool: {vmImage: 'vs2017-win2016'}
