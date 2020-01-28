@@ -87,10 +87,11 @@ stages:
       vmImage: 'macOS-10.14'
     strategy:
       matrix:
-        Python3.7:
-          pythonVersion: '3.7'
-          artifactName: 'wheels.macos'
-          artifactPattern: '**/*cp37*.whl'
+# Uncomment once wheels build on Python3.7 x64
+#        Python3.7:
+#          pythonVersion: '3.7'
+#          artifactName: 'wheels.macos'
+#          artifactPattern: '**/*cp37*.whl'
         Python3.8:
           pythonVersion: '3.8'
           artifactName: 'wheels.macos'
