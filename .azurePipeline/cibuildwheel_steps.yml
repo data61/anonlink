@@ -1,11 +1,9 @@
 
 steps:
-- task: UsePythonVersion@0
 - bash: |
-    # See
-    # https://github.com/joerick/cibuildwheel/pull/156
-    # for discussion on MacOS c++11 support
-    python -m pip install wheel==0.34.1
+    python -m pip install -U wheel
+    # See https://github.com/joerick/cibuildwheel/pull/220
+    # for discussion on MacOS x64 builds
     #python -m pip install cibuildwheel==1.1.0
     python -m pip install git+https://github.com/joerick/cibuildwheel
     cibuildwheel --print-build-identifiers
