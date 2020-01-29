@@ -10,7 +10,8 @@ cache:
 python:
 - 3.6
 - 3.7
-- 3.8-dev
+- 3.8
+- 3.9-dev
 - nightly
 - pypy3
 
@@ -28,7 +29,7 @@ script:
 jobs:
   fast_finish: true
   allow_failures:
-    - python: "3.8-dev"
+    - python: "3.9-dev"
     - python: "nightly"
     - python: "pypy3"
     - name: "Extended Size 100K"
@@ -45,13 +46,6 @@ jobs:
       python: "3.7"
       env:
         - INCLUDE_100K=1
-    - stage: test
-      name: "Typecheck"
-      python: "3.7"
-      before_install:
-        - travis_retry pip install -U mypy
-      script:
-        - mypy anonlink --ignore-missing-imports
     - stage: "Build wheels"
       name: "manylinux1_x86_64"
       sudo: required
