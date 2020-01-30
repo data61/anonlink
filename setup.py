@@ -20,7 +20,7 @@ requirements = [
         "cffi>=1.7",
         "clkhash~=0.15.0",
         "numpy>=1.14",
-        "mypy-extensions>=0.3",
+        "mypy-extensions>=0.4",
         "Cython>=0.29.10"
     ]
 

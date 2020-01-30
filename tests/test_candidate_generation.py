@@ -51,13 +51,13 @@ def test_no_blocking_three_datasets(k_):
     sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = find_candidate_pairs(
         datasets, similarity_f, THRESHOLD, k=k_)
 
-    if k_ is 0:
+    if k_ == 0:
         assert list(sims) == []
         assert list(dset_is0) == []
         assert list(dset_is1) == []
         assert list(rec_is0) == []
         assert list(rec_is1) == []
-    elif k_ is 1:
+    elif k_ == 1:
         assert list(sims) == [0.9962946784347061,
                               0.9432949307428928,
                               0.900267827898046,

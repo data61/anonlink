@@ -14,36 +14,49 @@ stages:
     # Need to install development libraries for manylinux container
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
-    CIBW_BUILD: 'cp37-* cp36-*'
-    CIBW_SKIP: '*-win32 *-manylinux1_i686'
+    CIBW_BUILD: 'cp38-* cp37-* cp36-*'
+    # Add MacOS Python 3.6 and 3.7 on x64 once https://github.com/joerick/cibuildwheel/pull/220
+    # is merged/released.
+    CIBW_SKIP: '*-win32 *-manylinux_i686 *macosx_intel'
   jobs:
+  - job: linux_38
+    displayName: Linux + Python3.8
+    pool: {vmImage: 'Ubuntu-16.04'}
+    variables:
+      CIBW_BUILD: 'cp38-*'
+    steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_37
     displayName: Linux + Python3.7
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp37-*'
     steps:
-    - template: .azurePipeline/cibuildwheel_steps.yml
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_36
     displayName: Linux + Python3.6
     pool: {vmImage: 'Ubuntu-16.04'}
     variables:
       CIBW_BUILD: 'cp36-*'
     steps:
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+      - template: .azurePipeline/cibuildwheel_steps.yml
+  - job: macos
+    displayName: MacOS
+    pool: {vmImage: 'macOS-10.14'}
+    variables:
+      MACOSX_DEPLOYMENT_TARGET: '10.14'
+    steps:
     - template: .azurePipeline/cibuildwheel_steps.yml
-#  - job: macos
-#    displayName: MacOS
-#    pool: {vmImage: 'macOS-10.13'}
-#    variables:
-#      MACOSX_DEPLOYMENT_TARGET: '10.13'
-#    steps:
-#    - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
     displayName: Windows
     pool: {vmImage: 'vs2017-win2016'}
     steps:
       - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
       - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
       - template: .azurePipeline/cibuildwheel_steps.yml
 
 - stage: test
@@ -62,33 +75,37 @@ stages:
         Python3.7:
           pythonVersion: '3.7'
           artifactName: 'wheels.linux37'
+        Python3.8:
+          pythonVersion: '3.8'
+          artifactName: 'wheels.linux38'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'ubuntu-16.04'
-#  - job:
-#    displayName: MacOS
-#    pool:
-#      vmImage: 'macOS-10.13'
-#    strategy:
-#      matrix:
-#        Python3.6:
-#          pythonVersion: '3.6'
-#          artifactName: 'wheels.macos'
-#          artifactPattern: '**/*cp36*.whl'
+  - job:
+    displayName: MacOS
+    pool:
+      vmImage: 'macOS-10.14'
+    strategy:
+      matrix:
+# Uncomment once wheels build on Python3.7 x64
 #        Python3.7:
 #          pythonVersion: '3.7'
 #          artifactName: 'wheels.macos'
 #          artifactPattern: '**/*cp37*.whl'
-#    steps:
-#      - template: .azurePipeline/unittest_wheel_steps.yml
-#        parameters:
-#          artifactName: $(artifactName)
-#          artifactPattern: $(artifactPattern)
-#          pythonVersion: $(pythonVersion)
-#          operatingSystem: 'macOS-10.13'
+        Python3.8:
+          pythonVersion: '3.8'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp38*.whl'
+    steps:
+      - template: .azurePipeline/unittest_wheel_steps.yml
+        parameters:
+          artifactName: $(artifactName)
+          artifactPattern: $(artifactPattern)
+          pythonVersion: $(pythonVersion)
+          operatingSystem: 'macOS-10.14'
   - job:
     displayName: Windows
     pool:
@@ -103,6 +120,10 @@ stages:
           pythonVersion: '3.7'
           artifactName: 'wheels.windows'
           artifactPattern: '**/*cp37m*.whl'
+        Python3.8:
+          pythonVersion: '3.8'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp38*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
