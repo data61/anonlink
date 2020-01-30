@@ -1,11 +1,10 @@
 
 steps:
 - bash: |
-    python -m pip install -U wheel
+    python -m pip install -U wheel==0.34.1
     # See https://github.com/joerick/cibuildwheel/pull/220
-    # for discussion on MacOS x64 builds
-    #python -m pip install cibuildwheel==1.1.0
-    python -m pip install git+https://github.com/joerick/cibuildwheel
+    # for discussion on supporting MacOS x64 builds
+    python -m pip install git+https://github.com/joerick/cibuildwheel@b779a88fde08aa85dd2e86dea536b70dfcad913c
     cibuildwheel --print-build-identifiers
     cibuildwheel --output-dir wheelhouse .
   displayName: Build Wheel
