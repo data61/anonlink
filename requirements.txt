@@ -1,4 +1,4 @@
-bitarray-hardbyte==1.1.0
+bitarray-hardbyte==1.2.1
 cffi>=1.7
 clkhash==0.15.1
 Cython==0.29.14
