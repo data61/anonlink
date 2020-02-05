@@ -6,4 +6,4 @@ hypothesis==4.33.0
 pytest>=3.4
 pytest-cov>=2.5
 numpy==1.16.4
-mypy-extensions==0.4.1
+mypy-extensions==0.4.3
