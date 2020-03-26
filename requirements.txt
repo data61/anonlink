@@ -1,7 +1,7 @@
 bitarray-hardbyte==1.2.2
 cffi>=1.7
 clkhash==0.15.1
-Cython==0.29.15
+Cython==0.29.16
 hypothesis==5.8.0
 pytest>=3.4
 pytest-cov>=2.5
