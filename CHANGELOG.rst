@@ -1,10 +1,12 @@
-0.13.0-dev
-==========
+new version
+===========
+
+0.13.0
+======
 
 - Adds support for Windows including accelerated extensions. Note performance on Windows is
   roughly half that of Linux.
 - Switch to using a fork of `bitarray` that distributes binary wheels.
-
 
 0.12.5
 ======
