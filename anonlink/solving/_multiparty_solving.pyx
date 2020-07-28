@@ -69,6 +69,8 @@ def probabilistic_greedy_solve_native(
         raise ValueError('inconsistent shape of index arrays')
     if len(dset_is_arrs) != 2:
         raise NotImplementedError('only binary solving is supported')
+    if merge_threshold < 0 or merge_threshold > 1:
+        raise ValueError('merge_threshold must be between 0 and 1')
 
     dset_is0_arr, dset_is1_arr = dset_is_arrs
     rec_is0_arr, rec_is1_arr = rec_is_arrs
