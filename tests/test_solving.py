@@ -36,10 +36,11 @@ def _compare_matching(result, truth):
     assert result_set == truth_set
 
 
-def test_greedy_twoparty():
+@pytest.mark.parametrize("greedy_solve", [greedy_solve_native, greedy_solve_python])
+def test_greedy_twoparty(greedy_solve):
     candidates = [(.8, ((0, 0), (1, 0)))]
     result = greedy_solve(_zip_candidates(candidates))
-    _compare_matching(result, [{(0,0), (1,0)}])
+    _compare_matching(result, [{(0, 0), (1, 0)}])
 
     candidates = [(.8, ((0, 0), (1, 0))),
                   (.7, ((0, 1), (1, 0)))]
@@ -55,11 +56,12 @@ def test_greedy_twoparty():
                   (.7, ((0, 1), (1, 0))),
                   (.6, ((0, 1), (1, 1)))]
     result = greedy_solve(_zip_candidates(candidates))
-    _compare_matching(result, [{(0,0), (1,0)},
-                               {(0,1), (1,1)}])
+    _compare_matching(result, [{(0, 0), (1, 0)},
+                               {(0, 1), (1, 1)}])
 
 
-def test_greedy_threeparty():
+@pytest.mark.parametrize("greedy_solve", [greedy_solve_native, greedy_solve_python])
+def test_greedy_threeparty(greedy_solve):
     candidates = [(.9, ((1, 0), (2, 0))),
                   (.8, ((0, 0), (1, 1))),
                   (.8, ((0, 0), (2, 1))),
@@ -99,7 +101,8 @@ def test_greedy_threeparty():
     _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0), (4,0)}])
 
 
-def test_greedy_fourparty():
+@pytest.mark.parametrize("greedy_solve", [greedy_solve_native, greedy_solve_python])
+def test_greedy_fourparty(greedy_solve):
     candidates = [(.9, ((0, 0), (1, 0))),
                   (.9, ((2, 0), (3, 0))),
                   (.7, ((0, 0), (2, 0))),
@@ -110,13 +113,23 @@ def test_greedy_fourparty():
     _compare_matching(result, [{(0,0), (1,0), (2,0), (3,0)}])
 
 
-def test_inconsistent_dataset_number():
+@pytest.mark.parametrize("greedy_solve", [greedy_solve_native, greedy_solve_python])
+def test_inconsistent_dataset_number(greedy_solve):
     candidates = (
         array('d', [.5]),
         (array('I', [3]), array('I', [4])),
         (array('I', [2]), array('I', [6]), array('I', [7])))
     with pytest.raises(ValueError):
         greedy_solve(candidates)
+
+
+@pytest.mark.parametrize("prob_greedy_solve", [probabilistic_greedy_solve_native, probabilistic_greedy_solve_python])
+def test_wrong_merge_threshold(prob_greedy_solve):
+    candidates = [(.8, ((0, 0), (1, 0)))]
+    with pytest.raises(ValueError):
+        prob_greedy_solve(_zip_candidates(candidates), merge_threshold=-0.1)
+    with pytest.raises(ValueError):
+        prob_greedy_solve(_zip_candidates(candidates), merge_threshold=1.01)
 
 
 @pytest.mark.parametrize('datasets_n', [0, 1, 3, 5])
@@ -129,7 +142,8 @@ def test_unsupported_shape(datasets_n):
         greedy_solve(candidates)
 
 
-def test_inconsistent_entry_number():
+@pytest.mark.parametrize("greedy_solve", [greedy_solve_native, greedy_solve_python])
+def test_inconsistent_entry_number(greedy_solve):
     candidates = (
         array('d', [.5, .3]),
         (array('I', [3]), array('I', [4])),
