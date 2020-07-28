@@ -1,6 +1,12 @@
 new version
 ===========
 
+0.13.1
+======
+
+- relaxed requirements for clkhash dependency to allow newer versions. (#318)
+- improved test coverage. (#320)
+
 0.13.0
 ======
 
