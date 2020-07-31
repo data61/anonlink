@@ -3,7 +3,7 @@ cffi==1.14.1
 clkhash==0.16.0b1
 Cython==0.29.21
 hypothesis==5.23.7
-pytest==6.0.0
+pytest==6.0.1
 pytest-cov==2.10.0
 numpy==1.19.1
 mypy-extensions==0.4.3
