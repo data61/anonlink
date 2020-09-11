@@ -5,5 +5,5 @@ Cython==0.29.21
 hypothesis==5.33.2
 pytest==6.0.1
 pytest-cov==2.10.1
-numpy==1.19.1
+numpy==1.19.2
 mypy-extensions==0.4.3
