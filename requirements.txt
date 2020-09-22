@@ -1,5 +1,5 @@
 bitarray-hardbyte==1.5.2
-cffi==1.14.2
+cffi==1.14.3
 clkhash==0.16.0
 Cython==0.29.21
 hypothesis==5.35.4
