@@ -157,3 +157,19 @@ def test_nonmatch_index_score(candidate_pairs, n):
     else:
         with pytest.raises(ValueError):
             anonlink.stats.nonmatch_index_score(candidate_pairs, n)
+
+
+def test_nonmatch_index_score_exhaustive():
+    candidate_pairs = (array.array('f', [0.9, 0.8, 0.7, 0.6, 0.5]),
+                       (array.array('I', [0, 0, 0, 0, 0]), array.array('I', [1, 1, 1, 1, 1])),
+                       (array.array('I', [0, 0, 1, 1, 2]),
+                       array.array('I', [1, 0, 1, 2, 2])))
+    for num_nonmatch, pos in zip((1, 2, 3), (1, 2, 4)):
+        assert pos == anonlink.stats.nonmatch_index_score(candidate_pairs, num_nonmatch)
+    with pytest.raises(ValueError):
+        anonlink.stats.nonmatch_index_score(candidate_pairs, 4)
+    candidate_pairs = (array.array('f', [0.8]),
+                      (array.array('I', [0]), array.array('I', [1]), array.array('I', [2])),
+                      (array.array('I', [0]), array.array('I', [0]), array.array('I', [0])))
+    with pytest.raises(ValueError):
+        anonlink.stats.nonmatch_index_score(candidate_pairs, 1)
