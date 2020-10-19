@@ -47,7 +47,7 @@ class TestBloomFilterComparison:
         assert (set(zip(M_sims, M_indices0, M_indices1))
                 == set(zip(N_sims, N_indices0, N_indices1)))
 
-    def test_cffi_manual(self):
+    def test_accelerated_manual(self):
         nl = randomnames.NameList(30)
         s1, s2 = nl.generate_subsets(5, 1.0)
         keys = generate_key_lists('secret', len(nl.schema_types))
@@ -64,7 +64,7 @@ class TestBloomFilterComparison:
             (f1, f2), self.default_threshold, self.default_k)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
-    def test_cffi(self):
+    def test_accelerated(self):
         similarity = similarities.dice_coefficient_accelerated(
             self.filters, self.default_threshold, self.default_k)
         self._check_proportion(similarity)
@@ -80,22 +80,22 @@ class TestBloomFilterComparison:
         self._check_proportion(similarity)
 
     def test_same_score(self):
-        cffi_cands = similarities.dice_coefficient_accelerated(
+        c_cands = similarities.dice_coefficient_accelerated(
             self.filters, self.default_threshold, self.default_k)
-        cffi_scores, _ = cffi_cands
+        c_scores, _ = c_cands
         python_cands = similarities.dice_coefficient_python(
             self.filters, self.default_threshold, self.default_k)
         python_scores, _ = python_cands
-        assert cffi_scores == python_scores
+        assert c_scores == python_scores
 
     def test_same_score_k_none(self):
-        cffi_cands = similarities.dice_coefficient_accelerated(
+        c_cands = similarities.dice_coefficient_accelerated(
             self.filters, self.default_threshold, None)
-        cffi_scores, _ = cffi_cands
+        c_scores, _ = c_cands
         python_cands = similarities.dice_coefficient_python(
             self.filters, self.default_threshold, None)
         python_scores, _ = python_cands
-        assert cffi_scores == python_scores
+        assert c_scores == python_scores
 
     def test_empty_input_a(self):
         candidate_pairs = similarities.dice_coefficient(

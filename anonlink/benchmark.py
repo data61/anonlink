@@ -107,13 +107,13 @@ def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
         0.0,
         k=1)
     end = timer()
-    cffi_time = end - start
+    c_time = end - start
 
-    assert result == result3, "Results are different between C++ cffi and Python"
+    assert result == result3, "Results are different between C++ and Python"
 
     # Results are the same
     return {
-        "c": cffi_time,
+        "c": c_time,
         "python": python_time
     }
 
@@ -151,3 +151,4 @@ def benchmark(size, compare):
 if __name__ == '__main__':
     benchmark(4000, False)
     # benchmark(20000, False)
+    #compare_python_c()
