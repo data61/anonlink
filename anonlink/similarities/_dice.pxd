@@ -1,3 +1,4 @@
+
 cdef extern from "dice.cpp":
 
     int match_one_against_many_dice_k_top(
@@ -9,7 +10,8 @@ cdef extern from "dice.cpp":
             unsigned int k,
             double threshold,
             unsigned int[] indices,
-            double[] scores) nogil
+            double[] scores
+    ) nogil
 
     double dice_coeff(const char[] array1, const char[] array2, int array_bytes) nogil
 
@@ -19,5 +21,4 @@ cdef extern from "dice.cpp":
             unsigned int narrays,
             unsigned int array_bytes
     ) nogil
-
 

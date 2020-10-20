@@ -1,12 +1,8 @@
-from itertools import repeat
 cimport cython
 
-# Adds support to use cpython's array.array as memoryview
-cimport cpython.array
 from cpython cimport array
 import array
 
-import numpy as np
 
 from anonlink.similarities._dice cimport popcount_arrays as c_popcount_arrays
 from anonlink.similarities._dice cimport dice_coeff as c_dice_coeff
@@ -141,11 +137,19 @@ def dice_many_to_many(
     assert len(c_popcounts) == length_f1
 
     # do all buffer allocations in Python and pass a memoryview to C
-    cdef c_scores = np.zeros(k, dtype=np.dtype('d'))
-    cdef c_indices = np.zeros(k, dtype=np.dtype('I'))
+    cdef array.array double_array_template = array.array('d', [])
+    cdef array.array int_array_template = array.array('I', [])
+
+    cdef array.array c_scores
+    cdef array.array c_indicies
+
+    c_scores = array.clone(double_array_template, k, zero=False)
+    c_indices = array.clone(int_array_template, k, zero=False)
+    i_buffer = array.clone(int_array_template, k, zero=False)
 
     cdef double[::1] scores_memview = c_scores
     cdef unsigned int[::1] indicies_memview = c_indices
+    cdef unsigned int[::1] i_buffer_memview = i_buffer
 
     for i in range(length_f0):
         with nogil:
@@ -161,12 +165,15 @@ def dice_many_to_many(
                 scores_memview
             )
             total_matches += matches
+            i_buffer_memview[:matches] = i
 
         if matches < 0:
             raise RuntimeError('bad key length')
 
-        result_sims.extend(scores_memview[:matches])
-        result_indices0.extend(repeat(i, matches))
-        result_indices1.extend(indicies_memview[0:matches])
+        # Note array.extend_buffer requires the gil to extend the array
+        # `.data.as_chars` gives us direct access to the underlying contiguous C array
+        array.extend_buffer(result_sims, c_scores.data.as_chars, matches)
+        array.extend_buffer(result_indices0, i_buffer.data.as_chars, matches)
+        array.extend_buffer(result_indices1, c_indices.data.as_chars, matches)
 
     return total_matches

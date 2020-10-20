@@ -26,19 +26,21 @@ def generate_random_clks(count, length=1024):
 some_filters = generate_random_clks(10000)
 
 
-def print_comparison_header(threshold):
-    print("\nThreshold:", threshold)
+def print_comparison_header(headline):
+    print()
+    print(headline)
     print("Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput")
     print("       |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)")
     print("-------+--------+------------------+-------------------------+-------------")
 
 
-def compute_comparison_speed(n1, n2, threshold):
+def compute_comparison_speed(n1, n2, threshold, k=None):
     """
     Using the greedy solver, how fast can hashes be computed using one core.
     """
 
     assert n1 != 0 and n2 != 0
+
     filters1 = [some_filters[random.randrange(0, 8000)] for _ in range(n1)]
     filters2 = [some_filters[random.randrange(2000, 10000)] for _ in range(n2)]
 
@@ -46,7 +48,9 @@ def compute_comparison_speed(n1, n2, threshold):
     sparse_matrix = anonlink.candidate_generation.find_candidate_pairs(
         (filters1, filters2),
         anonlink.similarities.dice_coefficient,
-        threshold)
+        threshold,
+        k=k
+    )
     t1 = timer()
     anonlink.solving.greedy_solve(sparse_matrix)
     end = timer()
@@ -60,7 +64,7 @@ def compute_comparison_speed(n1, n2, threshold):
 
     print("{:6d} | {:6d} | {:4d}e6  ({:5.2f}%) | {:6.3f}  ({:4.1f}% / {:4.1f}%) |  {:8.3f}".format(
         n1, n2, n1*n2 // 1000000,
-        100.0*len(sparse_matrix)/(n1*n2),
+        100.0*len(sparse_matrix[0])/(n1*n2),
         elapsed_time,
         100.0*similarity_time * inv_elapsed_time,
         100.0*solver_time * inv_elapsed_time,
@@ -68,62 +72,10 @@ def compute_comparison_speed(n1, n2, threshold):
     return elapsed_time
 
 
-def compare_python_c(ntotal=10000, nsubset=6000, frac=0.8):
-    """Compare results and running time of python and C++ versions.
-
-    :param ntotal: Total number of data points to generate
-    :param nsubset: Number of points for each database
-    :param frac: Fraction of overlap between subsets
-
-    :raises: AssertionError if the results differ
-    :return: dict with 'c' and 'python' keys with values of the total time taken
-             for each implementation
-    """
-
-    nml = NameList(ntotal)
-    sl1, sl2 = nml.generate_subsets(nsubset, frac)
-
-    keys = generate_key_lists('secret', len(nml.schema_types))
-    filters1 = tuple(map(operator.itemgetter(0),
-                         stream_bloom_filters(sl1, keys, nml.SCHEMA)))
-    filters2 = tuple(map(operator.itemgetter(0),
-                         stream_bloom_filters(sl2, keys, nml.SCHEMA)))
-
-    # Pure Python version
-    start = timer()
-    result = anonlink.candidate_generation.find_candidate_pairs(
-        (filters1, filters2),
-        anonlink.similarities.dice_coefficient_python,
-        0.0,
-        k=1)
-    end = timer()
-    python_time = end - start
-
-    # C++ accelerated version
-    start = timer()
-    result3 = anonlink.candidate_generation.find_candidate_pairs(
-        (filters1, filters2),
-        anonlink.similarities.dice_coefficient_accelerated,
-        0.0,
-        k=1)
-    end = timer()
-    c_time = end - start
-
-    assert result == result3, "Results are different between C++ and Python"
-
-    # Results are the same
-    return {
-        "c": c_time,
-        "python": python_time
-    }
-
-
-def benchmark(size, compare):
+def benchmark(size):
 
     print("Anonlink benchmark -- see README for explanation")
     print("------------------------------------------------")
-    if compare:
-        print(compare_python_c(ntotal=1000, nsubset=600))
 
     possible_test_sizes = [
         1000, 2000, 3000, 4000,
@@ -135,20 +87,30 @@ def benchmark(size, compare):
     ]
 
     thld = 0.5
-    print_comparison_header(thld)
+    print_comparison_header(f"Threshold: {thld}, All results returned")
     for test_size in possible_test_sizes:
         if test_size <= size:
-            compute_comparison_speed(test_size, test_size, thld)
+            compute_comparison_speed(test_size, test_size, thld, k=None)
+
+    size *= 5
+    thld = 0.5
+    print_comparison_header(f"Threshold: {thld}, Top 100 matches per record returned")
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed(test_size, test_size, thld, k=100)
 
     thld = 0.7
-    print_comparison_header(thld)
-    size *= 5
+    print_comparison_header(f"Threshold: {thld}, All results returned")
     for test_size in possible_test_sizes:
         if test_size <= size:
-            compute_comparison_speed(test_size, test_size, thld)
+            compute_comparison_speed(test_size, test_size, thld, k=None)
+
+    print_comparison_header(f"Threshold: {thld}, Top 100 matches per record returned")
+    for test_size in possible_test_sizes:
+        if test_size <= size:
+            compute_comparison_speed(test_size, test_size, thld, k=100)
 
 
 if __name__ == '__main__':
-    benchmark(4000, False)
-    # benchmark(20000, False)
-    #compare_python_c()
+    benchmark(4000)
+

@@ -58,6 +58,7 @@ def dice_coefficient_accelerated(
     filters0 = to_bitarrays(filters0)
     filters1 = to_bitarrays(filters1)
 
+    # Create empty output arrays
     result_sims: FloatArrayType = array('d')
     result_indices0: IntArrayType = array('I')
     result_indices1: IntArrayType = array('I')
@@ -85,16 +86,17 @@ def dice_coefficient_accelerated(
     filter_bytes = filter_bits // 8
     # Python char arrays of all filters from filters0 and filter1
     carr0, carr1 = array('b'), array('b')
-    carr0.frombytes(b''.join(f.tobytes() for f in filters0))
-    carr1.frombytes(b''.join(f.tobytes() for f in filters1))
 
-    # Python unsigned int array of popcounts in filters1
-    if len(filters1) * len(filters0) < 64e6:
+    carr0.frombytes(b''.join(memoryview(f) for f in filters0))
+    carr1.frombytes(b''.join(memoryview(f) for f in filters1))
+
+    # Only worth popcounting in C for a large number of filters1
+    if len(filters1) < 10000:
         c_popcounts = array('I', [f.count() for f in filters1])
     else:
         c_popcounts = _dice.popcount_arrays(carr1, filter_bytes)
 
-    total_matches = _dice.dice_many_to_many(
+    _dice.dice_many_to_many(
         carr0, carr1, length_f0, length_f1, c_popcounts, filter_bytes, k,
         threshold, result_sims, result_indices0, result_indices1)
 
