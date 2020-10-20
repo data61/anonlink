@@ -140,6 +140,11 @@ static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
+    while (nwords >= 64) {
+        c0 += popcnt(array, 64 * WORD_BYTES);
+        array += 64;
+        nwords -= 64;
+    }
     while (nwords >= 16) {
         popcount<16>(c0, c1, c2, c3, array);
         array += 16;
@@ -418,6 +423,7 @@ extern "C"
 
         clock_t t = clock();
         switch (nwords) {
+        case 64: _popcount_arrays<64>(counts, u, narrays); break;
         case 32: _popcount_arrays<32>(counts, u, narrays); break;
         case 16: _popcount_arrays<16>(counts, u, narrays); break;
         case  8: _popcount_arrays< 8>(counts, u, narrays); break;

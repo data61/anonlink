@@ -8,22 +8,22 @@ from anonlink.similarities._dice cimport popcount_arrays as c_popcount_arrays
 from anonlink.similarities._dice cimport dice_coeff as c_dice_coeff
 from anonlink.similarities._dice cimport match_one_against_many_dice_k_top as c_match_one_against_many_dice_k_top
 
-def popcnt(data: bytes, array_bytes = 128):
-    data_array = array.array('b')
-    data_array.frombytes(data)
-    return popcount_arrays(data_array, array_bytes)[0]
-
-
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def popcount_arrays(const char[::1] input_data, unsigned int array_bytes = 128):
+cpdef unsigned int[::1] popcount_arrays(const char[::1] input_data, unsigned int array_bytes = 128):
     """
     Compute the popcount of a flattened array of data where each element
     is array_bytes long.
     """
     cdef array.array unsigned_int_array_template = array.array('I', [])
     cdef array.array output_counts
-    output_counts = array.clone(unsigned_int_array_template, len(input_data) // array_bytes, zero=True)
+    if array_bytes == 0 or len(input_data) == 0:
+        return array.clone(unsigned_int_array_template, 0, zero=True)
+    else:
+        output_size = len(input_data) // array_bytes
+    # The CPP code reasonably assumes the length of the data is evenly divided by the array_bytes
+    assert len(input_data) % array_bytes == 0, "input data length not divisible by array_bytes"
+    output_counts = array.clone(unsigned_int_array_template, output_size, zero=True)
     popcount_arrays_preallocated_output(output_counts, input_data, array_bytes)
     return output_counts
 
@@ -77,8 +77,8 @@ def dice_coeff(
     return score
 
 
-#@cython.boundscheck(False)  # Deactivate bounds checking
-#@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
 cpdef int match_one_to_many_dice_preallocated_output(
         const char[::1] one,
         const char[::1] many,
@@ -115,8 +115,8 @@ cpdef int match_one_to_many_dice_preallocated_output(
 
     return number_matched
 
-#@cython.boundscheck(False)  # Deactivate bounds checking
-#@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
 def dice_many_to_many(
         const char[::1] carr0,
         const char[::1] carr1,

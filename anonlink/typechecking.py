@@ -13,9 +13,11 @@ Dataset = _typing.Sequence[Record]
 if _typing.TYPE_CHECKING:
     FloatArrayType = _array.array[float]
     IntArrayType = _array.array[int]
+    CharArrayType = _array.array[int]
 else:
     FloatArrayType = _array.array
     IntArrayType = _array.array
+    CharArrayType = _array.array
 
 CandidatePairs = _typing.Tuple[FloatArrayType,
                        _typing.Tuple[IntArrayType, ...],
