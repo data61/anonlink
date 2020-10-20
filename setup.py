@@ -17,7 +17,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
         "bitarray-hardbyte>=0.8.0",
-        "clkhash>=0.15.0",
+        "clkhash>=0.16.0",
         "numpy>=1.14",
         "mypy-extensions>=0.4",
         "Cython>=0.29.10"
