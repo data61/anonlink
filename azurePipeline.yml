@@ -1,12 +1,3 @@
-# This pipeline should be triggered by every local branches, but should not be used for external PRs.
-# In fact, this pipeline is able to use some of our secrets to push images on dockerhub and deploy on k8s.
-pr: none
-trigger:
-  branches:
-    include:
-    - '*'
-
-
 stages:
 - stage: wheels
   displayName: Build Wheel Packages
@@ -19,7 +10,8 @@ stages:
   jobs:
   - job: linux_38
     displayName: Linux + Python3.8
-    pool: {vmImage: 'Ubuntu-16.04'}
+    pool:
+      vmImage: 'ubuntu-16.04'
     variables:
       CIBW_BUILD: 'cp38-*'
     steps:
@@ -27,7 +19,8 @@ stages:
       - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_37
     displayName: Linux + Python3.7
-    pool: {vmImage: 'Ubuntu-16.04'}
+    pool:
+      vmImage: 'ubuntu-16.04'
     variables:
       CIBW_BUILD: 'cp37-*'
     steps:
@@ -35,7 +28,8 @@ stages:
       - template: .azurePipeline/cibuildwheel_steps.yml
   - job: linux_36
     displayName: Linux + Python3.6
-    pool: {vmImage: 'Ubuntu-16.04'}
+    pool:
+      vmImage: 'ubuntu-16.04'
     variables:
       CIBW_BUILD: 'cp36-*'
     steps:
@@ -43,7 +37,8 @@ stages:
       - template: .azurePipeline/cibuildwheel_steps.yml
   - job: macos
     displayName: MacOS
-    pool: {vmImage: 'macOS-10.14'}
+    pool:
+      vmImage: 'macOS-10.14'
     variables:
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
@@ -53,7 +48,8 @@ stages:
       - template: .azurePipeline/cibuildwheel_steps.yml
   - job: windows
     displayName: Windows
-    pool: {vmImage: 'vs2017-win2016'}
+    pool:
+      vmImage: 'vs2017-win2016'
     steps:
       - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
       - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
