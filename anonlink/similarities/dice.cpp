@@ -476,7 +476,8 @@ extern "C"
             uint32_t k,
             double threshold,
             unsigned int *indices,
-            double *scores) {
+            double *scores
+            ) {
 
         if (keybytes % WORD_BYTES != 0)
             return -1;
@@ -496,8 +497,9 @@ extern "C"
         typedef std::vector<Node> node_vector;
         typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
         node_vector vec;
+        Node temp_node;
         vec.reserve(k + 1);
-        node_queue top_k_scores(score_cmp(), std::move(vec));
+        node_queue top_k_scores(score_cmp(), vec);
 
         uint32_t count_one = _popcount_array(comp1, keywords);
         if (count_one == 0) {
@@ -518,12 +520,16 @@ extern "C"
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
+        double dynamic_threshold = threshold;
         auto push_score = [&](double score, int idx) {
-            if (score >= threshold) {
+            if (score >= dynamic_threshold) {
                 top_k_scores.push(Node(idx, score));
                 if (top_k_scores.size() > k) {
                     // Popping the top element is O(log(k))!
+                    temp_node = top_k_scores.top();
                     top_k_scores.pop();
+                    // threshold can now be raised
+                    dynamic_threshold = temp_node.score;
                 }
             }
         };
