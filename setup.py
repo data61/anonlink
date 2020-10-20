@@ -33,10 +33,12 @@ test_requirements = [
 
 current_os = platform.system()
 if current_os == "Windows":
-    extra_compile_args = ['/std:c++17', '/O2', '/arch:AVX512']
+    # '/arch:AVX512' or '/arch:AVX2'
+    extra_compile_args = ['/std:c++17', '/O2']
+    extra_link_args = []
 else:
     extra_compile_args = ['-O3', '-std=c++11']
-
+    extra_link_args = []
 
 extensions = [
     Extension(
@@ -57,7 +59,7 @@ extensions = [
         include_dirs=["anonlink/similarities"],
         language="c++",
         extra_compile_args=extra_compile_args,
-        extra_link_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         define_macros=[('NDEBUG', None)]
         )
 ]

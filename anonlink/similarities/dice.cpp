@@ -124,12 +124,12 @@ popcount<1>(
  */
 template<int nwords>
 static void
-_popcount_arrays(uint32_t *counts, const uint64_t *arrays, unsigned int narrays) {
+_popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     uint64_t c0, c1, c2, c3;
-    for (unsigned int i = 0; i < narrays; ++i, arrays += nwords) {
+    for (int i = 0; i < narrays; ++i, arrays += nwords) {
         c0 = c1 = c2 = c3 = 0;
         popcount<nwords>(c0, c1, c2, c3, arrays);
-        counts[i] = c0 + c1 + c2 + c3;
+        counts[i] = static_cast<uint32_t>(c0 + c1 + c2 + c3);
     }
 }
 
@@ -137,7 +137,7 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, unsigned int narrays)
  * Return the popcount of the nwords elements starting at array.
  */
 static uint32_t
-_popcount_array(const uint64_t *array, unsigned int nwords) {
+_popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
     while (nwords >= 16) {
@@ -166,7 +166,7 @@ _popcount_array(const uint64_t *array, unsigned int nwords) {
     // nwords < 2
     if (nwords == 1)
         popcount<1>(c0, c1, c2, c3, array);
-    return c0 + c1 + c2 + c3;
+    return static_cast<uint32_t>(c0 + c1 + c2 + c3);
 }
 
 /**
@@ -183,7 +183,8 @@ popcount_logand(
     for (int i = 0; i < n; i++) {
         b[i] = buf1[i] & buf2[i];
     }
-    popcount<n>(c0, c1, c2, c3, b);
+    c0 += popcnt(b, n*WORD_BYTES);
+    //popcount<n>(c0, c1, c2, c3, b);
 #else
     popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
     popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
@@ -279,7 +280,7 @@ _dice_coeff(
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
     popcount_logand<nwords>(c0, c1, c2, c3, u, v);
-    uint32_t uv_popc = c0 + c1 + c2 + c3;
+    uint64_t uv_popc = c0 + c1 + c2 + c3;
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
@@ -407,9 +408,7 @@ extern "C"
     double
     popcount_arrays(
             uint32_t *counts,
-            const char *arrays,
-            unsigned int narrays,
-            unsigned int array_bytes) {
+            const char *arrays, int narrays, int array_bytes) {
         // assumes WORD_BYTES divides array_bytes
         int nwords = array_bytes / WORD_BYTES;
         // The static_cast is to avoid int overflow in the multiplication
@@ -423,7 +422,7 @@ extern "C"
         case 16: _popcount_arrays<16>(counts, u, narrays); break;
         case  8: _popcount_arrays< 8>(counts, u, narrays); break;
         default:
-            for (unsigned int i = 0; i < narrays; ++i, u += nwords)
+            for (int i = 0; i < narrays; ++i, u += nwords)
                 counts[i] = _popcount_array(u, nwords);
         }
         return to_millis(clock() - t);
@@ -476,8 +475,7 @@ extern "C"
             uint32_t k,
             double threshold,
             unsigned int *indices,
-            double *scores
-            ) {
+            double *scores) {
 
         if (keybytes % WORD_BYTES != 0)
             return -1;
@@ -564,6 +562,8 @@ extern "C"
         for (int i = top_k_scores.size() - 1; i >= 0; --i) {
            scores[i] = top_k_scores.top().score;
            indices[i] = top_k_scores.top().index;
+           assert(indices[i] >= 0);
+           assert(indices[i] <= k);
            // Popping the top element is O(log(k))!
            top_k_scores.pop();
         }

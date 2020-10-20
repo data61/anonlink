@@ -39,12 +39,12 @@ def popcount_arrays_preallocated_output(
     :param input_data: flattened contiguous char input of ARRAY_BYTES elements
     """
     assert array_bytes % 8 == 0
-    cdef float elapsed_time
+    cdef double elapsed_time
 
     # Create a memoryview of the input data and preallocated count results
     cdef const char[::1] arr_memview = input_data
     cdef unsigned int[::1] counts_memview = output_counts
-    cdef unsigned int num_elements = arr_memview.shape[0] // array_bytes
+    cdef unsigned int num_elements = <unsigned int>arr_memview.shape[0] // array_bytes
 
     with nogil:
         elapsed_time = c_popcount_arrays(
@@ -77,8 +77,8 @@ def dice_coeff(
     return score
 
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
+#@cython.boundscheck(False)  # Deactivate bounds checking
+#@cython.wraparound(False)   # Deactivate negative indexing.
 cpdef int match_one_to_many_dice_preallocated_output(
         const char[::1] one,
         const char[::1] many,
@@ -99,7 +99,7 @@ cpdef int match_one_to_many_dice_preallocated_output(
     cdef unsigned int[::1] indicies_memview = output_indicies
     cdef double[::1] scores_memview = output_scores
 
-    cdef int num_elements = many_memview.shape[0] // array_bytes
+    cdef unsigned int num_elements = <unsigned int>many_memview.shape[0] // array_bytes
 
     number_matched = c_match_one_against_many_dice_k_top(
         &one_memview[0],
@@ -115,8 +115,8 @@ cpdef int match_one_to_many_dice_preallocated_output(
 
     return number_matched
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
+#@cython.boundscheck(False)  # Deactivate bounds checking
+#@cython.wraparound(False)   # Deactivate negative indexing.
 def dice_many_to_many(
         const char[::1] carr0,
         const char[::1] carr1,
@@ -143,37 +143,44 @@ def dice_many_to_many(
     cdef array.array c_scores
     cdef array.array c_indicies
 
-    c_scores = array.clone(double_array_template, k, zero=False)
-    c_indices = array.clone(int_array_template, k, zero=False)
-    i_buffer = array.clone(int_array_template, k, zero=False)
+    c_scores = array.clone(double_array_template, k, zero=True)
+    c_indices = array.clone(int_array_template, k, zero=True)
+    i_buffer = array.clone(int_array_template, k, zero=True)
 
     cdef double[::1] scores_memview = c_scores
     cdef unsigned int[::1] indicies_memview = c_indices
     cdef unsigned int[::1] i_buffer_memview = i_buffer
 
     for i in range(length_f0):
-        with nogil:
-            matches = match_one_to_many_dice_preallocated_output(
-                carr0[i * filter_bytes:(i + 1) * filter_bytes],
-                carr1,
-                c_popcounts,
-                length_f1,
-                filter_bytes,
-                k,
-                threshold,
-                indicies_memview,
-                scores_memview
-            )
-            total_matches += matches
-            i_buffer_memview[:matches] = i
+        #with nogil:
+        matches = match_one_to_many_dice_preallocated_output(
+            carr0[i * filter_bytes:(i + 1) * filter_bytes],
+            carr1,
+            c_popcounts,
+            length_f1,
+            filter_bytes,
+            k,
+            threshold,
+            indicies_memview,
+            scores_memview
+        )
+        total_matches += matches
+        i_buffer_memview[:] = i
+        #i_buffer_memview[:matches] = <unsigned int>i
 
         if matches < 0:
             raise RuntimeError('bad key length')
 
         # Note array.extend_buffer requires the gil to extend the array
         # `.data.as_chars` gives us direct access to the underlying contiguous C array
-        array.extend_buffer(result_sims, c_scores.data.as_chars, matches)
-        array.extend_buffer(result_indices0, i_buffer.data.as_chars, matches)
-        array.extend_buffer(result_indices1, c_indices.data.as_chars, matches)
+        # array.extend_buffer(result_sims, c_scores.data.as_chars, matches)
+        # array.extend_buffer(result_indices0, i_buffer.data.as_chars, matches)
+        # array.extend_buffer(result_indices1, c_indices.data.as_chars, matches)
+
+        assert matches <= k
+        result_sims.extend(c_scores[:matches])
+        result_indices0.extend(i_buffer[:matches])
+        result_indices1.extend(c_indices[:matches])
+
 
     return total_matches
