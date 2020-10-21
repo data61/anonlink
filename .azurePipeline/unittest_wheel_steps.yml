@@ -12,7 +12,7 @@ steps:
 
 - script: |
       python -m pip install --upgrade pip
-      pip install -U pytest-azurepipelines codecov -r requirements.txt
+      pip install -U pytest-azurepipelines -r requirements.txt
   displayName: 'Install testing requirements'
 
 - task: DownloadPipelineArtifact@2
@@ -35,8 +35,9 @@ steps:
       opSysFlag=$(echo ${{ parameters.operatingSystem }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       echo "codecov flags: $opSysFlag,$pyVFlag"
-      python -m codecov --token $(CODECOV_TOKEN) \
+      bash <(curl -s https://codecov.io/bash) \
         --file coverage.xml \
         -F $opSysFlag,$pyVFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
+  continueOnError: True
