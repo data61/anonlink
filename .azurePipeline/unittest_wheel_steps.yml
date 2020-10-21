@@ -36,7 +36,7 @@ steps:
       pyVFlag=$(echo python${{ parameters.pythonVersion }} | sed 's/[[:punct:]]//g' | tr '[:upper:]' '[:lower:]' | head -c30)
       echo "codecov flags: $opSysFlag,$pyVFlag"
       bash <(curl -s https://codecov.io/bash) \
-        --file coverage.xml \
+        -f coverage.xml \
         -F $opSysFlag,$pyVFlag
   displayName: 'Send coverage to codecov'
   condition: succeededOrFailed()
