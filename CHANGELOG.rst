@@ -4,8 +4,8 @@ new version
 0.13.1
 ======
 
-- relaxed requirements for clkhash dependency to allow newer versions. (#318)
-- improved test coverage. (#320)
+- Relaxed requirements for clkhash dependency to allow newer versions. (#318)
+- Improved test coverage. (#320)
 
 0.13.0
 ======
@@ -19,8 +19,8 @@ new version
 
 - Feature azure pipeline (#223)
 - Delete Jenkinsfile. (#226)
-- fix flaky test (#225)
-- fix tar.gz release file
+- Fix flaky test (#225)
+- Fix tar.gz release file
 - Updates hypothesis (#231)
 - Build and test wheel for each Python version in manylinux1 container (#232)
 - Build wheels for multiple platforms (#234)
