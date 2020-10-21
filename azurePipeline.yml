@@ -164,5 +164,5 @@ stages:
           path: $(Pipeline.Workspace)
       - task: TwineAuthenticate@1
         inputs:
-          artifactFeed: $(artifactFeed)
+          artifactFeed: Anonlink/$(artifactFeed)
       - script: 'twine upload -r $(artifactFeed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/*.whl --skip-existing'
