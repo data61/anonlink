@@ -78,8 +78,8 @@ def dice_coefficient_accelerated(
     if not _all_equal(map(len, chain(filters0, filters1))):
         raise ValueError('inconsistent filter length')
     filter_bits = len(filters0[0])
-    if filter_bits % 64:
-        msg = (f'only filters whose length in bits is a multiple of 64 '
+    if filter_bits % 8:
+        msg = (f'only filters whose length in bits is a multiple of 8 '
                f'are currently supported (got filter with length '
                f'{filter_bits})')
         raise NotImplementedError(msg)
