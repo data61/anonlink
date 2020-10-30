@@ -497,7 +497,9 @@ extern "C"
         // with a vector in which to put its elements. We do this so
         // that we can reserve the amount of space needed for the
         // scores in advance and avoid potential memory reallocation
-        // and copying.
+        // and copying. Note the data structure is a priority queue where
+        // the **lowest** score has the highest priority. The item with
+        // the lowest score is the first to be popped off the queue.
         typedef std::vector<Node> node_vector;
         typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
         node_vector vec;

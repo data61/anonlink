@@ -1,6 +1,8 @@
 new version
 ===========
 
+- Creates a cython wrapper for the similarity comparison C++ code and removes the cffi compiler.
+
 0.13.1
 ======
 
