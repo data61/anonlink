@@ -90,8 +90,10 @@ def dice_coefficient_accelerated(
     carr0.frombytes(b''.join(memoryview(f) for f in filters0))
     carr1.frombytes(b''.join(memoryview(f) for f in filters1))
 
-    # Only worth popcounting in C for a large number of filters1
-    if len(filters1) < 10000:
+    # Only worth popcounting in C for a large number of filters.
+    # Current threshold was found by trying out different values while benchmarking
+    POPCOUNT_NATIVE_THRESHOLD = 10000
+    if len(filters1) < POPCOUNT_NATIVE_THRESHOLD:
         c_popcounts = array('I', [f.count() for f in filters1])
     else:
         c_popcounts = _dice.popcount_arrays(carr1, filter_bytes)

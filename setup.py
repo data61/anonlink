@@ -17,7 +17,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
         "bitarray-hardbyte>=0.8.0",
-        "clkhash>=0.16.0",
         "numpy>=1.14",
         "mypy-extensions>=0.4",
         "Cython>=0.29.10"
@@ -28,12 +27,12 @@ test_requirements = [
         "pytest-timeout",
         "pytest-cov",
         "codecov",
-        "hypothesis"
+        "hypothesis",
+        "clkhash>=0.15.0",
     ]
 
 current_os = platform.system()
 if current_os == "Windows":
-    # '/arch:AVX512' or '/arch:AVX2'
     extra_compile_args = ['/std:c++17', '/O2']
     extra_link_args = []
 else:

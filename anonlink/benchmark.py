@@ -77,6 +77,9 @@ def benchmark(size):
     print("Anonlink benchmark -- see README for explanation")
     print("------------------------------------------------")
 
+    print(f"using '{anonlink.solving.greedy_solve.__name__}' as solver and "
+          f"'{anonlink.similarities.dice_coefficient.__name__}' as similarity metric")
+
     possible_test_sizes = [
         1000, 2000, 3000, 4000,
         5000, 6000, 7000, 8000, 9000,

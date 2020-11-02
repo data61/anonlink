@@ -157,7 +157,6 @@ def dice_many_to_many(
     cdef unsigned int[::1] i_buffer_memview = i_buffer
 
     for i in range(length_f0):
-        #with nogil:
         matches = match_one_to_many_dice_preallocated_output(
             carr0[i * filter_bytes:(i + 1) * filter_bytes],
             carr1,
@@ -171,21 +170,13 @@ def dice_many_to_many(
         )
         total_matches += matches
         i_buffer_memview[:] = i
-        #i_buffer_memview[:matches] = <unsigned int>i
 
         if matches < 0:
             raise RuntimeError('bad key length')
-
-        # Note array.extend_buffer requires the gil to extend the array
-        # `.data.as_chars` gives us direct access to the underlying contiguous C array
-        # array.extend_buffer(result_sims, c_scores.data.as_chars, matches)
-        # array.extend_buffer(result_indices0, i_buffer.data.as_chars, matches)
-        # array.extend_buffer(result_indices1, c_indices.data.as_chars, matches)
 
         assert matches <= k
         result_sims.extend(c_scores[:matches])
         result_indices0.extend(i_buffer[:matches])
         result_indices1.extend(c_indices[:matches])
-
 
     return total_matches
