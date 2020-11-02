@@ -157,7 +157,7 @@ class TestEntityMatchTopK(EntityHelperMixin, unittest.TestCase):
         self.s1, self.s2 = self.nl.generate_subsets(self.sample, self.proportion)
         self.key_lists = generate_key_lists('secret', len(self.nl.schema_types))
 
-    def test_cffi_k(self):
+    def test_accelerated_k(self):
 
         f1 = tuple(map(itemgetter(0),
                        bloomfilter.stream_bloom_filters(

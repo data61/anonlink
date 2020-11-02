@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Tuple
 
 from bitarray import bitarray
 
-from anonlink._entitymatcher import ffi, lib
+from anonlink.similarities import _dice
 from anonlink.similarities._utils import (sort_similarities_inplace,
                                           to_bitarrays)
 from anonlink.typechecking import FloatArrayType, IntArrayType
@@ -58,6 +58,7 @@ def dice_coefficient_accelerated(
     filters0 = to_bitarrays(filters0)
     filters1 = to_bitarrays(filters1)
 
+    # Create empty output arrays
     result_sims: FloatArrayType = array('d')
     result_indices0: IntArrayType = array('I')
     result_indices1: IntArrayType = array('I')
@@ -68,8 +69,8 @@ def dice_coefficient_accelerated(
 
     length_f0, length_f1 = map(len, datasets)
 
-    # There's no sense in having k > length_f1. Also, k is passed to
-    # ffi.new(...) below, so we need to protect against an
+    # There's no sense in having k > length_f1. Also, k is used to
+    # allocate memory below, so we need to protect against an
     # out-of-memory DoS if k is of untrustworthy origin.
     if k is None or k > length_f1:
         k = length_f1
@@ -83,43 +84,25 @@ def dice_coefficient_accelerated(
                f'{filter_bits})')
         raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
+    # Python char arrays of all filters from filters0 and filter1
+    carr0, carr1 = array('b'), array('b')
 
-    # Space for one filter. We will fill it with one filter from
-    # filters0 at a time.
-    carr0 = ffi.new('char[]', filter_bytes)
+    carr0.frombytes(b''.join(memoryview(f) for f in filters0))
+    carr1.frombytes(b''.join(memoryview(f) for f in filters1))
 
-    # Array of all filters from filters1.
-    carr1 = ffi.new(f"char[{filter_bytes * length_f1}]",
-                    b''.join(f.tobytes() for f in filters1))
+    # Only worth popcounting in C for a large number of filters.
+    # Current threshold was found by trying out different values while benchmarking
+    POPCOUNT_NATIVE_THRESHOLD = 10000
+    if len(filters1) < POPCOUNT_NATIVE_THRESHOLD:
+        c_popcounts = array('I', [f.count() for f in filters1])
+    else:
+        c_popcounts = _dice.popcount_arrays(carr1, filter_bytes)
 
-    c_popcounts = ffi.new(f"uint32_t[{length_f1}]",
-                          tuple(f.count() for f in filters1))
-
-    # easier to do all buffer allocations in Python and pass them to C,
-    # even for output-only arguments
-    c_scores = ffi.new("double[]", k)
-    c_indices = ffi.new("int[]", k)
-
-    for i, f0 in enumerate(filters0):
-        carr0[0:filter_bytes] = f0.tobytes()
-        matches = lib.match_one_against_many_dice_k_top(
-            carr0,
-            carr1,
-            c_popcounts,
-            length_f1,
-            filter_bytes,
-            k,
-            threshold,
-            c_indices,
-            c_scores)
-
-        if matches < 0:
-            raise RuntimeError('bad key length')
-
-        result_sims.extend(c_scores[0:matches])
-        result_indices0.extend(repeat(i, matches))
-        result_indices1.extend(c_indices[0:matches])
+    _dice.dice_many_to_many(
+        carr0, carr1, length_f0, length_f1, c_popcounts, filter_bytes, k,
+        threshold, result_sims, result_indices0, result_indices1)
 
     sort_similarities_inplace(result_sims, result_indices0, result_indices1)
 
     return result_sims, (result_indices0, result_indices1)
+
