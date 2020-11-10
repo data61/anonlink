@@ -129,7 +129,7 @@ _popcount_arrays(uint32_t *counts, const uint64_t *arrays, int narrays) {
     for (int i = 0; i < narrays; ++i, arrays += nwords) {
         c0 = c1 = c2 = c3 = 0;
         popcount<nwords>(c0, c1, c2, c3, arrays);
-        counts[i] = c0 + c1 + c2 + c3;
+        counts[i] = static_cast<uint32_t>(c0 + c1 + c2 + c3);
     }
 }
 
@@ -140,6 +140,11 @@ static uint32_t
 _popcount_array(const uint64_t *array, int nwords) {
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
+    while (nwords >= 64) {
+        c0 += popcnt(array, 64 * WORD_BYTES);
+        array += 64;
+        nwords -= 64;
+    }
     while (nwords >= 16) {
         popcount<16>(c0, c1, c2, c3, array);
         array += 16;
@@ -166,7 +171,7 @@ _popcount_array(const uint64_t *array, int nwords) {
     // nwords < 2
     if (nwords == 1)
         popcount<1>(c0, c1, c2, c3, array);
-    return c0 + c1 + c2 + c3;
+    return static_cast<uint32_t>(c0 + c1 + c2 + c3);
 }
 
 /**
@@ -183,7 +188,8 @@ popcount_logand(
     for (int i = 0; i < n; i++) {
         b[i] = buf1[i] & buf2[i];
     }
-    popcount<n>(c0, c1, c2, c3, b);
+    c0 += popcnt(b, n*WORD_BYTES);
+    //popcount<n>(c0, c1, c2, c3, b);
 #else
     popcount_logand<4>(c0, c1, c2, c3, buf1, buf2);
     popcount_logand<n - 4>(c0, c1, c2, c3, buf1 + 4, buf2 + 4);
@@ -279,7 +285,7 @@ _dice_coeff(
     uint64_t c0, c1, c2, c3;
     c0 = c1 = c2 = c3 = 0;
     popcount_logand<nwords>(c0, c1, c2, c3, u, v);
-    uint32_t uv_popc = c0 + c1 + c2 + c3;
+    uint64_t uv_popc = c0 + c1 + c2 + c3;
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
 
@@ -417,6 +423,7 @@ extern "C"
 
         clock_t t = clock();
         switch (nwords) {
+        case 64: _popcount_arrays<64>(counts, u, narrays); break;
         case 32: _popcount_arrays<32>(counts, u, narrays); break;
         case 16: _popcount_arrays<16>(counts, u, narrays); break;
         case  8: _popcount_arrays< 8>(counts, u, narrays); break;
@@ -473,7 +480,7 @@ extern "C"
             int keybytes,
             uint32_t k,
             double threshold,
-            int *indices,
+            unsigned int *indices,
             double *scores) {
 
         if (keybytes % WORD_BYTES != 0)
@@ -490,12 +497,15 @@ extern "C"
         // with a vector in which to put its elements. We do this so
         // that we can reserve the amount of space needed for the
         // scores in advance and avoid potential memory reallocation
-        // and copying.
+        // and copying. Note the data structure is a priority queue where
+        // the **lowest** score has the highest priority. The item with
+        // the lowest score is the first to be popped off the queue.
         typedef std::vector<Node> node_vector;
         typedef std::priority_queue<Node, std::vector<Node>, score_cmp> node_queue;
         node_vector vec;
+        Node temp_node;
         vec.reserve(k + 1);
-        node_queue top_k_scores(score_cmp(), std::move(vec));
+        node_queue top_k_scores(score_cmp(), vec);
 
         uint32_t count_one = _popcount_array(comp1, keywords);
         if (count_one == 0) {
@@ -516,12 +526,16 @@ extern "C"
             max_popcnt_delta = calculate_max_difference(count_one, threshold);
         }
 
+        double dynamic_threshold = threshold;
         auto push_score = [&](double score, int idx) {
-            if (score >= threshold) {
+            if (score >= dynamic_threshold) {
                 top_k_scores.push(Node(idx, score));
                 if (top_k_scores.size() > k) {
                     // Popping the top element is O(log(k))!
+                    temp_node = top_k_scores.top();
                     top_k_scores.pop();
+                    // threshold can now be raised
+                    dynamic_threshold = temp_node.score;
                 }
             }
         };
@@ -556,6 +570,8 @@ extern "C"
         for (int i = top_k_scores.size() - 1; i >= 0; --i) {
            scores[i] = top_k_scores.top().score;
            indices[i] = top_k_scores.top().index;
+           assert(indices[i] >= 0);
+           assert(indices[i] <= k);
            // Popping the top element is O(log(k))!
            top_k_scores.pop();
         }

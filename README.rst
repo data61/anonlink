@@ -53,60 +53,85 @@ You can run the benchmark with:
     $ python -m anonlink.benchmark
     Anonlink benchmark -- see README for explanation
     ------------------------------------------------
-    100000 x 1024 bit popcounts
-    Implementation              | Time (ms) | Bandwidth (MiB/s) | Throughput (1e6 popc/s)
-    Python (bitarray.count()):  |    17.78  |      686.54       |    5.62
-    Native code (no copy):      |     1.00  |    12243.76       |  100.30
-    Native code (w/ copy):      |   344.17  |       35.47       |    0.29 (99.7% copying)
 
-    Threshold: 0.5
+    Threshold: 0.5, All results returned
     Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput
            |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)
     -------+--------+------------------+-------------------------+-------------
-      1000 |   1000 |    1e6  (50.20%) |  0.249  (88.6% / 11.4%) |     4.525
-      2000 |   2000 |    4e6  (50.51%) |  1.069  (88.5% / 11.5%) |     4.227
-      3000 |   3000 |    9e6  (50.51%) |  2.412  (85.3% / 14.7%) |     4.375
-      4000 |   4000 |   16e6  (50.56%) |  4.316  (83.6% / 16.4%) |     4.434
+      1000 |   1000 |    1e6  (50.73%) |  0.762  (49.2% / 50.8%) |     2.669
+      2000 |   2000 |    4e6  (51.04%) |  3.696  (42.6% / 57.4%) |     2.540
+      3000 |   3000 |    9e6  (50.25%) |  8.121  (43.5% / 56.5%) |     2.548
+      4000 |   4000 |   16e6  (50.71%) | 15.560  (41.1% / 58.9%) |     2.504
 
-    Threshold: 0.7
+    Threshold: 0.5, Top 100 matches per record returned
     Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput
            |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)
     -------+--------+------------------+-------------------------+-------------
-      1000 |   1000 |    1e6  ( 0.01%) |  0.017  (99.8% /  0.2%) |    59.605
-      2000 |   2000 |    4e6  ( 0.01%) |  0.056  (99.8% /  0.2%) |    71.484
-      3000 |   3000 |    9e6  ( 0.01%) |  0.118  (99.9% /  0.1%) |    76.500
-      4000 |   4000 |   16e6  ( 0.01%) |  0.202  (99.9% /  0.1%) |    79.256
-      5000 |   5000 |   25e6  ( 0.01%) |  0.309  (99.9% /  0.1%) |    81.093
-      6000 |   6000 |   36e6  ( 0.01%) |  0.435  (99.9% /  0.1%) |    82.841
-      7000 |   7000 |   49e6  ( 0.01%) |  0.590  (99.9% /  0.1%) |    83.164
-      8000 |   8000 |   64e6  ( 0.01%) |  0.757  (99.9% /  0.1%) |    84.619
-      9000 |   9000 |   81e6  ( 0.01%) |  0.962  (99.8% /  0.2%) |    84.358
-     10000 |  10000 |  100e6  ( 0.01%) |  1.166  (99.8% /  0.2%) |    85.895
-     20000 |  20000 |  400e6  ( 0.01%) |  4.586  (99.9% /  0.1%) |    87.334
+      1000 |   1000 |    1e6  ( 6.86%) |  0.170  (85.9% / 14.1%) |     6.846
+      2000 |   2000 |    4e6  ( 3.22%) |  0.384  (82.9% / 17.1%) |    12.561
+      3000 |   3000 |    9e6  ( 2.09%) |  0.612  (81.6% / 18.4%) |    18.016
+      4000 |   4000 |   16e6  ( 1.52%) |  0.919  (78.7% / 21.3%) |    22.135
+      5000 |   5000 |   25e6  ( 1.18%) |  1.163  (80.8% / 19.2%) |    26.592
+      6000 |   6000 |   36e6  ( 0.97%) |  1.535  (75.4% / 24.6%) |    31.113
+      7000 |   7000 |   49e6  ( 0.82%) |  1.791  (80.6% / 19.4%) |    33.951
+      8000 |   8000 |   64e6  ( 0.71%) |  2.095  (81.5% / 18.5%) |    37.466
+      9000 |   9000 |   81e6  ( 0.63%) |  2.766  (72.5% / 27.5%) |    40.389
+     10000 |  10000 |  100e6  ( 0.56%) |  2.765  (81.7% / 18.3%) |    44.277
+     20000 |  20000 |  400e6  ( 0.27%) |  7.062  (86.2% / 13.8%) |    65.711
 
-The tables are interpreted as follows. The first section compares the
-bandwidth doing popcounts through (i) the Python bitarray library and
-(ii) a native code implementation in assembler.  The latter
-implementation is measured in two ways: the first measures just the
-time taken to compute the popcounts, while the second includes the
-time taken to copy the data out of the running Python instance as well
-as copying the result back into Python. The "% copying" measure is the
-proportion of time spent doing this copying.
+    Threshold: 0.7, All results returned
+    Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput
+           |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)
+    -------+--------+------------------+-------------------------+-------------
+      1000 |   1000 |    1e6  ( 0.01%) |  0.009  (99.0% /  1.0%) |   113.109
+      2000 |   2000 |    4e6  ( 0.01%) |  0.033  (98.7% /  1.3%) |   124.076
+      3000 |   3000 |    9e6  ( 0.01%) |  0.071  (99.1% /  0.9%) |   128.515
+      4000 |   4000 |   16e6  ( 0.01%) |  0.123  (99.0% /  1.0%) |   131.654
+      5000 |   5000 |   25e6  ( 0.01%) |  0.202  (99.1% /  0.9%) |   124.999
+      6000 |   6000 |   36e6  ( 0.01%) |  0.277  (99.0% /  1.0%) |   131.403
+      7000 |   7000 |   49e6  ( 0.01%) |  0.368  (98.9% /  1.1%) |   134.428
+      8000 |   8000 |   64e6  ( 0.01%) |  0.490  (99.0% /  1.0%) |   131.891
+      9000 |   9000 |   81e6  ( 0.01%) |  0.608  (99.0% /  1.0%) |   134.564
+     10000 |  10000 |  100e6  ( 0.01%) |  0.753  (99.0% /  1.0%) |   134.105
+     20000 |  20000 |  400e6  ( 0.01%) |  2.905  (98.8% /  1.2%) |   139.294
 
-The second section includes two tables that measure the throughput of
-the Dice coefficient comparison function. The two tables correspond to
-two different choices of "matching threshold", 0.5 and 0.7, which were
-chosen to characterise two different performance scenarios. Since the
-data used for comparisons is randomly generated, the first threshold
-value will cause about 50% of the candidates to "match", while the
-second threshold value will cause <0.01% of the candidates to match
-(these values are reported in the "match %" column).  In both cases,
-all matches above the threshold are returned and passed to the
-solver. In the first case, the large number of matches means that much
-of the time is spent keeping the candidates in order so that the top
-`k` matches can be returned. In the latter case, the tiny number of
-candidate matches means that the throughput is determined primarily by
-the comparison code itself.
+    Threshold: 0.7, Top 100 matches per record returned
+    Size 1 | Size 2 | Comparisons      | Total Time (s)          | Throughput
+           |        |        (match %) | (comparisons / matching)|  (1e6 cmp/s)
+    -------+--------+------------------+-------------------------+-------------
+      1000 |   1000 |    1e6  ( 0.01%) |  0.009  (99.0% /  1.0%) |   111.640
+      2000 |   2000 |    4e6  ( 0.01%) |  0.033  (98.6% /  1.4%) |   122.060
+      3000 |   3000 |    9e6  ( 0.01%) |  0.074  (99.1% /  0.9%) |   123.237
+      4000 |   4000 |   16e6  ( 0.01%) |  0.124  (99.0% /  1.0%) |   130.204
+      5000 |   5000 |   25e6  ( 0.01%) |  0.208  (99.1% /  0.9%) |   121.351
+      6000 |   6000 |   36e6  ( 0.01%) |  0.275  (99.0% /  1.0%) |   132.186
+      7000 |   7000 |   49e6  ( 0.01%) |  0.373  (99.0% /  1.0%) |   132.650
+      8000 |   8000 |   64e6  ( 0.01%) |  0.496  (99.1% /  0.9%) |   130.125
+      9000 |   9000 |   81e6  ( 0.01%) |  0.614  (99.0% /  1.0%) |   133.216
+     10000 |  10000 |  100e6  ( 0.01%) |  0.775  (99.1% /  0.9%) |   130.230
+     20000 |  20000 |  400e6  ( 0.01%) |  2.939  (98.9% /  1.1%) |   137.574
+
+
+The tables are interpreted as follows. Each table measures the throughput
+of the Dice coefficient comparison function. The four tables correspond to
+two different choices of "matching threshold" and "result limiting".
+
+These parameters have been chosen to characterise two different performance
+scenarios. Since the data used for comparisons is randomly generated, the
+first threshold value (`0.5`) will cause about 50% of the candidates to
+"match", while the second threshold value (`0.7) will cause ~0.01% of the
+candidates to match (these values are reported in the "match %" column).
+Where the table heading includes "All results returned", all matches above
+the threshold are returned and passed to the solver.
+With the threshold of 0.5, the large number of matches means that much
+of the time is spent keeping the candidates in order. Next we limit the
+number of matches per record to the top 100 - which also must be above the
+threshold.
+
+In the final two tables we use the threshold value of `0.7`, this very
+effectively filters the number of candidate matches down. Here the throughput
+is determined primarily by the comparison code itself, adding the top 100
+filter has no major impact.
 
 Finally, the Total Time column includes indications as to the
 proportion of time spent calculating the (sparse) similarity matrix

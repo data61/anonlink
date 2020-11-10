@@ -1,9 +1,8 @@
-bitarray-hardbyte==1.5.2
-cffi==1.14.3
+bitarray-hardbyte==1.6.1
 clkhash==0.16.0
 Cython==0.29.21
-hypothesis==5.37.3
-pytest==6.1.1
+hypothesis==5.41.2
+pytest==6.1.2
 pytest-cov==2.10.1
-numpy==1.19.2
+numpy==1.19.4
 mypy-extensions==0.4.3
