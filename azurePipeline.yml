@@ -147,6 +147,7 @@ stages:
 - stage: publish
   displayName: Publish packages to test feed
   dependsOn: ['test']
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
   jobs:
   - job:
     pool:
