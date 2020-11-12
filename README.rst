@@ -119,11 +119,11 @@ two different choices of "matching threshold" and "result limiting".
 These parameters have been chosen to characterise two different performance
 scenarios. Since the data used for comparisons is randomly generated, the
 first threshold value (`0.5`) will cause about 50% of the candidates to
-"match", while the second threshold value (`0.7) will cause ~0.01% of the
+"match", while the second threshold value (`0.7`) will cause ~0.01% of the
 candidates to match (these values are reported in the "match %" column).
 Where the table heading includes "All results returned", all matches above
 the threshold are returned and passed to the solver.
-With the threshold of 0.5, the large number of matches means that much
+With the threshold of `0.5`, the large number of matches means that much
 of the time is spent keeping the candidates in order. Next we limit the
 number of matches per record to the top 100 - which also must be above the
 threshold.
