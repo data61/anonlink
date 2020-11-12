@@ -305,7 +305,6 @@ _dice_coeff_generic(
         const uint64_t *u, uint32_t u_popc,
         const uint64_t *v, uint32_t v_popc,
         int nwords) {
-
     uint32_t uv_popc = _popcount_logand_array(u, v, nwords);
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
@@ -513,8 +512,7 @@ extern "C"
 
     /**
      * Calculate up to the top k indices and scores.  Returns the
-     * number matched above the given threshold or -1 if keybytes is
-     * not a multiple of 8.
+     * number matched above the given threshold
      */
     int match_one_against_many_dice_k_top(
             const char *one,

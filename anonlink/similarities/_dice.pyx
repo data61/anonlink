@@ -43,7 +43,6 @@ def popcount_arrays_preallocated_output(
     """
     :param input_data: flattened contiguous char input of ARRAY_BYTES elements
     """
-    #assert array_bytes % 8 == 0
     cdef double elapsed_time
 
     # Create a memoryview of the input data and preallocated count results
@@ -170,9 +169,6 @@ def dice_many_to_many(
         )
         total_matches += matches
         i_buffer_memview[:] = i
-
-        if matches < 0:
-            raise RuntimeError('bad key length')
 
         assert matches <= k
         result_sims.extend(c_scores[:matches])

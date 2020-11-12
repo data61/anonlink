@@ -26,10 +26,11 @@ def dice_coefficient_accelerated(
 ) -> Tuple[FloatArrayType, Tuple[IntArrayType, ...]]:
     """Find Dice coefficients of CLKs.
 
-    This version uses x86 popcount instructions.
+    This version uses a CPP implementation which will take advantage of
+    native x86 popcount instructions.
 
     We assume all filters are the same length and that this length is a
-    multiple of 64 bits.
+    multiple of 8 bits.
 
     The returned pairs are sorted in decreasing order of similarity,
     then in increasing order of the record index in the first dataset,
@@ -43,7 +44,12 @@ def dice_coefficient_accelerated(
     :param k: Only permit this many candidate pairs per dataset pair
         per record. Set to `None` to permit all pairs above with
         similarity at least `threshold`.
-    
+
+    :raises NotImplementedError: If an unsupported length filter is
+        provided.
+
+    :raises ValueError: If different filter lengths are provided.
+
     :return: A 2-tuple of similarity scores and indices. The similarity
         scores are an array of floating-point values. The indices are a
         2-tuple of arrays of integers.
