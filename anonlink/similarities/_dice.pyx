@@ -23,11 +23,6 @@ cpdef unsigned int[::1] popcount_arrays(const char[::1] input_data, unsigned int
         output_size = len(input_data) // array_bytes
     # The CPP code reasonably assumes the length of the data is evenly divided by the array_bytes
     assert len(input_data) % array_bytes == 0, "input data length not divisible by array_bytes"
-
-    # To permit arbitrary size input_data, we may need to pad with zeros to align to a word boundary?
-    # Eg say our input is 32 bits and our array size is 8, our output_size is already correct at 4
-    # but we may want to make the input 64 bits?
-
     output_counts = array.clone(unsigned_int_array_template, output_size, zero=True)
     popcount_arrays_preallocated_output(output_counts, input_data, array_bytes)
     return output_counts

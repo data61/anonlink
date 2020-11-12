@@ -305,6 +305,7 @@ _dice_coeff_generic(
         const uint64_t *u, uint32_t u_popc,
         const uint64_t *v, uint32_t v_popc,
         int nwords) {
+
     uint32_t uv_popc = _popcount_logand_array(u, v, nwords);
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
