@@ -212,7 +212,11 @@ class TestBloomFilterComparison:
         c_similarity = similarities.dice_coefficient_accelerated(datasets, threshold, k=k)
         self.assert_similarity_matrices_equal(py_similarity, c_similarity)
 
-
+    def test_not_multiple_of_8_raises(self,):
+        datasets = [[bitarray('010')],
+                    [bitarray('010')]]
+        with pytest.raises(NotImplementedError):
+            similarities.dice_coefficient_accelerated(datasets, threshold=self.default_threshold)
 
     @pytest.mark.parametrize('sim_fun', SIM_FUNS)
     @pytest.mark.parametrize('k', [None, 0, 1])
