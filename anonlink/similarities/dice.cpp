@@ -176,6 +176,26 @@ _popcount_array(const uint64_t *array, int nwords) {
 
 /**
  * The popcount of the logical AND of n corresponding elements of buf1
+ * and buf2 is returned. The AND of the two input buffers is placed
+ * in buf1n2.
+ * Byte version, see below for word aligned version.
+ */
+static inline uint64_t
+popcount_logand_chars(
+        char *buf1n2,
+        const char *buf1,
+        const char *buf2,
+        int n
+        ) {
+    for (int i = 0; i < n; i++) {
+        buf1n2[i] = buf1[i] & buf2[i];
+    }
+    return popcnt(&buf1n2[0], n);
+}
+
+
+/**
+ * The popcount of the logical AND of n corresponding elements of buf1
  * and buf2 is the sum of c0, c1, c2, c3.
  */
 template<int n>
@@ -261,6 +281,22 @@ _popcount_logand_array(const uint64_t *u, const uint64_t *v, int len) {
 }
 
 /**
+ * Return the Sorensen-Dice coefficient of n byte length arrays u and
+ * v, whose popcounts are given in u_popc and v_popc respectively.
+ *
+ * Byte version
+ */
+static inline double
+_dice_coeff_chars(
+        const char *u, uint32_t u_popc,
+        const char *v, uint32_t v_popc,
+        char *andbuffer,
+        int n) {
+    uint64_t uv_popc = popcount_logand_chars(andbuffer, u, v, n);
+    return (2 * uv_popc) / (double) (u_popc + v_popc);
+}
+
+/**
  * Return the Sorensen-Dice coefficient of nwords length arrays u and
  * v, whose popcounts are given in u_popc and v_popc respectively.
  */
@@ -269,6 +305,7 @@ _dice_coeff_generic(
         const uint64_t *u, uint32_t u_popc,
         const uint64_t *v, uint32_t v_popc,
         int nwords) {
+
     uint32_t uv_popc = _popcount_logand_array(u, v, nwords);
     return (2 * uv_popc) / (double) (u_popc + v_popc);
 }
@@ -414,22 +451,29 @@ extern "C"
     popcount_arrays(
             uint32_t *counts,
             const char *arrays, int narrays, int array_bytes) {
-        // assumes WORD_BYTES divides array_bytes
-        int nwords = array_bytes / WORD_BYTES;
-        // The static_cast is to avoid int overflow in the multiplication
-        size_t total_bytes = static_cast<size_t>(narrays) * array_bytes;
-        auto ptr = adjust_ptr_alignment(arrays, total_bytes);
-        auto u = ptr.get();
-
         clock_t t = clock();
-        switch (nwords) {
-        case 64: _popcount_arrays<64>(counts, u, narrays); break;
-        case 32: _popcount_arrays<32>(counts, u, narrays); break;
-        case 16: _popcount_arrays<16>(counts, u, narrays); break;
-        case  8: _popcount_arrays< 8>(counts, u, narrays); break;
-        default:
-            for (int i = 0; i < narrays; ++i, u += nwords)
-                counts[i] = _popcount_array(u, nwords);
+        if (array_bytes >= WORD_BYTES && array_bytes % WORD_BYTES == 0) {
+            // WORD_BYTES divides array_bytes
+            int nwords = array_bytes / WORD_BYTES;
+            // The static_cast is to avoid int overflow in the multiplication
+            size_t total_bytes = static_cast<size_t>(narrays) * array_bytes;
+            auto ptr = adjust_ptr_alignment(arrays, total_bytes);
+            auto u = ptr.get();
+
+            switch (nwords) {
+            case 64: _popcount_arrays<64>(counts, u, narrays); break;
+            case 32: _popcount_arrays<32>(counts, u, narrays); break;
+            case 16: _popcount_arrays<16>(counts, u, narrays); break;
+            case  8: _popcount_arrays< 8>(counts, u, narrays); break;
+            default:
+                for (int i = 0; i < narrays; ++i, u += nwords)
+                    counts[i] = _popcount_array(u, nwords);
+            }
+        } else {
+            // array_bytes not aligned with our word size
+            for (int i = 0; i < narrays; ++i) {
+                counts[i] = popcnt(&arrays[i], array_bytes);
+            }
         }
         return to_millis(clock() - t);
     }
@@ -469,8 +513,7 @@ extern "C"
 
     /**
      * Calculate up to the top k indices and scores.  Returns the
-     * number matched above the given threshold or -1 if keybytes is
-     * not a multiple of 8.
+     * number matched above the given threshold
      */
     int match_one_against_many_dice_k_top(
             const char *one,
@@ -483,15 +526,7 @@ extern "C"
             unsigned int *indices,
             double *scores) {
 
-        if (keybytes % WORD_BYTES != 0)
-            return -1;
-        int keywords = keybytes / WORD_BYTES;
-        // The static_cast is to avoid int overflow in the multiplication
-        size_t total_bytes = static_cast<size_t>(n) * keybytes;
-        auto ptr_comp1 = adjust_ptr_alignment(one, total_bytes);
-        auto ptr_comp2 = adjust_ptr_alignment(many, total_bytes);
-        auto comp1 = ptr_comp1.get();
-        auto comp2 = ptr_comp2.get();
+        uint32_t count_one;
 
         // Here we create top_k_scores on the stack by providing it
         // with a vector in which to put its elements. We do this so
@@ -506,61 +541,121 @@ extern "C"
         Node temp_node;
         vec.reserve(k + 1);
         node_queue top_k_scores(score_cmp(), vec);
+        bool key_is_word_divisible = (keybytes > WORD_BYTES) && (keybytes % WORD_BYTES == 0);
+        if (key_is_word_divisible) {
+            // keybytes is divisible by WORD_BYTES
+            int keywords = keybytes / WORD_BYTES;
+            // The static_cast is to avoid int overflow in the multiplication
+            size_t total_bytes = static_cast<size_t>(n) * keybytes;
+            auto ptr_comp1 = adjust_ptr_alignment(one, total_bytes);
+            auto ptr_comp2 = adjust_ptr_alignment(many, total_bytes);
+            auto comp1 = ptr_comp1.get();
+            auto comp2 = ptr_comp2.get();
 
-        uint32_t count_one = _popcount_array(comp1, keywords);
-        if (count_one == 0) {
-            if (threshold > 0) {
-                return 0;
+            count_one = _popcount_array(comp1, keywords);
+
+            if (count_one == 0) {
+                if (threshold > 0) {
+                    return 0;
+                }
+
+                for (uint32_t j = 0; j < k; ++j) {
+                    scores[j] = 0.0;
+                    indices[j] = j;
+                }
+
+                return static_cast<int>(k);
             }
 
-            for (uint32_t j = 0; j < k; ++j) {
-                scores[j] = 0.0;
-                indices[j] = j;
+            uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
+            if(threshold > 0) {
+                max_popcnt_delta = calculate_max_difference(count_one, threshold);
             }
 
-            return static_cast<int>(k);
-        }
+            double dynamic_threshold = threshold;
+            auto push_score = [&](double score, int idx) {
+                if (score >= dynamic_threshold) {
+                    top_k_scores.push(Node(idx, score));
+                    if (top_k_scores.size() > k) {
+                        // Popping the top element is O(log(k))!
+                        temp_node = top_k_scores.top();
+                        top_k_scores.pop();
+                        // threshold can now be raised
+                        dynamic_threshold = temp_node.score;
+                    }
+                }
+            };
 
-        uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
-        if(threshold > 0) {
-            max_popcnt_delta = calculate_max_difference(count_one, threshold);
-        }
-
-        double dynamic_threshold = threshold;
-        auto push_score = [&](double score, int idx) {
-            if (score >= dynamic_threshold) {
-                top_k_scores.push(Node(idx, score));
-                if (top_k_scores.size() > k) {
-                    // Popping the top element is O(log(k))!
-                    temp_node = top_k_scores.top();
-                    top_k_scores.pop();
-                    // threshold can now be raised
-                    dynamic_threshold = temp_node.score;
+            const uint64_t *current = comp2;
+            // NB: For any key length that must run at maximum speed, we
+            // need to specialise a block in the following 'if' statement
+            // (which is an example of specialising to keywords == 16).
+            if (keywords == 16) {
+                for (int j = 0; j < n; j++, current += 16) {
+                    const uint32_t counts_many_j = counts_many[j];
+                    if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
+                        double score = _dice_coeff<16>(comp1, count_one, current, counts_many_j);
+                        push_score(score, j);
+                    }
+                }
+            } else {
+                for (int j = 0; j < n; j++, current += keywords) {
+                    const uint32_t counts_many_j = counts_many[j];
+                    if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
+                        double score = _dice_coeff_generic(comp1, count_one, current, counts_many_j, keywords);
+                        push_score(score, j);
+                    }
                 }
             }
-        };
 
-        const uint64_t *current = comp2;
-
-        // NB: For any key length that must run at maximum speed, we
-        // need to specialise a block in the following 'if' statement
-        // (which is an example of specialising to keywords == 16).
-        if (keywords == 16) {
-            for (int j = 0; j < n; j++, current += 16) {
-                const uint32_t counts_many_j = counts_many[j];
-                if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
-                    double score = _dice_coeff<16>(comp1, count_one, current, counts_many_j);
-                    push_score(score, j);
-                }
-            }
         } else {
-            for (int j = 0; j < n; j++, current += keywords) {
+            // As the keybytes is not evenly divisible by WORD_BYTES we
+            // process individual bytes instead of 64 bit words.
+            count_one = popcnt(one, keybytes);
+
+            // DUPLICATED FROM ABOVE
+            if (count_one == 0) {
+                if (threshold > 0) {
+                    return 0;
+                }
+
+                for (uint32_t j = 0; j < k; ++j) {
+                    scores[j] = 0.0;
+                    indices[j] = j;
+                }
+
+                return static_cast<int>(k);
+            }
+            uint32_t max_popcnt_delta = keybytes * CHAR_BIT; // = bits per key
+            if(threshold > 0) {
+                max_popcnt_delta = calculate_max_difference(count_one, threshold);
+            }
+            double dynamic_threshold = threshold;
+            auto push_score = [&](double score, int idx) {
+                if (score >= dynamic_threshold) {
+                    top_k_scores.push(Node(idx, score));
+                    if (top_k_scores.size() > k) {
+                        // Popping the top element is O(log(k))!
+                        temp_node = top_k_scores.top();
+                        top_k_scores.pop();
+                        // threshold can now be raised
+                        dynamic_threshold = temp_node.score;
+                    }
+                }
+            };
+
+            const char *current = many;
+            char *andbuffer = new char[keybytes];
+
+            for (int j = 0; j < n; j++, current += keybytes) {
                 const uint32_t counts_many_j = counts_many[j];
                 if (abs_diff(count_one, counts_many_j) <= max_popcnt_delta) {
-                    double score = _dice_coeff_generic(comp1, count_one, current, counts_many_j, keywords);
+                    double score = _dice_coeff_chars(one, count_one, current, counts_many_j, andbuffer, keybytes);
                     push_score(score, j);
                 }
             }
+            delete andbuffer;
+
         }
 
         // Copy the scores and indices in reverse order so that the

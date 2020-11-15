@@ -206,8 +206,17 @@ class TestBloomFilterComparison:
     def test_not_multiple_of_64(self, k, threshold, bytes_n):
         datasets = [[bitarray('01001011') * bytes_n],
                     [bitarray('01001011') * bytes_n]]
+
+        py_similarity = similarities.dice_coefficient_python(
+            datasets, self.default_threshold, k)
+        c_similarity = similarities.dice_coefficient_accelerated(datasets, threshold, k=k)
+        self.assert_similarity_matrices_equal(py_similarity, c_similarity)
+
+    def test_not_multiple_of_8_raises(self,):
+        datasets = [[bitarray('010')],
+                    [bitarray('010')]]
         with pytest.raises(NotImplementedError):
-            similarities.dice_coefficient_accelerated(datasets, threshold, k=k)
+            similarities.dice_coefficient_accelerated(datasets, threshold=self.default_threshold)
 
     @pytest.mark.parametrize('sim_fun', SIM_FUNS)
     @pytest.mark.parametrize('k', [None, 0, 1])
@@ -286,9 +295,8 @@ def _to_bitarray(bytes_):
 def test_bytes_bitarray_agree(sim_fun, data, threshold):
     bytes_length = data.draw(strategies.integers(
         min_value=0,
-        max_value=1024  # Let's not get too carried away...
+        max_value=4096  # Let's not get too carried away...
     ))
-    bytes_length *= 8  # TODO: remove this line when we deal with #163
     filters0_bytes = data.draw(strategies.lists(strategies.binary(
         min_size=bytes_length, max_size=bytes_length)))
     filters1_bytes = data.draw(strategies.lists(strategies.binary(
