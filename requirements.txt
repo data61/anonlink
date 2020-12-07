@@ -1,4 +1,4 @@
-bitarray-hardbyte==1.6.1
+bitarray-hardbyte==1.6.2
 clkhash==0.16.0
 Cython==0.29.21
 hypothesis==5.41.4
