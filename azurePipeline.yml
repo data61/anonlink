@@ -88,7 +88,7 @@ stages:
           artifactName: 'wheels.linux38'
         Python3.9:
           pythonVersion: '3.9'
-          artifactName: 'wheels.linux38'
+          artifactName: 'wheels.linux39'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
