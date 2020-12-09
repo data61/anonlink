@@ -25,7 +25,7 @@ stages:
         CIBW_BUILD: 'cp38-*'
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
-      - template: .azurePipeline/cibuildwheel_steps.yml
+        - template: .azurePipeline/cibuildwheel_steps.yml
     - job: linux_37
       displayName: Linux + Python3.7
       pool:
