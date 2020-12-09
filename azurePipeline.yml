@@ -5,56 +5,67 @@ stages:
     # Need to install development libraries for manylinux container
     CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
-    CIBW_BUILD: 'cp38-* cp37-* cp36-*'
+    CIBW_BUILD: 'cp39-* cp38-* cp37-* cp36-*'
     CIBW_SKIP: '*-win32 *-manylinux_i686'
   jobs:
-  - job: linux_38
-    displayName: Linux + Python3.8
-    pool:
-      vmImage: 'ubuntu-16.04'
-    variables:
-      CIBW_BUILD: 'cp38-*'
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+    - job: linux_39
+      displayName: Linux + Python3.9
+      pool:
+        vmImage: 'ubuntu-16.04'
+      variables:
+        CIBW_BUILD: 'cp39-*'
+      steps:
+        - { task: UsePythonVersion@0, inputs: { versionSpec: '3.9', architecture: x64 } }
+        - template: .azurePipeline/cibuildwheel_steps.yml
+    - job: linux_38
+      displayName: Linux + Python3.8
+      pool:
+        vmImage: 'ubuntu-16.04'
+      variables:
+        CIBW_BUILD: 'cp38-*'
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
       - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: linux_37
-    displayName: Linux + Python3.7
-    pool:
-      vmImage: 'ubuntu-16.04'
-    variables:
-      CIBW_BUILD: 'cp37-*'
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-      - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: linux_36
-    displayName: Linux + Python3.6
-    pool:
-      vmImage: 'ubuntu-16.04'
-    variables:
-      CIBW_BUILD: 'cp36-*'
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-      - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: macos
-    displayName: MacOS
-    pool:
-      vmImage: 'macOS-10.14'
-    variables:
-      MACOSX_DEPLOYMENT_TARGET: '10.14'
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
-      - template: .azurePipeline/cibuildwheel_steps.yml
-  - job: windows
-    displayName: Windows
-    pool:
-      vmImage: 'vs2017-win2016'
-    steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
-      - template: .azurePipeline/cibuildwheel_steps.yml
+    - job: linux_37
+      displayName: Linux + Python3.7
+      pool:
+        vmImage: 'ubuntu-16.04'
+      variables:
+        CIBW_BUILD: 'cp37-*'
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+        - template: .azurePipeline/cibuildwheel_steps.yml
+    - job: linux_36
+      displayName: Linux + Python3.6
+      pool:
+        vmImage: 'ubuntu-16.04'
+      variables:
+        CIBW_BUILD: 'cp36-*'
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+        - template: .azurePipeline/cibuildwheel_steps.yml
+    - job: macos
+      displayName: MacOS
+      pool:
+        vmImage: 'macOS-10.14'
+      variables:
+        MACOSX_DEPLOYMENT_TARGET: '10.14'
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
+        - template: .azurePipeline/cibuildwheel_steps.yml
+    - job: windows
+      displayName: Windows
+      pool:
+        vmImage: 'vs2017-win2016'
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
+        - template: .azurePipeline/cibuildwheel_steps.yml
 
 - stage: test
   displayName: Unit tests
@@ -74,6 +85,9 @@ stages:
           artifactName: 'wheels.linux37'
         Python3.8:
           pythonVersion: '3.8'
+          artifactName: 'wheels.linux38'
+        Python3.9:
+          pythonVersion: '3.9'
           artifactName: 'wheels.linux38'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
@@ -95,6 +109,10 @@ stages:
           pythonVersion: '3.8'
           artifactName: 'wheels.macos'
           artifactPattern: '**/*cp38*.whl'
+        Python3.9:
+          pythonVersion: '3.9'
+          artifactName: 'wheels.macos'
+          artifactPattern: '**/*cp39*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
@@ -120,6 +138,10 @@ stages:
           pythonVersion: '3.8'
           artifactName: 'wheels.windows'
           artifactPattern: '**/*cp38*.whl'
+        Python3.9:
+          pythonVersion: '3.9'
+          artifactName: 'wheels.windows'
+          artifactPattern: '**/*cp39*.whl'
     steps:
       - template: .azurePipeline/unittest_wheel_steps.yml
         parameters:
