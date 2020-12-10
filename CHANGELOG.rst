@@ -1,7 +1,13 @@
 new version
 ===========
 
-- Creates a cython wrapper for the similarity comparison C++ code and removes the cffi compiler.
+0.13.2
+======
+
+- test and release for Python 3.9 too #384
+- fix cibuildwheel #382
+- Feature arbitrary (byte)-size encodings #366
+- Creates a cython wrapper for the similarity comparison C++ code and removes the cffi compiler. #363
 
 0.13.1
 ======
