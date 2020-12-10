@@ -1,11 +1,12 @@
 new version
 ===========
 
-0.13.2
+0.14.0
 ======
 
 - test and release for Python 3.9 too #384
 - fix cibuildwheel #382
+Thanks Brian for the following two PRs. That's awesome!
 - Feature arbitrary (byte)-size encodings #366
 - Creates a cython wrapper for the similarity comparison C++ code and removes the cffi compiler. #363
 
