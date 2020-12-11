@@ -1,3 +1,11 @@
+trigger:
+  branches:
+    include:
+      - '*'
+  tags:
+    include:
+      - v*
+
 stages:
 - stage: wheels
   displayName: Build Wheel Packages
@@ -66,6 +74,25 @@ stages:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
+
+- stage: sdist
+  displayName: Build source distribution
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+    - script: |
+        python setup.py sdist
+      displayName: 'Artifact creation'
+    - task: CopyFiles@2
+      inputs:
+        targetFolder: 'sdist'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'sdist'
+        ArtifactName: 'drop'
 
 - stage: test
   displayName: Unit tests
@@ -184,6 +211,7 @@ stages:
         inputs:
           artifactName: 'drop'
           patterns: '**/*.whl'
+                    '**/*.tar.gz'
           path: $(Pipeline.Workspace)
       - task: TwineAuthenticate@1
         inputs:
@@ -191,3 +219,4 @@ stages:
       - script: 'echo $(Build.Repository.Name)'
       - script: 'echo $(Build.SourceBranchName)'
       - script: 'twine upload -r $(artifactFeed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/*.whl --skip-existing'
+      - script: 'twine upload -r $(artifactFeed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/*.tar.gz --skip-existing'
