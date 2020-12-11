@@ -77,6 +77,7 @@ stages:
 
 - stage: sdist
   displayName: Build source distribution
+  dependsOn: []
   jobs:
     - job: sdist
       displayName: build source distribution
@@ -94,7 +95,7 @@ stages:
             targetFolder: 'sdist'
         - task: PublishBuildArtifacts@1
           inputs:
-            PathtoPublish: 'sdist'
+            PathtoPublish: 'sdist/dist'
             ArtifactName: 'drop'
 
 - stage: test
