@@ -77,22 +77,25 @@ stages:
 
 - stage: sdist
   displayName: Build source distribution
-  pool:
-    vmImage: 'ubuntu-16.04'
-  steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-    - script: |
-        python setup.py sdist
-      displayName: 'Artifact creation'
-    - task: CopyFiles@2
-      inputs:
-        targetFolder: 'sdist'
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: 'sdist'
-        ArtifactName: 'drop'
+  jobs:
+    - job: sdist
+      displayName: build source distribution
+      pool:
+        vmImage: 'ubuntu-16.04'
+      steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.9'
+        - script: |
+            python setup.py sdist
+          displayName: 'Artifact creation'
+        - task: CopyFiles@2
+          inputs:
+            targetFolder: 'sdist'
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: 'sdist'
+            ArtifactName: 'drop'
 
 - stage: test
   displayName: Unit tests
