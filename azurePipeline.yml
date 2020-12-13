@@ -98,6 +98,38 @@ stages:
             PathtoPublish: 'sdist/dist'
             ArtifactName: 'drop'
 
+- stage: TestSdistOnWinX86
+  displayName: testing if sdist can be compiled
+  dependsOn: [sdist]
+  jobs:
+    - job: winx86
+      displayName: testing on WinX86
+      pool:
+        vmImage: 'vs2017-win2016'
+      steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.9'
+            architecture: x86
+        - script: |
+            python -m pip install --upgrade pip
+            pip install -U pytest-azurepipelines -r requirements.txt
+          displayName: 'Install testing requirements'
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifactName: 'drop'
+            patterns: '**/*.tar.gz'
+            path: $(Pipeline.Workspace)
+
+        - script: |
+            pip install anonlink --no-index -f $(Pipeline.Workspace)
+          displayName: 'Install anonlink sdist'
+        - script: |
+            # Delete the source code folder to ensure we test only the installed wheel
+            rm -fr anonlink
+            pytest -W ignore::DeprecationWarning
+          displayName: 'pytest'
+
 - stage: test
   displayName: Unit tests
   dependsOn: ['wheels']
