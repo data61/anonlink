@@ -122,7 +122,7 @@ stages:
             path: $(Pipeline.Workspace)
 
         - script: |
-            pip install anonlink --no-index -f $(Pipeline.Workspace)
+            pip install $(Pipeline.Workspace)/anonlink-*.tar.gz
           displayName: 'Install anonlink sdist'
         - script: |
             # Delete the source code folder to ensure we test only the installed wheel
