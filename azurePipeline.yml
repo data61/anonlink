@@ -122,6 +122,7 @@ stages:
             path: $(Pipeline.Workspace)
 
         - script: |
+            cd $(Pipeline.Workspace)
             pip install anonlink-*.tar.gz
           displayName: 'Install anonlink sdist'
         - script: |
