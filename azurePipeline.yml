@@ -121,7 +121,7 @@ stages:
             patterns: '**/*.tar.gz'
             path: $(Pipeline.Workspace)
 
-        - script: pip install anonlink --no-index --no-binary anonlink -f $(Pipeline.Workspace)'
+        - script: pip install anonlink --no-index --no-binary anonlink -f file://$(Pipeline.Workspace)'
           displayName: 'Install anonlink sdist'
         - script: |
             # Delete the source code folder to ensure we test only the installed wheel
