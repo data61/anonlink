@@ -19,7 +19,7 @@ stages:
     - job: linux_39
       displayName: Linux + Python3.9
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-18.04'
       variables:
         CIBW_BUILD: 'cp39-*'
       steps:
@@ -28,7 +28,7 @@ stages:
     - job: linux_38
       displayName: Linux + Python3.8
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-18.04'
       variables:
         CIBW_BUILD: 'cp38-*'
       steps:
@@ -37,7 +37,7 @@ stages:
     - job: linux_37
       displayName: Linux + Python3.7
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-18.04'
       variables:
         CIBW_BUILD: 'cp37-*'
       steps:
@@ -46,7 +46,7 @@ stages:
     - job: linux_36
       displayName: Linux + Python3.6
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-18.04'
       variables:
         CIBW_BUILD: 'cp36-*'
       steps:
@@ -82,7 +82,7 @@ stages:
     - job: sdist
       displayName: build source distribution
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-18.04'
       steps:
         - task: UsePythonVersion@0
           inputs:
@@ -98,37 +98,6 @@ stages:
             PathtoPublish: 'sdist/dist'
             ArtifactName: 'drop'
 
-- stage: TestSdistOnWinX86
-  displayName: testing if sdist can be compiled
-  dependsOn: [sdist]
-  jobs:
-    - job: winx86
-      displayName: testing on WinX86
-      pool:
-        vmImage: 'vs2017-win2016'
-      steps:
-        - task: UsePythonVersion@0
-          inputs:
-            versionSpec: '3.9'
-            architecture: x86
-        - script: |
-            python -m pip install --upgrade pip
-            pip install -U pytest-azurepipelines -r requirements.txt
-          displayName: 'Install testing requirements'
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifactName: 'drop'
-            patterns: '**/*.tar.gz'
-            path: $(Pipeline.Workspace)
-
-        - script: pip install $(Pipeline.Workspace)/anonlink-0.14.0.tar.gz
-          displayName: 'Install anonlink sdist'
-        - script: |
-            # Delete the source code folder to ensure we test only the installed wheel
-            rm -fr anonlink
-            pytest -W ignore::DeprecationWarning
-          displayName: 'pytest'
-
 - stage: test
   displayName: Unit tests
   dependsOn: ['wheels']
@@ -136,7 +105,7 @@ stages:
   - job:
     displayName: Linux
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-18.04'
     strategy:
       matrix:
         Python3.6:
@@ -156,7 +125,7 @@ stages:
         parameters:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'ubuntu-16.04'
+          operatingSystem: 'ubuntu-18.04'
   - job:
     displayName: MacOS
     pool:
@@ -219,7 +188,7 @@ stages:
   - job:
     displayName: Typecheck
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-18.04'
     steps:
       - task: UsePythonVersion@0
         inputs:
