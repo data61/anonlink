@@ -196,6 +196,13 @@ stages:
       - script: pip install -U mypy
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
+  - job:
+    displayName: "check for and tag release"
+    steps:
+      # In this step, if this build is triggered by a tag, it will add a tag 'doRelease' to the current build.
+      # This tag in turn is used as a trigger for the release pipeline.
+      - script: echo "##vso[build.addbuildtag]doRelease"
+        condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
 
 - stage: publish
   displayName: Publish packages to test feed
