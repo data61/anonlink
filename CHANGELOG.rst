@@ -1,6 +1,11 @@
 new version
 ===========
 
+0.14.1
+======
+
+- fixed broken source distribution #388
+
 0.14.0
 ======
 
