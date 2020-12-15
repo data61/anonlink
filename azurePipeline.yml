@@ -214,7 +214,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         inputs:
           artifactName: 'drop'
-          patterns: '**/*.(whl|tar.gz)'
+          patterns: '**/*.@(whl|tar.gz)'
           path: $(Pipeline.Workspace)
       - task: TwineAuthenticate@1
         inputs:
