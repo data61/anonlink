@@ -8,10 +8,6 @@ cache:
   - "$HOME/.cache/pip"
 
 python:
-- 3.6
-- 3.7
-- 3.8
-- 3.9-dev
 - nightly
 - pypy3
 
@@ -29,7 +25,6 @@ script:
 jobs:
   fast_finish: true
   allow_failures:
-    - python: "3.9-dev"
     - python: "nightly"
     - python: "pypy3"
     - name: "Extended Size 100K"
@@ -46,38 +41,3 @@ jobs:
       python: "3.7"
       env:
         - INCLUDE_100K=1
-    - stage: "Build wheels"
-      name: "manylinux1_x86_64"
-      sudo: required
-      if: tag IS present
-      python: "3.6"
-      services:
-      - docker
-      env:
-        - PLAT=manylinux1_x86_64
-        - TWINE_USERNAME=confidentialcomputing
-      install:
-        - docker pull quay.io/pypa/manylinux1_x86_64
-        - travis_retry pip install -U twine
-      script:
-      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/travis/build-dist.sh
-      - ls wheelhouse/
-      - python -m twine upload --skip-existing wheelhouse/anonlink*manylinux1_x86_64.whl
-      - python -m twine upload --skip-existing wheelhouse/anonlink*.tar.gz
-    - name: "manylinux2010_x86_64"
-      sudo: required
-      if: tag IS present
-      python: "3.6"
-      services:
-      - docker
-      env:
-        - PLAT=manylinux2010_x86_64
-        - TWINE_USERNAME=confidentialcomputing
-      install:
-        - docker pull quay.io/pypa/manylinux1_x86_64
-        - travis_retry pip install -U twine
-      script:
-      - docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/manylinux2010_x86_64 /io/travis/build-dist.sh
-      - ls wheelhouse/
-      - python -m twine upload --skip-existing wheelhouse/anonlink*manylinux2010_x86_64.whl
-
