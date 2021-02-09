@@ -2,6 +2,7 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
+#include <stdint.h>
 #include "_multiparty_solving_inner.h"
 
 namespace {
