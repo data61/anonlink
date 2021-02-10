@@ -1,6 +1,11 @@
 new version
 ===========
 
+0.14.2
+======
+
+- fix anonlink build on Alpine linux. #411
+
 0.14.1
 ======
 
