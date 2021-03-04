@@ -1,7 +1,7 @@
 bitarray-hardbyte==1.6.2
 clkhash==0.16.1
 Cython==0.29.22
-hypothesis==6.4.0
+hypothesis==6.4.2
 pytest==6.2.2
 pytest-cov==2.11.1
 numpy==1.20.1; python_version >= '3.7'
