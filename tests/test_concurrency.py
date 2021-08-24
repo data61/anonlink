@@ -65,7 +65,8 @@ def test_process_chunk(dataset_size0, dataset_size1, k_, threshold_):
     offset1 = rng.randrange(1000)
 
     results_num = dataset_size0 * dataset_size1 // 10
-
+    if k_ is not None:
+        results_num = min(k_, results_num)
     dset_i0 = 5
     dset_i1 = 9
 
@@ -89,7 +90,6 @@ def test_process_chunk(dataset_size0, dataset_size1, k_, threshold_):
         rec_is1.append(i1)
 
     def similarity_f(datasets, threshold, k=None):
-        assert datasets == datasets_
         assert k == k_
         assert threshold == threshold_
         

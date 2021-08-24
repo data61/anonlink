@@ -121,7 +121,8 @@ def find_candidate_pairs(
         sequence in `record_i` has the same length as `similarity`.
         Currently `dataset_i` and `record_i` have length 2, but this may
         be changed in the future.
-            Every valid index `i` corresponds to one candidate match.
+
+        Every valid index `i` corresponds to one candidate match.
         `dataset[0][i]` is the index of the dataset of the first record
         in the pair; `record[0][i]` is this record's index in its
         dataset. `dataset_[1][i]` is the index of the dataset of the
