@@ -193,7 +193,7 @@ stages:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: '3.7'
-      - script: pip install -U mypy
+      - script: pip install -U mypy types-setuptools
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
   - job:
