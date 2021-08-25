@@ -116,7 +116,8 @@ def process_chunk(
     datasets: _typing.Sequence[_typechecking.Dataset],
     similarity_f: _typechecking.SimilarityFunction,
     threshold: float,
-    k: _typing.Optional[int] = None
+    k: _typing.Optional[int] = None,
+    blocking_f: _typing.Optional[_typechecking.BlockingFunction] = None
 ) -> _typechecking.CandidatePairs:
     """Find candidate pairs for the chunk.
 
@@ -135,6 +136,9 @@ def process_chunk(
     :param k: Only permit this many candidate pairs per dataset pair per
         record. Set to `None` to permit all pairs above with similarity
         at least `threshold`.
+    :param blocking_f: A function returning all block IDs for a record.
+        Two records are compared iff they have at least one block ID in
+        common. Support for this is experimental and subject to change.
 
     :return: A 3-tuple `(similarity, dataset_i, record_i)`. `dataset_i`
         and `record_i` are sequences of sequences. Every sequence in
@@ -174,7 +178,14 @@ def process_chunk(
             f'only binary matching is currently supported '
             f'(chunk has {len(chunk)} datasets)')
 
-    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = find_candidate_pairs(datasets, similarity_f, threshold, k=k)
+    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = find_candidate_pairs(
+        datasets,
+        similarity_f,
+        threshold,
+        k=k,
+        blocking_f=blocking_f
+    )
+
     assert len(sims) == len(rec_is0) == len(rec_is1)
 
     _replace_int_array_values_inplace(dset_is0, chunk[0]['datasetIndex'])

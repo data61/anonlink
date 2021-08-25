@@ -35,10 +35,9 @@ def _block_similarities(
     for i0, i1 in _itertools.combinations(range(len(block)), 2):
         recs_dset0 = tuple(map(datasets[i0].__getitem__, block[i0]))
         recs_dset1 = tuple(map(datasets[i1].__getitem__, block[i1]))
-        sims, (rec_is0, rec_is1) = similarity_f(
-            (recs_dset0, recs_dset1), threshold, k=k)
-
-        yield _to_candidate_pairs(sims, rec_is0, rec_is1, i0, i1, block)
+        if len(recs_dset0) > 0 and len(recs_dset1) > 0:
+            sims, (rec_is0, rec_is1) = similarity_f((recs_dset0, recs_dset1), threshold, k=k)
+            yield _to_candidate_pairs(sims, rec_is0, rec_is1, i0, i1, block)
 
 
 def _enforce_k(
