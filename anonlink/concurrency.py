@@ -103,12 +103,12 @@ def _offset_record_indices_inplace(
     np_rec_is += a
 
 
-def _replace_int_array_values_inplace(
+def _fill_int_array_inplace(
     int_array: _typechecking.IntArrayType,
     value: int
 ) -> None:
     np_buffer = _np.frombuffer(int_array, dtype=int_array.typecode)
-    np_buffer[:] = value
+    np_buffer.fill(value)
 
 
 def process_chunk(
@@ -188,10 +188,10 @@ def process_chunk(
 
     assert len(sims) == len(rec_is0) == len(rec_is1)
 
-    _replace_int_array_values_inplace(dset_is0, chunk[0]['datasetIndex'])
+    _fill_int_array_inplace(dset_is0, chunk[0]['datasetIndex'])
     _offset_record_indices_inplace(chunk[0], rec_is0)
 
-    _replace_int_array_values_inplace(dset_is1, chunk[1]['datasetIndex'])
+    _fill_int_array_inplace(dset_is1, chunk[1]['datasetIndex'])
     _offset_record_indices_inplace(chunk[1], rec_is1)
 
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
