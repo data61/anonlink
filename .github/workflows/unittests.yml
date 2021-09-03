@@ -37,3 +37,9 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -q
+      - name: Test with extended size 100k
+        if: ${{ matrix.python-version == 3.9}}
+        env: 
+          INCLUDE_100K: 1
+        run: |
+          pytest -q
