@@ -35,10 +35,9 @@ def _block_similarities(
     for i0, i1 in _itertools.combinations(range(len(block)), 2):
         recs_dset0 = tuple(map(datasets[i0].__getitem__, block[i0]))
         recs_dset1 = tuple(map(datasets[i1].__getitem__, block[i1]))
-        sims, (rec_is0, rec_is1) = similarity_f(
-            (recs_dset0, recs_dset1), threshold, k=k)
-
-        yield _to_candidate_pairs(sims, rec_is0, rec_is1, i0, i1, block)
+        if len(recs_dset0) > 0 and len(recs_dset1) > 0:
+            sims, (rec_is0, rec_is1) = similarity_f((recs_dset0, recs_dset1), threshold, k=k)
+            yield _to_candidate_pairs(sims, rec_is0, rec_is1, i0, i1, block)
 
 
 def _enforce_k(
@@ -121,7 +120,8 @@ def find_candidate_pairs(
         sequence in `record_i` has the same length as `similarity`.
         Currently `dataset_i` and `record_i` have length 2, but this may
         be changed in the future.
-            Every valid index `i` corresponds to one candidate match.
+
+        Every valid index `i` corresponds to one candidate match.
         `dataset[0][i]` is the index of the dataset of the first record
         in the pair; `record[0][i]` is this record's index in its
         dataset. `dataset_[1][i]` is the index of the dataset of the

@@ -4,6 +4,7 @@ import random
 
 import pytest
 
+import anonlink.blocking
 from anonlink import concurrency
 
 DATASET_SIZES = (0, 1, 100)
@@ -65,7 +66,8 @@ def test_process_chunk(dataset_size0, dataset_size1, k_, threshold_):
     offset1 = rng.randrange(1000)
 
     results_num = dataset_size0 * dataset_size1 // 10
-
+    if k_ is not None:
+        results_num = min(k_, results_num)
     dset_i0 = 5
     dset_i1 = 9
 
@@ -89,7 +91,6 @@ def test_process_chunk(dataset_size0, dataset_size1, k_, threshold_):
         rec_is1.append(i1)
 
     def similarity_f(datasets, threshold, k=None):
-        assert datasets == datasets_
         assert k == k_
         assert threshold == threshold_
         
@@ -204,3 +205,61 @@ def test_process_chunk_invalid_chunk(
     with pytest.raises(ValueError):
         concurrency.process_chunk(
             chunk, datasets, similarity_f, threshold, k=k)
+
+
+@pytest.mark.parametrize('dataset_size0', (1, 100))
+@pytest.mark.parametrize('dataset_size1', (1, 100))
+@pytest.mark.parametrize('k_', (None, 5))
+@pytest.mark.parametrize('threshold_', (0.5, 0.9))
+def test_process_chunk_with_blocking(dataset_size0, dataset_size1, k_, threshold_):
+    rng = random.Random(SEED)
+    offset0 = rng.randrange(1000)
+    offset1 = rng.randrange(1000)
+
+    results_num = dataset_size0 * dataset_size1 // 10
+    if k_ is not None:
+        results_num = min(k_, results_num)
+    dset_i0 = 5
+    dset_i1 = 9
+
+    chunk = [{'datasetIndex': dset_i0, 'range': [offset0, offset0 + dataset_size0]},
+             {'datasetIndex': dset_i1, 'range': [offset1, offset1 + dataset_size1]}]
+
+    dataset0 = [rng.randrange(500) for _ in range(dataset_size0)]
+    dataset1 = [rng.randrange(500) for _ in range(dataset_size1)]
+    datasets_ = [dataset0, dataset1]
+
+    def similarity_f(datasets, threshold, k=None):
+        results = []
+        indicies_a = []
+        indicies_b = []
+        for i, record_a in enumerate(datasets[0]):
+            for j, record_b in enumerate(datasets[1]):
+                sim = abs(record_a - record_b)
+                if sim > threshold:
+                    results.append(sim)
+                    indicies_a.append(i)
+                    indicies_b.append(j)
+        return (results, (indicies_a, indicies_b))
+
+    blocking_f = anonlink.blocking.continuous_blocking(radius=10, source=[dataset0, dataset1])
+    sims_with_blocking, _, _ = concurrency.process_chunk(
+            chunk,
+            datasets_,
+            similarity_f,
+            threshold_,
+            k=k_,
+            blocking_f=blocking_f
+    )
+
+    sims_without_blocking, _, _ = concurrency.process_chunk(
+            chunk,
+            datasets_,
+            similarity_f,
+            threshold_,
+            k=k_,
+            blocking_f=blocking_f
+    )
+
+    assert len(sims_with_blocking) <= len(sims_without_blocking)
+

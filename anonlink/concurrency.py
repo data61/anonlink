@@ -8,6 +8,7 @@ import typing as _typing
 import numpy as _np
 
 import anonlink.typechecking as _typechecking
+from anonlink.candidate_generation import find_candidate_pairs
 
 # Future: There may be better ways of chunking. Hamish suggests putting
 # a better guarantee on the maximum size of a chunk. This may help with
@@ -60,7 +61,7 @@ def split_to_chunks(
 
     :param chunk_size_aim: Number of comparisons per chunk to aim for.
         This is a hint only. No promises.
-    :param datset_sizes: The sizes of the datsets to compare, as a
+    :param dataset_sizes: The sizes of the datasets to compare, as a
         sequence.
 
     :return: An iterable of chunks.
@@ -102,12 +103,21 @@ def _offset_record_indices_inplace(
     np_rec_is += a
 
 
+def _fill_int_array_inplace(
+    int_array: _typechecking.IntArrayType,
+    value: int
+) -> None:
+    np_buffer = _np.frombuffer(int_array, dtype=int_array.typecode)
+    np_buffer.fill(value)
+
+
 def process_chunk(
     chunk: _typechecking.ChunkInfo,
     datasets: _typing.Sequence[_typechecking.Dataset],
     similarity_f: _typechecking.SimilarityFunction,
     threshold: float,
-    k: _typing.Optional[int] = None
+    k: _typing.Optional[int] = None,
+    blocking_f: _typing.Optional[_typechecking.BlockingFunction] = None
 ) -> _typechecking.CandidatePairs:
     """Find candidate pairs for the chunk.
 
@@ -126,6 +136,9 @@ def process_chunk(
     :param k: Only permit this many candidate pairs per dataset pair per
         record. Set to `None` to permit all pairs above with similarity
         at least `threshold`.
+    :param blocking_f: A function returning all block IDs for a record.
+        Two records are compared iff they have at least one block ID in
+        common. Support for this is experimental and subject to change.
 
     :return: A 3-tuple `(similarity, dataset_i, record_i)`. `dataset_i`
         and `record_i` are sequences of sequences. Every sequence in
@@ -141,7 +154,6 @@ def process_chunk(
         index in its dataset. `similarity[i]` is the pair's similarity;
         this value will be greater than `threshold`.
     """
-
 
     if len(chunk) != len(datasets):
         raise ValueError(
@@ -166,14 +178,20 @@ def process_chunk(
             f'only binary matching is currently supported '
             f'(chunk has {len(chunk)} datasets)')
 
+    sims, (dset_is0, dset_is1), (rec_is0, rec_is1) = find_candidate_pairs(
+        datasets,
+        similarity_f,
+        threshold,
+        k=k,
+        blocking_f=blocking_f
+    )
 
-    sims, (rec_is0, rec_is1) = similarity_f(datasets, threshold, k=k)
     assert len(sims) == len(rec_is0) == len(rec_is1)
 
-    dset_is0 = _get_dataset_indices(chunk[0], len(sims))
+    _fill_int_array_inplace(dset_is0, chunk[0]['datasetIndex'])
     _offset_record_indices_inplace(chunk[0], rec_is0)
 
-    dset_is1 = _get_dataset_indices(chunk[1], len(sims))
+    _fill_int_array_inplace(dset_is1, chunk[1]['datasetIndex'])
     _offset_record_indices_inplace(chunk[1], rec_is1)
 
     return sims, (dset_is0, dset_is1), (rec_is0, rec_is1)
