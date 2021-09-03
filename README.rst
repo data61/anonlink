@@ -1,18 +1,15 @@
 
-.. image:: https://dev.azure.com/data61/Anonlink/_apis/build/status/data61.anonlink?branchName=master
-    :target: https://dev.azure.com/data61/Anonlink/_build/latest?definitionId=3&branchName=master
+.. image:: https://dev.azure.com/data61/Anonlink/_apis/build/status/data61.anonlink?branchName=main
+    :target: https://dev.azure.com/data61/Anonlink/_build/latest?definitionId=3&branchName=main
 
 
-.. image:: https://travis-ci.org/data61/anonlink.svg?branch=master
-    :target: https://travis-ci.org/data61/anonlink
 
-
-.. image:: https://codecov.io/gh/data61/anonlink/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/data61/anonlink/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/data61/anonlink
 
 
-.. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=master
-    :target: https://requires.io/github/data61/anonlink/requirements/?branch=master
+.. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=main
+    :target: https://requires.io/github/data61/anonlink/requirements/?branch=main
 
 
 .. image:: https://pepy.tech/badge/anonlink
