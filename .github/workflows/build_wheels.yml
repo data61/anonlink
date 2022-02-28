@@ -17,7 +17,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.3.1
         # to supply options, put them in 'env', like:
         env:
-         CIBW_SKIP: '*-win32 *-manylinux_i686'
+         CIBW_SKIP: '*-win32 *i686'
 
       - uses: actions/upload-artifact@v2
         with:
