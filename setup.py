@@ -28,7 +28,7 @@ test_requirements = [
         "pytest-cov",
         "codecov",
         "hypothesis",
-        "clkhash>=0.15.0",
+        "clkhash>=0.16.1",
     ]
 
 current_os = platform.system()
