@@ -16,7 +16,7 @@ else:
 here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
-        "bitarray-hardbyte>=2.4.0",
+        "bitarray>=2.4.0",
         "numpy>=1.19",
         "mypy-extensions>=0.4",
         "Cython>=0.29.10"
