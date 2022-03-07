@@ -3,8 +3,9 @@ name: Build and upload to PyPI
 on:
   release:
     types: [ published ]
-  pull_request:
-    types: [opened, reopened]
+  push:
+    branches:
+      - 'main'
 
 jobs:
   build_wheels:
