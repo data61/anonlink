@@ -11,15 +11,26 @@ stages:
   displayName: Build Wheel Packages
   variables:
     # Need to install development libraries for manylinux container
-    CIBW_BEFORE_BUILD_LINUX: 'yum install -y libffi-devel atlas-devel'
+    CIBW_BEFORE_ALL_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
-    CIBW_BUILD: 'cp39-* cp38-* cp37-* cp36-*'
-    CIBW_SKIP: '*-win32 *-manylinux_i686'
+    CIBW_BUILD: 'cp310-* cp39-* cp38-* cp37-* cp36-*'
+    CIBW_SKIP: '*-win32 *-manylinux_i686 *-musllinux_*'
+    #CIBW_BEFORE_TEST: pip install -r {project}/requirements.txt
+    #CIBW_TEST_COMMAND: "pytest {project}/tests"
   jobs:
+    - job: linux_310
+      displayName: Linux + Python3.10
+      pool:
+        vmImage: 'ubuntu-20.04'
+      variables:
+        CIBW_BUILD: 'cp310-*'
+      steps:
+        - { task: UsePythonVersion@0, inputs: { versionSpec: '3.10', architecture: x64 } }
+        - template: .azurePipeline/cibuildwheel_steps.yml
     - job: linux_39
       displayName: Linux + Python3.9
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         CIBW_BUILD: 'cp39-*'
       steps:
@@ -28,7 +39,7 @@ stages:
     - job: linux_38
       displayName: Linux + Python3.8
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         CIBW_BUILD: 'cp38-*'
       steps:
@@ -37,7 +48,7 @@ stages:
     - job: linux_37
       displayName: Linux + Python3.7
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         CIBW_BUILD: 'cp37-*'
       steps:
@@ -46,7 +57,7 @@ stages:
     - job: linux_36
       displayName: Linux + Python3.6
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         CIBW_BUILD: 'cp36-*'
       steps:
@@ -55,9 +66,9 @@ stages:
     - job: macos
       displayName: MacOS
       pool:
-        vmImage: 'macOS-10.14'
+        vmImage: 'macOS-10.15'
       variables:
-        MACOSX_DEPLOYMENT_TARGET: '10.14'
+        MACOSX_DEPLOYMENT_TARGET: '10.15'
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
@@ -67,7 +78,7 @@ stages:
     - job: windows
       displayName: Windows
       pool:
-        vmImage: 'vs2017-win2016'
+        vmImage: 'windows-2019'
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
@@ -82,7 +93,7 @@ stages:
     - job: sdist
       displayName: build source distribution
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       steps:
         - task: UsePythonVersion@0
           inputs:
@@ -105,7 +116,7 @@ stages:
   - job:
     displayName: Linux
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     strategy:
       matrix:
         Python3.6:
@@ -125,11 +136,11 @@ stages:
         parameters:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'ubuntu-18.04'
+          operatingSystem: 'ubuntu-20.04'
   - job:
     displayName: MacOS
     pool:
-      vmImage: 'macOS-10.14'
+      vmImage: 'macOS-10.15'
     strategy:
       matrix:
         Python3.7:
@@ -150,11 +161,11 @@ stages:
           artifactName: $(artifactName)
           artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'macOS-10.14'
+          operatingSystem: 'macOS-10.15'
   - job:
     displayName: Windows
     pool:
-      vmImage: 'vs2017-win2016'
+      vmImage: 'windows-2019'
     strategy:
       matrix:
         Python3.6:
@@ -179,7 +190,7 @@ stages:
           artifactName: $(artifactName)
           artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'vs2017-win2016'
+          operatingSystem: 'windows-2019'
 
 - stage: static_checks
   displayName: Static Checks
@@ -188,21 +199,14 @@ stages:
   - job:
     displayName: Typecheck
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: '3.7'
+          versionSpec: '3.9'
       - script: pip install -U mypy types-setuptools
       - script: mypy anonlink --ignore-missing-imports
         displayName: mypy
-  - job:
-    displayName: "check for and tag release"
-    steps:
-      # In this step, if this build is triggered by a tag, it will add a tag 'doRelease' to the current build.
-      # This tag in turn is used as a trigger for the release pipeline.
-      - script: echo "##vso[build.addbuildtag]doRelease"
-        condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
 
 - stage: publish
   displayName: Publish packages to test feed

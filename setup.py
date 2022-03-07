@@ -16,8 +16,8 @@ else:
 here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
-        "bitarray-hardbyte>=0.8.0",
-        "numpy>=1.14",
+        "bitarray>=2.4.0",
+        "numpy>=1.19",
         "mypy-extensions>=0.4",
         "Cython>=0.29.10"
     ]
@@ -28,7 +28,7 @@ test_requirements = [
         "pytest-cov",
         "codecov",
         "hypothesis",
-        "clkhash>=0.15.0",
+        "clkhash>=0.16.1",
     ]
 
 current_os = platform.system()
@@ -100,6 +100,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Security :: Cryptography",

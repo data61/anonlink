@@ -1,7 +1,7 @@
 parameters:
-  pythonVersion: '3.7'
-  operatingSystem: 'ubuntu-16.04'
-  artifactName: 'wheels.linux37'
+  pythonVersion: '3.9'
+  operatingSystem: 'ubuntu-20.04'
+  artifactName: 'wheels.linux39'
   artifactPattern: '**/*.whl'
 
 steps:

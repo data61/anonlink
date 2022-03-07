@@ -1,6 +1,12 @@
 new version
 ===========
 
+- Process chunk now utilizes the ``find_candidate_pairs`` function and can optionally pass on a blocking function. #462
+- Added support for Python 3.10 and updated various test dependencies. #517
+- Switch from Travis-CI to Github Actions #467
+- Switch back to using upstream `bitarray` now they distribute binary wheels. #517
+
+
 0.14.2
 ======
 
