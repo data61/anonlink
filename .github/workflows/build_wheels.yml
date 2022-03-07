@@ -1,6 +1,10 @@
 name: Build and upload to PyPI
 
-on: [push, pull_request]
+on:
+  release:
+    types: [ published ]
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   build_wheels:
@@ -32,8 +36,9 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
+          name: binary-wheels
           path: dist/*.tar.gz
 
   upload_pypi:
@@ -43,9 +48,9 @@ jobs:
     # upload to PyPI on every tag starting with "v"
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
-          name: artifact
+          name: binary-wheels
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@v1.4.2
