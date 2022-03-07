@@ -24,8 +24,9 @@ jobs:
         env:
          CIBW_SKIP: '*-win32 *i686'
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
+          name: binary-wheels
           path: ./wheelhouse/*.whl
 
   build_sdist:
