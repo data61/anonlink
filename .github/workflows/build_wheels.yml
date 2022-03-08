@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # upload to PyPI on every release
-    if: github.event_name == 'release'
+    if: github.event.type == 'ReleaseEvent'
     steps:
       - uses: actions/download-artifact@v3
         with:
