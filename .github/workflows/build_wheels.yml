@@ -47,8 +47,8 @@ jobs:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
 
-    # upload to PyPI on every tag starting with "v"
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    # upload to PyPI on every release
+    if: github.event.release && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v3
         with:
