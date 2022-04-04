@@ -654,7 +654,7 @@ extern "C"
                     push_score(score, j);
                 }
             }
-            delete andbuffer;
+            delete [] andbuffer;
 
         }
 
