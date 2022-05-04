@@ -1,4 +1,4 @@
-bitarray==2.4.1
+bitarray==2.5.0
 clkhash==0.16.1
 Cython==0.29.28
 hypothesis==6.9.2
