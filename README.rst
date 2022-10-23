@@ -3,7 +3,6 @@
     :target: https://dev.azure.com/data61/Anonlink/_build/latest?definitionId=3&branchName=main
 
 
-
 .. image:: https://codecov.io/gh/data61/anonlink/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/data61/anonlink
 

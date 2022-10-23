@@ -16,10 +16,10 @@ else:
 here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = [
-        "bitarray>=2.4.0",
+        "bitarray>=2.5",
         "numpy>=1.19",
         "mypy-extensions>=0.4",
-        "Cython>=0.29.10"
+        "Cython>=0.29"
     ]
 
 test_requirements = [
@@ -68,7 +68,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 
 setup(
     name="anonlink",
-    version='0.15.0',
+    version='0.15.1',
     description='Anonymous linkage using cryptographic hashes and bloom filters',
     long_description=readme,
     long_description_content_type='text/x-rst',
@@ -96,7 +96,6 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
