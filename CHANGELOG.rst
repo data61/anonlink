@@ -1,5 +1,10 @@
-new version
-===========
+0.15.1
+======
+
+- Updates dependencies used in testing to latest versions
+- Updates to latest version of `cibuildwheel`.
+- Drops explicit testing for Python 3.7
+
 
 0.15.0
 ======
