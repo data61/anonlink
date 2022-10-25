@@ -1,5 +1,5 @@
 bitarray==2.6.0
-clkhash==0.16.1
+clkhash==0.17.0
 Cython==0.29.32
 hypothesis==6.9.2
 pytest>=7.0.1
