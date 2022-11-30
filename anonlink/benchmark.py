@@ -1,14 +1,9 @@
 import itertools
 import random
-import operator
 import os
 from timeit import default_timer as timer
 
 import bitarray
-from clkhash.key_derivation import generate_key_lists
-from clkhash.bloomfilter import stream_bloom_filters
-from clkhash.randomnames import NameList
-
 import anonlink
 
 
