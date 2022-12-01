@@ -13,7 +13,7 @@ stages:
     # Need to install development libraries for manylinux container
     CIBW_BEFORE_ALL_LINUX: 'yum install -y libffi-devel atlas-devel'
     # Only build for Python36+, and x64 arch
-    CIBW_BUILD: 'cp310-* cp39-* cp38-* cp37-* cp36-*'
+    CIBW_BUILD: 'cp310-* cp39-* cp38-*'
     CIBW_SKIP: '*-win32 *-manylinux_i686 *-musllinux_*'
     #CIBW_BEFORE_TEST: pip install -r {project}/requirements.txt
     #CIBW_TEST_COMMAND: "pytest {project}/tests"
@@ -45,24 +45,6 @@ stages:
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
-    - job: linux_37
-      displayName: Linux + Python3.7
-      pool:
-        vmImage: 'ubuntu-20.04'
-      variables:
-        CIBW_BUILD: 'cp37-*'
-      steps:
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-        - template: .azurePipeline/cibuildwheel_steps.yml
-    - job: linux_36
-      displayName: Linux + Python3.6
-      pool:
-        vmImage: 'ubuntu-20.04'
-      variables:
-        CIBW_BUILD: 'cp36-*'
-      steps:
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-        - template: .azurePipeline/cibuildwheel_steps.yml
     - job: macos
       displayName: MacOS
       pool:
@@ -70,8 +52,6 @@ stages:
       variables:
         MACOSX_DEPLOYMENT_TARGET: '10.15'
       steps:
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
@@ -80,8 +60,6 @@ stages:
       pool:
         vmImage: 'windows-2019'
       steps:
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
@@ -119,12 +97,6 @@ stages:
       vmImage: 'ubuntu-20.04'
     strategy:
       matrix:
-        Python3.6:
-          pythonVersion: '3.6'
-          artifactName: 'wheels.linux36'
-        Python3.7:
-          pythonVersion: '3.7'
-          artifactName: 'wheels.linux37'
         Python3.8:
           pythonVersion: '3.8'
           artifactName: 'wheels.linux38'
@@ -143,10 +115,6 @@ stages:
       vmImage: 'macOS-10.15'
     strategy:
       matrix:
-        Python3.7:
-          pythonVersion: '3.7'
-          artifactName: 'wheels.macos'
-          artifactPattern: '**/*cp37*.whl'
         Python3.8:
           pythonVersion: '3.8'
           artifactName: 'wheels.macos'
@@ -168,14 +136,6 @@ stages:
       vmImage: 'windows-2019'
     strategy:
       matrix:
-        Python3.6:
-          pythonVersion: '3.6'
-          artifactName: 'wheels.windows'
-          artifactPattern: '**/*cp36m*.whl'
-        Python3.7:
-          pythonVersion: '3.7'
-          artifactName: 'wheels.windows'
-          artifactPattern: '**/*cp37m*.whl'
         Python3.8:
           pythonVersion: '3.8'
           artifactName: 'wheels.windows'
@@ -220,7 +180,7 @@ stages:
       # the name of an Azure artifacts feed to publish artifacts to
       artifactFeed: anonlink
     steps:
-      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+      - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
       - script: 'pip install twine'
       - task: DownloadPipelineArtifact@2
         inputs:
