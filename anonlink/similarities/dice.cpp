@@ -39,7 +39,7 @@ popcount<4>( uint64_t &c0, uint64_t &c1, uint64_t &c2, uint64_t &c3, const uint6
 
 // Although `popcnt` from libpopcount.h works on Linux & MacOS
 // The handrolled assembler is faster for 32 byte buffers
-#if defined (_MSC_VER)
+#if defined (_MSC_VER) || defined(__aarch64__)
     c0 += popcnt(buf, 4*WORD_BYTES);
     c1 += 0; c2 += 0; c3 += 0;
 #else
