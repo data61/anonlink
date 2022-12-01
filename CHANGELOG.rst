@@ -1,3 +1,10 @@
+0.15.2
+======
+
+- Added support for Apple Silicon (aarch64). #544
+- Also test Python 3.11 #545
+- remove testing of Python 3.6, 3.7 #545
+
 0.15.1
 ======
 
