@@ -2,14 +2,11 @@
 .. image:: https://dev.azure.com/data61/Anonlink/_apis/build/status/data61.anonlink?branchName=main
     :target: https://dev.azure.com/data61/Anonlink/_build/latest?definitionId=3&branchName=main
 
+.. image:: https://github.com/data61/anonlink/actions/workflows/unittests.yml/badge.svg?branch=main
+    :target: https://github.com/data61/anonlink/actions/workflows/unittests.yml
 
-.. image:: https://codecov.io/gh/data61/anonlink/branch/main/graph/badge.svg
+.. image:: https://codecov.io/gh/data61/anonlink/branch/main/graph/badge.svg?token=04DblXwUsT
     :target: https://codecov.io/gh/data61/anonlink
-
-
-.. image:: https://requires.io/github/data61/anonlink/requirements.svg?branch=main
-    :target: https://requires.io/github/data61/anonlink/requirements/?branch=main
-
 
 .. image:: https://pepy.tech/badge/anonlink
     :target: https://pepy.tech/project/anonlink
