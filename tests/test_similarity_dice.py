@@ -4,6 +4,7 @@ from clkhash import bloomfilter, randomnames
 from clkhash.key_derivation import generate_key_lists
 from hypothesis import given, strategies
 
+import anonlink.similarities
 from anonlink import similarities
 
 FLOAT_ARRAY_TYPES = 'fd'
@@ -257,6 +258,21 @@ class TestBloomFilterComparison:
         assert sims.typecode in FLOAT_ARRAY_TYPES
         assert (rec_is0.typecode in UINT_ARRAY_TYPES
                 and rec_is1.typecode in UINT_ARRAY_TYPES)
+
+    def test_candidate_stream_right_low(self):
+        datasets = list(zip(*[[bitarray('01001011') * 8],
+                    [bitarray('00000000') * 8]]))
+        sims = anonlink.similarities.dice_coefficient_pairs_python(datasets)
+        assert len(sims) == 1
+        assert all(s == 0.0 for s in sims)
+
+    def test_candidate_stream_all_low(self):
+        datasets = list(zip(*[[bitarray('00000000') * 8],
+                    [bitarray('00000000') * 8]]))
+        sims = anonlink.similarities.dice_coefficient_pairs_python(datasets)
+
+        assert len(sims) == 1
+        assert all(s == 0.0 for s in sims)
 
     @pytest.mark.parametrize('sim_fun', SIM_FUNS)
     def test_order(self, sim_fun):
