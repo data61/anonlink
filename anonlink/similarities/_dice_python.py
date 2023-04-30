@@ -84,7 +84,7 @@ def dice_coefficient_python(
 def dice_coefficient_pairs_python(
         datasets: Sequence[Tuple[bitarray, bitarray]]
 ):
-    """Find Dice Sorensen coefficients of bitarray pairs.
+    """Find Dice coefficients of bitarray pairs.
 
     This version is written in Python, so it does not rely on
     architecture-specific instructions. It may be slower than an
