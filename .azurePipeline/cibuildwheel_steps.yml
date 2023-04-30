@@ -1,3 +1,5 @@
+parameters:
+  artifactName: 'wheels'
 
 steps:
 - bash: |
@@ -9,4 +11,4 @@ steps:
 - task: PublishBuildArtifacts@1
   inputs: {pathtoPublish: 'wheelhouse'}
 - task: PublishPipelineArtifact@1
-  inputs: {targetPath: 'wheelhouse'}
+  inputs: {targetPath: 'wheelhouse', artifact: ${{ parameters.artifactName }}}

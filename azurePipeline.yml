@@ -27,6 +27,8 @@ stages:
       steps:
         - { task: UsePythonVersion@0, inputs: { versionSpec: '3.10', architecture: x64 } }
         - template: .azurePipeline/cibuildwheel_steps.yml
+          parameters:
+            artifactName: 'wheels.linux310'
     - job: linux_39
       displayName: Linux + Python3.9
       pool:
@@ -36,6 +38,8 @@ stages:
       steps:
         - { task: UsePythonVersion@0, inputs: { versionSpec: '3.9', architecture: x64 } }
         - template: .azurePipeline/cibuildwheel_steps.yml
+          parameters:
+            artifactName: 'wheels.linux39'
     - job: linux_38
       displayName: Linux + Python3.8
       pool:
@@ -45,6 +49,8 @@ stages:
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
+          parameters:
+            artifactName: 'wheels.linux38'
     - job: macos
       displayName: MacOS
       pool:
@@ -55,6 +61,8 @@ stages:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
+          parameters:
+            artifactName: 'wheels.macos'
     - job: windows
       displayName: Windows
       pool:
@@ -63,6 +71,8 @@ stages:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
         - template: .azurePipeline/cibuildwheel_steps.yml
+          parameters:
+            artifactName: 'wheels.windows'
 
 - stage: sdist
   displayName: Build source distribution
