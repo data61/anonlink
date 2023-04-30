@@ -48,9 +48,9 @@ stages:
     - job: macos
       displayName: MacOS
       pool:
-        vmImage: 'macOS-10.15'
+        vmImage: 'macOS-12'
       variables:
-        MACOSX_DEPLOYMENT_TARGET: '10.15'
+        MACOSX_DEPLOYMENT_TARGET: '12'
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
         - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
@@ -112,7 +112,7 @@ stages:
   - job:
     displayName: MacOS
     pool:
-      vmImage: 'macOS-10.15'
+      vmImage: 'macOS-12'
     strategy:
       matrix:
         Python3.8:
@@ -129,7 +129,7 @@ stages:
           artifactName: $(artifactName)
           artifactPattern: $(artifactPattern)
           pythonVersion: $(pythonVersion)
-          operatingSystem: 'macOS-10.15'
+          operatingSystem: 'macOS-12'
   - job:
     displayName: Windows
     pool:
