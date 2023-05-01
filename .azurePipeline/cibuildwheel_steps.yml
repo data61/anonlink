@@ -11,4 +11,6 @@ steps:
 - task: PublishBuildArtifacts@1
   inputs: {pathtoPublish: 'wheelhouse'}
 - task: PublishPipelineArtifact@1
-  inputs: {targetPath: 'wheelhouse', artifact: ${{ parameters.artifactName }}}
+  inputs:
+    targetPath: 'wheelhouse'
+    artifact: ${{ parameters.artifactName }}
