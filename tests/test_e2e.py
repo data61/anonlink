@@ -273,5 +273,48 @@ class TestGreedy(unittest.TestCase):
         assert mapping == merged_mapping
 
 
+
+class TestSimilarityStream(EntityHelperMixin, unittest.TestCase):
+
+    proportion = 0.8
+    sample = 150
+
+    def setUp(self):
+        self.nl = randomnames.NameList(300)
+        self.s1, self.s2 = self.nl.generate_subsets(self.sample, self.proportion)
+        self.key_lists = generate_key_lists('secret', len(self.nl.schema_types))
+        self.f1 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s1, self.key_lists, self.nl.SCHEMA)))
+        self.f2 = tuple(map(itemgetter(0),
+                       bloomfilter.stream_bloom_filters(
+                           self.s2, self.key_lists, self.nl.SCHEMA)))
+
+    def test_similarity_stream(self):
+        candidate_pairs = []
+        for f1 in self.f1:
+            for f2 in self.f2:
+                candidate_pairs.append((f1, f2))
+
+        similarity_stream = anonlink.similarities.dice_coefficient_pairs_python(
+            candidate_pairs
+        )
+
+        assert len(similarity_stream) == len(self.f1) * len(self.f2)
+
+        candidate_pairs = anonlink.candidate_generation.find_candidate_pairs(
+            (self.f1, self.f2),
+            anonlink.similarities.dice_coefficient_accelerated,
+            threshold=0.0,
+        )
+
+        scores, _, (l_indicies, r_indicies) = candidate_pairs
+
+        for score, l_index, r_index in zip(scores, l_indicies, r_indicies):
+            # Calculate the index in the streamed candidate pairs list
+            index = l_index * len(self.f2) + r_index
+            assert similarity_stream[index] == score
+
+
 if __name__ == '__main__':
     unittest.main()
