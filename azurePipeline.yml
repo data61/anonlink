@@ -51,18 +51,6 @@ stages:
         - template: .azurePipeline/cibuildwheel_steps.yml
           parameters:
             artifactName: 'wheels.linux38'
-    - job: macos
-      displayName: MacOS
-      pool:
-        vmImage: 'macOS-12'
-      variables:
-        MACOSX_DEPLOYMENT_TARGET: '12'
-      steps:
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
-        - {task: UsePythonVersion@0, inputs: {versionSpec: '3.9', architecture: x64}}
-        - template: .azurePipeline/cibuildwheel_steps.yml
-          parameters:
-            artifactName: 'wheels.macos'
     - job: windows
       displayName: Windows
       pool:
@@ -119,27 +107,6 @@ stages:
           artifactName: $(artifactName)
           pythonVersion: $(pythonVersion)
           operatingSystem: 'ubuntu-20.04'
-  - job:
-    displayName: MacOS
-    pool:
-      vmImage: 'macOS-12'
-    strategy:
-      matrix:
-        Python3.8:
-          pythonVersion: '3.8'
-          artifactName: 'wheels.macos'
-          artifactPattern: '**/*cp38*.whl'
-        Python3.9:
-          pythonVersion: '3.9'
-          artifactName: 'wheels.macos'
-          artifactPattern: '**/*cp39*.whl'
-    steps:
-      - template: .azurePipeline/unittest_wheel_steps.yml
-        parameters:
-          artifactName: $(artifactName)
-          artifactPattern: $(artifactPattern)
-          pythonVersion: $(pythonVersion)
-          operatingSystem: 'macOS-12'
   - job:
     displayName: Windows
     pool:
