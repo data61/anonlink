@@ -10,7 +10,8 @@ implemented. These work on binary strings. However, other similarity
 functions are possible as well.
 """
 
-from anonlink.similarities._dice_python import dice_coefficient_python
+from anonlink.similarities._dice_python import (dice_coefficient_python,
+                                                dice_coefficient_pairs_python)
 from anonlink.similarities._smc import (hamming_similarity,
                                         simple_matching_coefficient)
 

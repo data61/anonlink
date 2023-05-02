@@ -1,3 +1,8 @@
+0.15.3
+======
+
+- Added function to compute Dice coefficients of bitarray pairs. #567
+
 0.15.2
 ======
 

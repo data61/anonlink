@@ -2,6 +2,7 @@ from array import array
 from itertools import repeat
 from typing import Iterable, Optional, Sequence, Tuple
 
+import numpy as np
 from bitarray import bitarray
 
 from anonlink.similarities._utils import (sort_similarities_inplace,
@@ -77,3 +78,43 @@ def dice_coefficient_python(
     sort_similarities_inplace(result_sims, result_indices0, result_indices1)
     
     return result_sims, (result_indices0, result_indices1)
+
+
+
+def dice_coefficient_pairs_python(
+        datasets: Sequence[Tuple[bitarray, bitarray]]
+):
+    """Find Dice coefficients of bitarray pairs.
+
+    This version is written in Python, so it does not rely on
+    architecture-specific instructions. It may be slower than an
+    accelerated version.
+
+    A similarity is computed for every pair of bitarrays in the input
+    datasets, the similarity for each pair is returned as a floating-point
+    value.
+
+    :param datasets: A sequence of candidate pairs. Each pair in a tuple
+        of bitarrays.
+
+    :return: Similarity scores for every input pair as an array of
+        floating-point values.
+    """
+    candidate_pair_count = len(datasets)
+
+    # Preallocate the result array.
+    result_sims = np.zeros(candidate_pair_count, dtype=np.float64)
+
+    for i, (f0, f1) in enumerate(datasets):
+        f0_count = f0.count()
+        f1_count = f1.count()
+        combined_count = f0_count + f1_count
+
+        if combined_count:
+            score: float = (2.0 * (f0 & f1).count() / combined_count)
+        else:  # Avoid division by zero.
+            score = 0.0
+
+        result_sims[i] = score
+
+    return result_sims
