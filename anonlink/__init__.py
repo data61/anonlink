@@ -1,4 +1,4 @@
-import pkg_resources
+from importlib.metadata import version
 
 from anonlink import blocking
 from anonlink import candidate_generation
@@ -9,5 +9,5 @@ from anonlink import solving
 from anonlink import stats
 from anonlink import typechecking
 
-__version__ = pkg_resources.get_distribution('anonlink').version
+__version__ = version('anonlink')
 __author__ = 'Data61'
