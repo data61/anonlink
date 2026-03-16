@@ -47,3 +47,16 @@ jobs:
         env:
           INCLUDE_100K: 1
         run: uv run pytest -q
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --python 3.13
+      - name: Run mypy
+        run: uv run mypy anonlink --ignore-missing-imports

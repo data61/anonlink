@@ -53,3 +53,9 @@ Homepage = "https://github.com/data61/anonlink"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "types-setuptools>=81.0.0.20260209",
+]
