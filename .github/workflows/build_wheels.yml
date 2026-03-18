@@ -13,35 +13,42 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-2019, macos-11]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      # QEMU needed for building Linux ARM wheels on x86 runners
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.11.1
-        # to supply options, put them in 'env', like:
+        uses: pypa/cibuildwheel@v2.23
         env:
-         CIBW_SKIP: '*-win32 *i686'
+         CIBW_SKIP: '*-win32 *i686 *-musllinux_*'
+         CIBW_ARCHS_LINUX: auto aarch64
          CIBW_ARCHS_MACOS: x86_64 arm64
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: binary-wheels
+          name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: binary-wheels
+          name: sdist
           path: dist/*.tar.gz
 
   upload_pypi:
@@ -51,12 +58,18 @@ jobs:
     # upload to PyPI on every release
     if: github.event.release && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: binary-wheels
+          pattern: wheels-*
+          merge-multiple: true
           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@v1.12
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}

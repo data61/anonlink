@@ -90,6 +90,9 @@ def dice_coefficient_accelerated(
                f'{filter_bits})')
         raise NotImplementedError(msg)
     filter_bytes = filter_bits // 8
+    if filter_bytes == 0:
+        # Zero-length filters: no meaningful comparison possible
+        return result_sims, (result_indices0, result_indices1)
     # Python char arrays of all filters from filters0 and filter1
     carr0, carr1 = array('b'), array('b')
 

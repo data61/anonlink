@@ -1,2 +1,61 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython"]
+requires = ["setuptools", "wheel", "cython>=3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anonlink"
+version = "0.16.0"
+description = "Anonymous linkage using cryptographic hashes and bloom filters"
+readme = "README.rst"
+license = "Apache-2.0"
+requires-python = ">=3.9"
+authors = [
+    { name = "Data61" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Security :: Cryptography",
+]
+dependencies = [
+    "bitarray>=2.5",
+    "numpy>=1.19",
+    "mypy-extensions>=0.4",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-timeout",
+    "pytest-cov",
+    "codecov",
+    "hypothesis",
+    "clkhash>=0.16.1",
+    "setuptools<82",
+]
+
+[project.urls]
+Homepage = "https://github.com/data61/anonlink"
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "types-setuptools>=81.0.0.20260209",
+]

@@ -1,3 +1,16 @@
+0.16.0
+======
+
+- Migrate build system to uv with modern pyproject.toml. Remove requirements.txt and setup.cfg.
+- Fix Cython extensions for Cython 3.x compatibility. Native C++ extensions now build on all platforms.
+- Add ARM (aarch64/Apple Silicon) support for native C++ extensions using NEON intrinsics.
+- Fix char signedness mismatch on ARM Linux (``const char`` vs ``signed char``).
+- Fix divide-by-zero with zero-length filters in accelerated Dice comparison.
+- Replace deprecated ``pkg_resources`` with ``importlib.metadata``.
+- Add Python 3.12, 3.13, 3.14 support. Drop Python 3.8, 3.9.
+- Migrate CI from Azure Pipelines to GitHub Actions with ARM Linux runner.
+- Add mypy typecheck job to CI.
+
 0.15.3
 ======
 

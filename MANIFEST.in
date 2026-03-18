@@ -5,6 +5,6 @@ global-exclude __pycache__/*
 global-include *.pyx
 global-include *.pxd
 include anonlink/solving/_multiparty_solving_inner.h
+include anonlink/solving/_multiparty_solving_inner.cpp
 include anonlink/similarities/libpopcount.h
-include anonlink/_entitymatcher*
 include anonlink/similarities/dice.cpp
