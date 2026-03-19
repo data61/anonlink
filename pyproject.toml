@@ -45,7 +45,7 @@ test = [
     "codecov",
     "hypothesis",
     "clkhash>=0.16.1",
-    "setuptools<82",
+    "setuptools<83",
 ]
 
 [project.urls]
