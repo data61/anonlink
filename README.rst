@@ -12,7 +12,7 @@
 A Python (and optimised C++) implementation of **anonymous linkage** using
 *cryptographic linkage keys* as described by Rainer Schnell, Tobias
 Bachteler, and Jörg Reiher in `A Novel Error-Tolerant Anonymous Linking
-Code <http://grlc.german-microsimulation.de/wp-content/uploads/2017/05/downloadwp-grlc-2011-02.pdf>`__.
+Code <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3549247>`__.
 
 ``anonlink`` computes similarity scores, and/or best guess matches between sets
 of *cryptographic linkage keys* (hashed entity records).
